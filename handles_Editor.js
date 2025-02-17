@@ -17,8 +17,8 @@ const HandlesEditor = () => {
     const [activeTab, setActiveTab] = useState('current');
     const [savedNotes, setSavedNotes] = useState(JSON.parse(localStorage.getItem('saved-notes-handles')) || {});
     const [visible, setVisible] = useState(false);
-    const [goal, setGoal] = useState('');
-    const [progress, setProgress] = useState('');
+    const [goal, setGoal] = useState(JSON.parse(localStorage.getItem(`goalProgress-handles-${notePath}`))?.goal);
+    const [progress, setProgress] = useState(JSON.parse(localStorage.getItem(`goalProgress-handles-${notePath}`))?.progress);
     const[workingThisRow,setWorkingThisRow]= useState('')
     const handleClose = () => {
       setVisible(false);
@@ -82,7 +82,7 @@ const HandlesEditor = () => {
         }
     }, [data]);
 
-    $(document).on('click', '.save-new-record', function () {
+    $(document).on('click', '.save-new-record-handles', function () {
 
         addNewRecord();
     });
@@ -94,7 +94,7 @@ const HandlesEditor = () => {
         });
     }, [newRecord]);
 
-    $(document).on('click', '.save-note', function (e) {
+    $(document).on('click', '.save-note-handles', function (e) {
         let rowIndex = $(this).data('rowindexsave'), // Access data-rowindex
             noteId = $(this).data('noteidsave'); // Access data-rowindex
 
@@ -487,7 +487,7 @@ const calculateCompletion = (goal, progress) => {
                                             onClick: () => {
                                                 // Save goal and progress to localStorage
                                                 const data = { goal, progress };
-                                                localStorage.setItem(`goalProgress-packout-${row[1]}`, JSON.stringify(data));
+                                                localStorage.setItem(`goalProgress-handles-${row[1]}`, JSON.stringify(data));
                                                
                                                 alert('Goal and progress saved!');
                                             }
@@ -560,7 +560,7 @@ const calculateCompletion = (goal, progress) => {
             React.createElement('div', { className: 'actions' },
                 React.createElement('button', { className: 'ui button deny' }, 'Cancel'),
                 React.createElement('button', {
-                    className: 'ui primary button approve save-new-record',
+                    className: 'ui primary button approve save-new-record-handles',
                 }, 'Add')
             )
         ),
@@ -682,7 +682,7 @@ const calculateCompletion = (goal, progress) => {
                                         ),
                                         React.createElement('div', { className: 'ui divider hidden' }),
                                         React.createElement('button', {
-                                            className: 'ui primary labeled icon button save-note',
+                                            className: 'ui primary labeled icon button save-note-handles',
                                             'data-rowIndexSave': rowIndex,
                                             'data-noteIdSave': row[0],
                                         },
