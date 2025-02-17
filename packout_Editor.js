@@ -301,7 +301,7 @@ const calculateCompletion = (goal, progress) => {
     // In practice, this would need to be an actual file existence check (e.g., API request or file system check).
 
     return React.createElement('div', { className: 'ui container grid ', style: { marginTop: '20px' } },
-
+ React.createElement('h1',{},'live'),
         // **Top Menu Bar**
         React.createElement('div', { className: 'ui top attached menu ', 
             style: {width:'89%', position: 'sticky', top: 0, zIndex: 1000, background: 'white' } },
