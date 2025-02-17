@@ -1,7 +1,7 @@
 const { useState } = React;
-import PaintEditor from './paint_Editor.js'; // Import ExcelEditor component
-import PackOutEditor from './packout_Editor.js';
-import HandlesEditor from './handles_Editor.js';
+import PaintEditor from './js/paint_Editor.js'; // Import ExcelEditor component
+import PackOutEditor from './js/packout_Editor.js';
+import HandlesEditor from './js/handles_Editor.js';
 
 
 function DepartmentMenu() {
