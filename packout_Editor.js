@@ -78,7 +78,7 @@ const PackOutEditor = () => {
         }
     }, [data]);
 
-    $(document).on('click', '.save-new-record', function () {
+    $(document).on('click', '.save-new-record-packout', function () {
 
         addNewRecord();
     });
@@ -90,7 +90,7 @@ const PackOutEditor = () => {
         });
     }, [newRecord]);
 
-    $(document).on('click', '.save-note', function (e) {
+    $(document).on('click', '.save-note-packout', function (e) {
         let rowIndex = $(this).data('rowindexsave'), // Access data-rowindex
             noteId = $(this).data('noteidsave'); // Access data-rowindex
 
@@ -546,7 +546,7 @@ const calculateCompletion = (goal, progress) => {
             React.createElement('div', { className: 'actions' },
                 React.createElement('button', { className: 'ui button deny' }, 'Cancel'),
                 React.createElement('button', {
-                    className: 'ui primary button approve save-new-record',
+                    className: 'ui primary button approve save-new-record-packout',
                 }, 'Add')
             )
         ),
@@ -663,7 +663,7 @@ const calculateCompletion = (goal, progress) => {
                                         ),
                                         React.createElement('div', { className: 'ui divider hidden' }),
                                         React.createElement('button', {
-                                            className: 'ui primary labeled icon button save-note',
+                                            className: 'ui primary labeled icon button save-note-packout',
                                             'data-rowIndexSave': rowIndex,
                                             'data-noteIdSave': row[1],
                                         },
