@@ -17,8 +17,8 @@ const PackOutEditor = () => {
     const [activeTab, setActiveTab] = useState('current');
     const [savedNotes, setSavedNotes] = useState(JSON.parse(localStorage.getItem('saved-notes-packout')) || {});
     const [visible, setVisible] = useState(false);
-    const [goal, setGoal] = useState('');
-    const [progress, setProgress] = useState('');
+    const [goal, setGoal] = useState(JSON.parse(localStorage.getItem(`goalProgress-packout-${notePath}`))?.goal);
+    const [progress, setProgress] = useState(JSON.parse(localStorage.getItem(`goalProgress-packout-${notePath}`))?.progress);
     const[workingThisRow,setWorkingThisRow]= useState('')
     const handleClose = () => {
       setVisible(false);
@@ -30,14 +30,14 @@ const PackOutEditor = () => {
       };
       
       useEffect(() => {
-        // Access the first item of the `data` array (row is `data[i]`)
+        // Access the item of the `data` array (row is `data[i]`)
         const row = data[workingThisRow];  // `row` is now referring to `data[i]`
         const storedData = JSON.parse(localStorage.getItem(`goalProgress-packout-${row?.id}`)); // Assuming `row.id` is unique
         if (storedData) {
           setGoal(storedData.goal);
           setProgress(storedData.progress);
         }
-      }, [data,workingThisRow]);  // Depend on `data` to load data when `data` changes
+      }, [data,workingThisRow,goal,progress]);  // Depend on `data` to load data when `data` changes
 
     useEffect(() => {
         localStorage.setItem('saved-notes-packout', JSON.stringify(savedNotes));
@@ -301,7 +301,7 @@ const calculateCompletion = (goal, progress) => {
     // In practice, this would need to be an actual file existence check (e.g., API request or file system check).
 
     return React.createElement('div', { className: 'ui container grid ', style: { marginTop: '20px' } },
-
+      
         // **Top Menu Bar**
         React.createElement('div', { className: 'ui top attached menu ', 
             style: {width:'89%', position: 'sticky', top: 0, zIndex: 1000, background: 'white' } },
