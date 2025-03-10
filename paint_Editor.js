@@ -1,9 +1,22 @@
 const { useState, useEffect } = React;
 
-const PaintEditor = () => {
-    const [data, setData] = useState([]);
-    const [sheetName, setSheetName] = useState('');
-    const [searchQuery, setSearchQuery] = useState('');
+const PaintEditor = (props) => {
+      // Access the function from props
+  const { gAFucntion,
+    pickListApp,
+    selectedDepartment,
+    displayPane,
+    lookupComponent,
+    departmentName,
+    goalProgressInput,           
+    searchQueryLifted, 
+    visibleLifted,
+    dataLifted,
+    sheetNameLifted,setData } = props;
+
+    /* const [data, setData] = useState(dataLifted); */
+    const [sheetName, setSheetName] = useState(sheetNameLifted);
+    const [searchQuery, setSearchQuery] = useState(searchQueryLifted);
     const [newRecord, setNewRecord] = useState({});
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [imagePaths, setImagePaths] = useState({}); // Store image paths dynamically
@@ -13,12 +26,13 @@ const PaintEditor = () => {
     const [notePath, setNotePath] = useState({});
     const [notes, setNotes] = useState({});
     const [quantities, setQuantities] = useState({});
-    const [activeTab, setActiveTab] = useState('current');
+    const [pickListActiveTab, setPickListActiveTab] = useState(false);
     const [savedNotes, setSavedNotes] = useState(JSON.parse(localStorage.getItem('saved-notes-paint')) || {});
-    const [visible, setVisible] = useState(false);
+    const [visible, setVisible] = useState(visibleLifted);
     const [goal, setGoal] = useState(JSON.parse(localStorage.getItem(`goalProgress-paint-${notePath}`))?.goal);
     const [progress, setProgress] = useState(JSON.parse(localStorage.getItem(`goalProgress-paint-${notePath}`))?.progress);
-    const[workingThisRow,setWorkingThisRow]= useState('')
+    const[workingThisRow,setWorkingThisRow]= useState('');
+
     const handleClose = () => {
       setVisible(false);
 
@@ -31,13 +45,18 @@ const PaintEditor = () => {
      
       useEffect(() => {
         // Access the first item of the `data` array (row is `data[i]`)
-        const row = data[workingThisRow];  // `row` is now referring to `data[i]`
+        const row = dataLifted[workingThisRow];  // `row` is now referring to `data[i]`
         const storedData = JSON.parse(localStorage.getItem(`goalProgress-paint-${row?.id}`)); // Assuming `row.id` is unique
+           
+        /* TODO make sure gAFucntion only works when localstorage is not blank */
+           gAFucntion.createOrUpdateFile(JSON.stringify(savedNotes),'saved-notes-paint').then(e=>console.log(e)).catch(err => console.log(err));
+
         if (storedData) {
+             /* TODO use gAFucntion to set the units for the schedule */
           setGoal(storedData.goal);
           setProgress(storedData.progress);
         }
-      }, [data,workingThisRow]);  // Depend on `data` to load data when `data` changes
+      }, [dataLifted,workingThisRow]);  // Depend on `data` to load data when `data` changes
 
     useEffect(() => {
         localStorage.setItem('saved-notes-paint', JSON.stringify(savedNotes));
@@ -65,7 +84,7 @@ const PaintEditor = () => {
         const fetchImages = async () => {
             const imageMap = {};
             await Promise.all(
-                data.map(async (row) => {
+                dataLifted.map(async (row) => {
                     const path = await getImagePath(row);
                     imageMap[row[0]] = path; // Store path using a unique identifier
                 })
@@ -73,10 +92,10 @@ const PaintEditor = () => {
             setImagePaths(imageMap);
         };
 
-        if (data.length > 0) {
+        if (dataLifted.length > 0) {
             fetchImages();
         }
-    }, [data]);
+    }, [dataLifted]);
 
     $(document).on('click', '.save-new-record-paint', function () {
 
@@ -154,6 +173,9 @@ const PaintEditor = () => {
                 if (!noteExists) {
                     savedNotes[noteId][rowIndex].push(newNote);
                     localStorage.setItem('saved-notes-paint', JSON.stringify(savedNotes));
+
+                    /* TODO make sure gAFucntion only works when localstorage is not blank */
+                    gAFucntion.createOrUpdateFile(JSON.stringify(savedNotes),'saved-notes-paint').then(e=>console.log(e)).catch(err => console.log(err));
                     setSavedNotes(savedNotes); // Update state to re-render with the latest saved notes
                 }
             } else {
@@ -192,7 +214,7 @@ const PaintEditor = () => {
 
     const saveFile = () => {
         try {
-            let ws = XLSX.utils.aoa_to_sheet(data);
+            let ws = XLSX.utils.aoa_to_sheet(dataLifted);
             let wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, sheetName);
             XLSX.writeFile(wb, 'Paint_Open_This_Lastest_File.xlsx');
@@ -203,7 +225,7 @@ const PaintEditor = () => {
     };
 
     const handleSearchChange = (e) => {
-        setSearchQuery(e.target.value);
+        setSearchQuery(searchQueryIn);
     };
  
     const handleNewRecordChange = (e, field) => {
@@ -217,7 +239,7 @@ const PaintEditor = () => {
 
         const newRow = headers.map(header => newRecord[header] || '');
 
-        setData([...data, newRow]);
+        setData([...dataLifted, newRow]);
         setNewRecord({});
         setIsModalOpen(false);
         handleOpen();
@@ -246,15 +268,15 @@ const PaintEditor = () => {
     };
 
     // Filter data based on search query
-    const filteredData = data.filter(row => {
+    const filteredData = dataLifted.filter(row => {
         return row.some(cell => {
             const cellValue = (cell || '').toString().trim().toLowerCase();
-            return cellValue.includes(searchQuery.toLowerCase().trim());
+            return cellValue.includes(searchQueryLifted.toLowerCase().trim());
         });
     });
 
     // Get headers (titles) for data
-    const headers = data[0] || [];
+    const headers = dataLifted[0] || [];
 
     const openNoteModal = () => {
         $('.ui.small.modal.note-viewer.paint').modal('show'); // Use jQuery to show the modal 
@@ -264,6 +286,11 @@ const PaintEditor = () => {
         $('.addRecord.small.modal.paint').modal('show'); // Use jQuery to show the modal
     };
 
+    const toggleMainPane = () =>{
+
+        setPickListActiveTab(true);
+
+    }
     const checkImageExists = (path) => {
         return new Promise((resolve) => {
             const img = new Image();
@@ -297,239 +324,44 @@ const calculateCompletion = (goal, progress) => {
     if (!goal || !progress) return 0;
     return (goal-progress); // Ensure it doesn't go over 100%
   };
+
+  console.log('paint Pane',departmentName,dataLifted);
     // This function would simulate the image existence check.
     // In practice, this would need to be an actual file existence check (e.g., API request or file system check).
 
     return React.createElement('div', { className: 'ui container grid ', style: { marginTop: '20px' } },
 
-        // **Top Menu Bar**
-        React.createElement('div', { className: 'ui top attached menu ', 
-            style: {width:'89%', position: 'sticky', top: 0, zIndex: 1000, background: 'white' } },
 
-            // **Left Dropdown Menu**
-            React.createElement('div', { className: 'ui dropdown icon item' },
-                React.createElement('i', { className: 'wrench icon ' }),
-                React.createElement('div', { className: 'menu' },
-
-                    // File upload button
-                    React.createElement('div', { className: 'item ui button' }, 'Open...',
-                        React.createElement('input', {
-                            type: 'file',
-                            accept: '.xlsx, .xls',
-                            onChange: handleFileUpload,
-                        })
-                    ),
-                    React.createElement('div', { className: 'item', onClick: saveFile }, 'Save...'),
-                    React.createElement('div', { className: 'divider' }),
-                    React.createElement('div', { className: 'header ' }, 'Export'),
-                    React.createElement('div', { className: 'item disabled' }, 'Share...')
-                )
-            ),
-
-            // **New Record Tab**
-            React.createElement('div', { className: 'ui item  ', onClick: openModal, style: { cursor: 'pointer' } },
-                React.createElement('i', { className: 'plus icon grey' }), 'Add Record'
-            ),
-
-            visible ? React.createElement(
-                'div',
-                { className: 'ui icon message yellow compact small' },
-                React.createElement(
-                  'i',
-                  {
-                    className: 'close icon',
-                    onClick: handleClose
-                  }
-                ),
-                React.createElement('i', { className: 'warning circle icon' }),
-                React.createElement(
-                  'div',
-                  { className: 'content' },
-                  React.createElement('div', { className: 'header' }, 'Remember to save your data!'),
-                  React.createElement('p', null, 'Your changes will be lost if you refresh the page without saving.'),
-                  React.createElement(
-                    'button',
-                    {
-                      className: 'ui button yellow',
-                      onClick: saveFile,handleClose
-                    },
-                    'Save'
-                  )
-                )
-              ) : null,
-
-            // **Right Search Menu**
-            React.createElement('div', { className: 'right menu' },
-                React.createElement('div', { className: 'ui right aligned category search item' },
-                    React.createElement('div', { className: 'ui transparent icon input' },
-                        React.createElement('input', {
-                            type: 'text',
-                            placeholder: 'Search...',
-                            value: searchQuery,
-                            onChange: handleSearchChange,
-                            className: 'prompt'
-                        }),
-                        React.createElement('i', { className: 'search link icon' })
-                    ),
-                    React.createElement('div', { className: 'results' })
-                )
-            )
-        ),
 
         // **Display each row in its own segment with name on top**
-        React.createElement('div', { className: 'ui divided items fourteen wide column' },
-            filteredData.slice().map((row, rowIndex) =>
-                React.createElement('div', { key: rowIndex, className: 'ui segment basic' },
-                    React.createElement('div', { className: 'ui divider' }),
-                    React.createElement('h1', { className: 'ui header' },
-                        React.createElement('div', { className: 'ui ribbon label' }, ` ${headers[0]} ${row[0] || 'Unnamed'}`),
-                    ),
-                    React.createElement('div', { className: 'ui grid' },
-                        React.createElement('div', { className: 'four wide column', style: { textAlign: 'center' } },
-                            imagePaths[row[0]] && imagePaths[row[0]] !== 'img/default_image.jpg'
-                                ? React.createElement('img', {
-                                    className: 'ui fluid image',
-                                    src: imagePaths[row[0]],
-                                    alt: 'Loaded Image',
-                                })
-                                : React.createElement('div', { className: 'ui placeholder' }, // Placeholder for missing images
-                                    React.createElement('div', { className: 'image' })
-                                ),
-                                React.createElement('div', { className: 'ui divider hidden' }) ,
-                                React.createElement('div', { className: 'ui buttons' },
-                                    React.createElement('button', {
-                                        className: 'ui blue small button',
-                                        onClick: async () => {
-                                            const pdf = getPdfPath(row)[0],
-                                            pdf2 = getPdfPath(row)[1],
-                                            pdf3 = getPdfPath(row)[2];
-                                            setPdfPath(pdf);
-                                            setPdfPath2(pdf2);
-                                            setPdfPath3(pdf3);
-                                            if (pdf !== '') {
-                                                openPdfModal(pdf, pdf2, pdf3);
-                                            } else {
-                                                alert('PDF not found.');
-                                            }
-                                        }
-                                    }, 'Drawing'),
-        
-                                    React.createElement('button', {
-                                        className: 'ui blue small button',
-                                        onClick: async () => {
-                                            setNotePath(row[0]);
-                                            openNoteModal();
-                                        }
-                                    }, 'Notes')
-                                ),
+         React.createElement(displayPane,
+            {
+                goalProgressInput,
+                departmentName,
+                lookupComponent,
+                pickListApp, 
+                selectedDepartment, 
+                filteredData, 
+                imagePaths, 
+                headers, 
+                getPdfPath, 
+                openPdfModal, 
+                openNoteModal, 
+                setPdfPath, 
+                setPdfPath2, 
+                setPdfPath3, 
+                setNotePath, 
+                setWorkingThisRow, 
+                setGoal, 
+                setProgress, 
+                goal, 
+                progress, 
+                calculateCompletion, 
+                calculateRemaining, 
+                workingThisRow
+            }),
+       
 
-                                React.createElement('div', { className: 'ui divider ' }) ,
-                                // New section for Goal and Progress input
-                                React.createElement('div', { className: 'ui segment container grid'  },
-                                    React.createElement('h3', {}, 'Set Goal and Progress'),
-        
-                                    // Goal Input
-                                    React.createElement('div', { className: 'ui input sixteen wide column' },
-                                        React.createElement('input', {
-                                            type: 'number',
-                                            placeholder: 'Set Goal (Total Quantity)',
-                                            value: workingThisRow === row[0] ? goal : JSON.parse(localStorage.getItem(`goalProgress-paint-${row[0]}`))?.goal,
-                                            onChange: (e) => { setWorkingThisRow(row[0]), setGoal(e.target.value); },
-                                            onclick:()=> setWorkingThisRow(row[0]),
-                                            min: '0'
-                                        })
-                                    ),
-        
-                                    // Progress Input
-                                    React.createElement('div', { className: 'ui input sixteen wide column' },
-                                        React.createElement('input', {
-                                            type: 'number',
-                                            placeholder: 'Current Progress',
-                                            value: workingThisRow === row[0] ? progress : JSON.parse(localStorage.getItem(`goalProgress-paint-${row[0]}`))?.progress,
-                                            onChange: (e) => { setWorkingThisRow(row[0]), setProgress(e.target.value); },
-                                            onclick:()=> setWorkingThisRow(row[0]),
-                                            min: '0'
-                                        })
-                                    ),
-        
-                                    // Progress Completion Bar
-                                    React.createElement('div', { className: 'ui progress sixteen wide column active', },
-                                        React.createElement('div', {
-                                            className: 'bar green',
-                                            style: { width: `${calculateCompletion(
-                                                workingThisRow === row[0] ? goal : JSON.parse(localStorage.getItem(`goalProgress-paint-${row[0]}`))?.goal,
-                                                workingThisRow === row[0] ? progress : JSON.parse(localStorage.getItem(`goalProgress-paint-${row[0]}`))?.progress
-                                            )}%` }
-                                        }),
-                                        React.createElement('div', { className: 'label sixteen wide column' }, `Completion: ${Math.round(calculateCompletion(
-                                            workingThisRow === row[0] ? goal : JSON.parse(localStorage.getItem(`goalProgress-paint-${row[0]}`))?.goal,
-                                            workingThisRow === row[0] ? progress : JSON.parse(localStorage.getItem(`goalProgress-paint-${row[0]}`))?.progress
-                                        ))}%`),
-                                     
-                                    ),  
-                                    React.createElement('div', { className: 'label sixteen wide column' }, `Remaining: ${Math.round(calculateRemaining(
-                                        workingThisRow === row[0] ? goal : JSON.parse(localStorage.getItem(`goalProgress-paint-${row[0]}`))?.goal,
-                                        workingThisRow === row[0] ? progress : JSON.parse(localStorage.getItem(`goalProgress-paint-${row[0]}`))?.progress
-                                    ))}`),
-        
-                                    React.createElement('div', { className: 'ui buttons sixteen wide column' },
-                                        // Save Button
-                                        React.createElement('button', {
-                                            className: 'ui primary blue button  ',
-                                            onClick: () => {
-                                                // Save goal and progress to localStorage
-                                                const data = { goal, progress };
-                                                localStorage.setItem(`goalProgress-paint-${row[0]}`, JSON.stringify(data));
-                                               
-                                                alert('Goal and progress saved!');
-                                            }
-                                        }, 'Save'),
-            
-                                        // Reset Button
-                                        React.createElement('button', {
-                                            className: 'ui red small button   ',
-                                            onClick: () => {
-                                                setGoal('');
-                                                setProgress('');
-                                            }
-                                        }, 'Reset'))
-                                ),
-
-                            ),
-
-                           
-                            React.createElement('div', { className: 'twelve wide column' },
-                                React.createElement('table', { className: 'ui celled striped table' },
-                                    React.createElement('tbody', null,
-                                        // First row - Active Indicator if progress > 0
-                                        calculateCompletion(
-                                            workingThisRow === row[0] ? goal : JSON.parse(localStorage.getItem(`goalProgress-paint-${row[0]}`))?.goal,
-                                            workingThisRow === row[0] ? progress : JSON.parse(localStorage.getItem(`goalProgress-paint-${row[0]}`))?.progress
-                                        ) > 0 &&
-                                        React.createElement('tr', null,
-                                            React.createElement('td', { colSpan: 2, style: { textAlign: 'center' } },
-                                                React.createElement('div', { className: 'ui label green', style: {  display: 'flex', alignItems: 'center', fontWeight: 'bold' } },
-                                                    React.createElement('div', { className: 'dot', style: { width: '10px', height: '10px', backgroundColor: 'green', borderRadius: '50%', marginRight: '5px' } }),
-                                                    'Active'
-                                                )
-                                            )
-                                        ),
-                            
-                                        // Other rows from the headers
-                                        headers.slice().map((header, colIndex) =>
-                                            React.createElement('tr', { key: colIndex },
-                                                React.createElement('td', { style: { fontWeight: 'bold' } }, header || 'Field'),
-                                                React.createElement('td', null, row[colIndex] || 'N/A'),
-                                            )
-                                        )
-                                    )
-                                )
-                            )
-                            
-                        )
-                    )
-                )
-            ),
         
         // **Modal for adding new record**
         React.createElement('div', { className: 'ui small modal addRecord paint' },
@@ -643,7 +475,7 @@ const calculateCompletion = (goal, progress) => {
 
                 React.createElement('div', { className: `ui bottom attached  tab segment`, 'data-tab': 'current' },
 
-                    data.map((row, rowIndex) =>
+                    dataLifted.map((row, rowIndex) =>
                         notePath === row[0] && React.createElement('div', { key: rowIndex, className: 'ui segment basic' },
                             React.createElement('h3', {}, `Model ${row[0]}`),
                             React.createElement('div', { className: 'ui comments' },
