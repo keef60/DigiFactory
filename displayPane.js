@@ -1,0 +1,73 @@
+const { useState, useEffect } = React;
+
+const DisplayPane = ({
+    pickListApp,
+    selectedDepartment,
+    filteredData,
+    imagePaths,
+    headers,
+    getPdfPath,
+    openPdfModal,
+    openNoteModal,
+    setPdfPath,
+    setPdfPath2,
+    setPdfPath3,
+    setNotePath,
+    setWorkingThisRow,
+    setGoal,
+    setProgress,
+    goal,
+    progress,
+    calculateCompletion,
+    calculateRemaining,
+    workingThisRow,
+    lookupComponent,
+    goalProgressInput,
+    departmentName
+}) => {
+    const [activeTab, setActiveTab] = useState('lookup'); // default to "Look Up" tab
+console.log('display Pane',departmentName);
+    const tabContent = {
+        lookup: React.createElement(lookupComponent, {
+            filteredData,
+            headers,
+            imagePaths,
+            getPdfPath,
+            openPdfModal,
+            openNoteModal,
+            setPdfPath,
+            setPdfPath2,
+            setPdfPath3,
+            setNotePath,
+            setWorkingThisRow,
+            setGoal,
+            setProgress,
+            goal,
+            progress,
+            workingThisRow,
+            calculateCompletion,
+            calculateRemaining,
+            goalProgressInput,
+            departmentName
+        }),
+        pickList: React.createElement(pickListApp, { selectedDepartment, departmentName}),
+    };
+
+    return React.createElement('div', null,
+        React.createElement('div', { className: 'ui top attached tabular menu ',style:{ marginTop: "2.5%"} },
+            React.createElement('a', {
+                className: `item ${activeTab === 'lookup' ? 'active' : ''}`,
+                onClick: () => setActiveTab('lookup')
+            }, 'Look Up'),
+            React.createElement('a', {
+                className: `item ${activeTab === 'pickList' ? 'active' : ''}`,
+                onClick: () => setActiveTab('pickList')
+            }, 'My Pick List')
+        ),
+        React.createElement('div', { className: 'ui bottom attached segment ' },
+            tabContent[activeTab]  // Render content based on the active tab
+        )
+    );
+};
+
+export default DisplayPane;
