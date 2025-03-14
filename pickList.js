@@ -166,7 +166,8 @@ const PickListApp = (props) => {
     
         // Construct the URL to get the list items with a filter by Title (modelNumber)
         const itemsUrl = `https://graph.microsoft.com/v1.0/sites/${siteID}/lists/${postName}/items?$filter=fields/Title eq '${modelNumber}'&$expand=fields`;
-    
+//        const itemsUrl2 = `https://graph.microsoft.com/v1.0/sites/${siteID}/lists/${postName}/items?$expand=fields`;
+   
         const headers = {
             "Authorization": `Bearer ${accessToken}`,
             "Content-Type": "application/json",
@@ -186,6 +187,7 @@ const PickListApp = (props) => {
             }
     
             const itemsData = await itemsResponse.json();
+            console.log(itemsData)
     
             // Step 2: Check if the item exists
             if (itemsData.value.length > 0) {
@@ -196,7 +198,7 @@ const PickListApp = (props) => {
                 const updateBody = {
                     fields: {
                         Title: modelNumber,  // Adjust this field as per the requirement
-                        [selectedDepartment]: delFieldData // Include any other fields you want to update
+                        [departmentName.charAt(0).toUpperCase()+departmentName.slice(1)]: delFieldData // Include any other fields you want to update
                     },
                 };
     
@@ -223,7 +225,7 @@ const PickListApp = (props) => {
                 const body = {
                     fields: {
                         Title: modelNumber,  // Adjust this field as per your SharePoint list
-                        [selectedDepartment]: delFieldData // Add other fields as needed
+                        [departmentName.charAt(0).toUpperCase()+departmentName.slice(1)]: delFieldData // Add other fields as needed
                     },
                 };
     
@@ -330,6 +332,7 @@ const PickListApp = (props) => {
     };
 
     const displaySharePointData = (data) => {
+  
         return React.createElement('div', { className: 'ui items divided' },
             data.map(item => {
                 const fields = item.fields;
