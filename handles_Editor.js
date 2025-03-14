@@ -3,7 +3,8 @@ const { useState, useEffect } = React;
 
 const HandlesEditor = (props) => {
        // Access the function from props
-       const { gAFucntion,
+       const { 
+        spMethod,
         pickListApp,
         selectedDepartment,
         displayPane,
@@ -13,7 +14,14 @@ const HandlesEditor = (props) => {
         searchQueryLifted, 
         visibleLifted,
         dataLifted,
-        sheetNameLifted,setData } = props;
+        sheetNameLifted,
+        setData,
+        lookuptable,
+        issue,
+        lineSelection,
+        selectedNumber,
+        setSelectedNumber,
+        chart } = props;
        
        
       /*  const [data, setData] = useState([]); */
@@ -50,7 +58,10 @@ const HandlesEditor = (props) => {
         const row = dataLifted[workingThisRow];  // `row` is now referring to `data[i]`
         const storedData = JSON.parse(localStorage.getItem(`goalProgress-handles-${row?.id}`)); // Assuming `row.id` is unique
              /* TODO make sure gAFucntion only works when localstorage is not blank */
-        gAFucntion.createOrUpdateFile(JSON.stringify(savedNotes), 'saved-notes-handles').then(e => console.log(e)).catch(err => console.log(err));
+             spMethod.fetchSharePointData('NOTES',departmentName);
+             spMethod.fetchSharePointData('REPORTS',departmentName);
+             spMethod.fetchSharePointData('ISSUES',departmentName);
+
 
         if (storedData) {
             /* TODO use gAFucntion to set the units for the schedule */
@@ -181,7 +192,7 @@ const HandlesEditor = (props) => {
                     savedNotes[noteId][rowIndex].push(newNote);
                     localStorage.setItem('saved-notes-handles', JSON.stringify(savedNotes));
                         /* TODO make sure gAFucntion only works when localstorage is not blank */
-        gAFucntion.createOrUpdateFile(JSON.stringify(savedNotes),'saved-notes-handles').then(e=>console.log(e)).catch(err => console.log(err));
+                        spMethod.handleSubmit(noteId,JSON.stringify(savedNotes), 'handles','NOTES').then(e => console.log(e)).catch(err => console.log(err));            
 
                     setSavedNotes(savedNotes); // Update state to re-render with the latest saved notes
                 }
@@ -336,29 +347,37 @@ const calculateCompletion = (goal, progress) => {
 
         // **Display each row in its own segment with name on top**
         React.createElement(displayPane,{
+            pickListApp,
+            selectedDepartment,
+            filteredData,
+            imagePaths,
+            headers,
+            getPdfPath,
+            openPdfModal,
+            openNoteModal,
+            setPdfPath,
+            setPdfPath2,
+            setPdfPath3,
+            setNotePath,
+            setWorkingThisRow,
+            setGoal,
+            setProgress,
+            goal,
+            progress,
+            calculateCompletion,
+            calculateRemaining,
+            workingThisRow,
+            lookupComponent,
             goalProgressInput,
             departmentName,
-            pickListApp, 
-            selectedDepartment, 
-            filteredData, 
-            imagePaths, 
-            headers, 
-            getPdfPath, 
-            openPdfModal, 
-            openNoteModal, 
-            setPdfPath, 
-            setPdfPath2, 
-            setPdfPath3, 
-            setNotePath, 
-            setWorkingThisRow,
-             setGoal, 
-             setProgress,
-             goal, 
-             progress, 
-             calculateCompletion, 
-             calculateRemaining, 
-             workingThisRow,
-             lookupComponent
+            lookuptable,
+            spMethod,
+            issue,
+            lineSelection,
+            selectedNumber,
+            setSelectedNumber,
+            chart
+            
             }),
 
         
