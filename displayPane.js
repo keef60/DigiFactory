@@ -23,7 +23,14 @@ const DisplayPane = ({
     workingThisRow,
     lookupComponent,
     goalProgressInput,
-    departmentName
+    departmentName,
+    lookuptable,
+    spMethod,
+    issue,
+    lineSelection,
+    selectedNumber,
+    setSelectedNumber,
+    chart
 }) => {
     const [activeTab, setActiveTab] = useState('lookup'); // default to "Look Up" tab
 console.log('display Pane',departmentName);
@@ -48,7 +55,15 @@ console.log('display Pane',departmentName);
             calculateCompletion,
             calculateRemaining,
             goalProgressInput,
-            departmentName
+            departmentName,
+            lookuptable,
+            spMethod,
+            issue,
+            lineSelection,
+            selectedNumber,
+            setSelectedNumber,
+            chart
+            
         }),
         pickList: React.createElement(pickListApp, { selectedDepartment, departmentName}),
     };
