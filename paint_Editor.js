@@ -1,18 +1,24 @@
 const { useState, useEffect } = React;
 
 const PaintEditor = (props) => {
-      // Access the function from props
-  const { gAFucntion,
-    pickListApp,
-    selectedDepartment,
-    displayPane,
-    lookupComponent,
-    departmentName,
-    goalProgressInput,           
-    searchQueryLifted, 
-    visibleLifted,
-    dataLifted,
-    sheetNameLifted,setData } = props;
+    // Access the function from props
+    const { 
+        spMethod,
+        pickListApp,
+        selectedDepartment,
+        displayPane,
+        lookupComponent,
+        departmentName,
+        goalProgressInput,
+        searchQueryLifted,
+        visibleLifted,
+        dataLifted,
+        sheetNameLifted, 
+        setData, 
+        lookuptable,
+        issue,
+        chart
+    } = props;
 
     /* const [data, setData] = useState(dataLifted); */
     const [sheetName, setSheetName] = useState(sheetNameLifted);
@@ -31,52 +37,58 @@ const PaintEditor = (props) => {
     const [visible, setVisible] = useState(visibleLifted);
     const [goal, setGoal] = useState(JSON.parse(localStorage.getItem(`goalProgress-paint-${notePath}`))?.goal);
     const [progress, setProgress] = useState(JSON.parse(localStorage.getItem(`goalProgress-paint-${notePath}`))?.progress);
-    const[workingThisRow,setWorkingThisRow]= useState('');
+    const [workingThisRow, setWorkingThisRow] = useState('');
 
     const handleClose = () => {
-      setVisible(false);
+        setVisible(false);
 
     };
 
     const handleOpen = () => {
         setVisible(true);
-  
-      };
-     
-      useEffect(() => {
+
+    };
+
+    useEffect(() => {
         // Access the first item of the `data` array (row is `data[i]`)
         const row = dataLifted[workingThisRow];  // `row` is now referring to `data[i]`
         const storedData = JSON.parse(localStorage.getItem(`goalProgress-paint-${row?.id}`)); // Assuming `row.id` is unique
-           
-        /* TODO make sure gAFucntion only works when localstorage is not blank */
-           gAFucntion.createOrUpdateFile(JSON.stringify(savedNotes),'saved-notes-paint').then(e=>console.log(e)).catch(err => console.log(err));
+
+        /* TODO make sure spMethod only works when localstorage is not blank */
+        spMethod.fetchSharePointData('NOTES',departmentName);
+        spMethod.fetchSharePointData('REPORTS',departmentName);
+        spMethod.fetchSharePointData('ISSUES',departmentName);
+        
 
         if (storedData) {
-             /* TODO use gAFucntion to set the units for the schedule */
-          setGoal(storedData.goal);
-          setProgress(storedData.progress);
+            /* TODO use spMethod to set the units for the schedule */
+            setGoal(storedData.goal);
+            setProgress(storedData.progress);
         }
-      }, [dataLifted,workingThisRow]);  // Depend on `data` to load data when `data` changes
+    }, [dataLifted, workingThisRow]);  // Depend on `data` to load data when `data` changes
 
     useEffect(() => {
         localStorage.setItem('saved-notes-paint', JSON.stringify(savedNotes));
     }, [savedNotes]); // This will update localStorage whenever savedNotes changes
 
-    $(document).on('click','.icon.close',()=>{
+    $(document).on('click', '.icon.close', () => {
         handleClose();
     })
 
     useEffect(() => {
         $('.menu .item').tab();
         $('.ui .item').tab();
-        $('.ui.dropdown').dropdown(); // Initialize Semantic UI dropdown
+        $('.ui.dropdown').dropdown({
+            allowAdditions: true
+          }); // Initialize Semantic UI dropdown
         $('.ui.progress').progress();
- 
+        
+
     }, []);
 
     useEffect(() => {
         localStorage.setItem('notes-paint', JSON.stringify(notes));
-      //  localStorage.setItem('quantities', JSON.stringify(quantities));
+        //  localStorage.setItem('quantities', JSON.stringify(quantities));
     }, [notes, quantities]);
 
     useEffect(() => {
@@ -174,8 +186,8 @@ const PaintEditor = (props) => {
                     savedNotes[noteId][rowIndex].push(newNote);
                     localStorage.setItem('saved-notes-paint', JSON.stringify(savedNotes));
 
-                    /* TODO make sure gAFucntion only works when localstorage is not blank */
-                    gAFucntion.createOrUpdateFile(JSON.stringify(savedNotes),'saved-notes-paint').then(e=>console.log(e)).catch(err => console.log(err));
+                    /* TODO make sure spMethod only works when localstorage is not blank */
+                    spMethod.handleSubmit(noteId,JSON.stringify(savedNotes), 'paint','NOTES').then(e => console.log(e)).catch(err => console.log(err));            
                     setSavedNotes(savedNotes); // Update state to re-render with the latest saved notes
                 }
             } else {
@@ -227,11 +239,11 @@ const PaintEditor = (props) => {
     const handleSearchChange = (e) => {
         setSearchQuery(searchQueryIn);
     };
- 
+
     const handleNewRecordChange = (e, field) => {
-     
+
         setNewRecord({ ...newRecord, [field]: e.target.value });
-      
+
     };
 
     const addNewRecord = () => {
@@ -286,7 +298,7 @@ const PaintEditor = (props) => {
         $('.addRecord.small.modal.paint').modal('show'); // Use jQuery to show the modal
     };
 
-    const toggleMainPane = () =>{
+    const toggleMainPane = () => {
 
         setPickListActiveTab(true);
 
@@ -314,55 +326,57 @@ const PaintEditor = (props) => {
 
     };
 
-// Calculate completion percentage
-const calculateCompletion = (goal, progress) => {
-    if (!goal || !progress) return 0;
-    return Math.min((progress / goal) * 100, 100); // Ensure it doesn't go over 100%
-  };
+    // Calculate completion percentage
+    const calculateCompletion = (goal, progress) => {
+        if (!goal || !progress) return 0;
+        return Math.min((progress / goal) * 100, 100); // Ensure it doesn't go over 100%
+    };
 
-  const  calculateRemaining   = (goal, progress) => {
-    if (!goal || !progress) return 0;
-    return (goal-progress); // Ensure it doesn't go over 100%
-  };
+    const calculateRemaining = (goal, progress) => {
+        if (!goal || !progress) return 0;
+        return (goal - progress); // Ensure it doesn't go over 100%
+    };
 
-  console.log('paint Pane',departmentName,dataLifted);
+    console.log('paint Pane', departmentName, dataLifted);
     // This function would simulate the image existence check.
     // In practice, this would need to be an actual file existence check (e.g., API request or file system check).
 
     return React.createElement('div', { className: 'ui container grid ', style: { marginTop: '20px' } },
 
-
-
         // **Display each row in its own segment with name on top**
-         React.createElement(displayPane,
+        React.createElement(displayPane,
             {
+                pickListApp,
+                selectedDepartment,
+                filteredData,
+                imagePaths,
+                headers,
+                getPdfPath,
+                openPdfModal,
+                openNoteModal,
+                setPdfPath,
+                setPdfPath2,
+                setPdfPath3,
+                setNotePath,
+                setWorkingThisRow,
+                setGoal,
+                setProgress,
+                goal,
+                progress,
+                calculateCompletion,
+                calculateRemaining,
+                workingThisRow,
+                lookupComponent,
                 goalProgressInput,
                 departmentName,
-                lookupComponent,
-                pickListApp, 
-                selectedDepartment, 
-                filteredData, 
-                imagePaths, 
-                headers, 
-                getPdfPath, 
-                openPdfModal, 
-                openNoteModal, 
-                setPdfPath, 
-                setPdfPath2, 
-                setPdfPath3, 
-                setNotePath, 
-                setWorkingThisRow, 
-                setGoal, 
-                setProgress, 
-                goal, 
-                progress, 
-                calculateCompletion, 
-                calculateRemaining, 
-                workingThisRow
+                lookuptable,
+                spMethod,
+                issue,
+                chart
             }),
-       
 
-        
+
+
         // **Modal for adding new record**
         React.createElement('div', { className: 'ui small modal addRecord paint' },
             React.createElement('div', { className: 'header' }, 'Add New Record'),
@@ -532,7 +546,7 @@ const calculateCompletion = (goal, progress) => {
                         },
                             // Render the header only once per noteId, making it sticky
                             React.createElement('h3', {
-                                style: {top: '0', backgroundColor: 'white', zIndex: 1, padding: '3% 0' } // Added sticky styles
+                                style: { top: '0', backgroundColor: 'white', zIndex: 1, padding: '3% 0' } // Added sticky styles
                             }, `Saved Notes for Model ${noteId}`),
                             React.createElement('div', { className: 'ui comments' },
                                 // For each rowIndex in this noteId, render the corresponding notes
