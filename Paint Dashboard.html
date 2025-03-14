@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+  <!-- ✅ Load jQuery First -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    
+  <!-- ✅ Load Semantic UI JavaScript After jQuery -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.4.1/semantic.min.js"></script>
+  
+  <!-- ✅ Load Semantic UI CSS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.4.1/semantic.min.css">
+
+  <!-- ✅ Load React and ReactDOM -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+
+   <!-- XLSX Library (from CDN) -->
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+       <!-- Babel CDN to transpile JSX -->
+       <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+
+        <!-- CDN for Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+
+  <style>
+    
+
+      body {
+            background-color: #F2F0EF;
+        }
+        .ui.container {
+            padding-top: 10px;
+            max-width: 1200px;
+        }
+        .ui.segment {
+            margin-bottom: 30px;
+        }
+        .ui.message {
+            margin-bottom: 20px;
+        }
+        .checkmark {
+            color: green;
+            font-size: 20px;
+            display: inline-block;
+            margin-left: 10px;
+        }
+        .ui.button {
+            margin-top: 10px;
+        }
+        .ui.placeholder {
+            display: block;
+            height: 200px;
+            width: 100%;
+        }
+        .header.huge {
+            font-size: 2.5em;
+        }
+        .ui.input input {
+            width: 100px;
+        }
+        .ui.table td, .ui.table th {
+            text-align: center;
+        }
+  </style>
+<body>
+      <!-- Link to your JS files hosted on GitHub via JSDelivr -->
+<!-- 
+ <script type="module" src="https://cdn.jsdelivr.net/gh/keef60/DigiFactory@f562b1d9f0a7be5c4615753cf734e93060f4cb74/handles_Editor.js"></script>
+  
+ <script type="module" src="https://cdn.jsdelivr.net/gh/keef60/DigiFactory@f562b1d9f0a7be5c4615753cf734e93060f4cb74/packout_Editor.js"></script>
+  
+  <script type="module" src="https://cdn.jsdelivr.net/gh/keef60/DigiFactory@f562b1d9f0a7be5c4615753cf734e93060f4cb74/paint_Editor.js"></script> 
+   
+  <script type="module" src="https://cdn.jsdelivr.net/gh/keef60/DigiFactory@f562b1d9f0a7be5c4615753cf734e93060f4cb74/app2%20Update.js"></script>
+  
+    <script type="module" src="https://cdn.jsdelivr.net/gh/keef60/DigiFactory@f562b1d9f0a7be5c4615753cf734e93060f4cb74/detailPane.js"></script>
+  
+    <script type="module" src="https://cdn.jsdelivr.net/gh/keef60/DigiFactory@f562b1d9f0a7be5c4615753cf734e93060f4cb74/newRecordModal.js"></script>
+  
+    <script type="module" src="https://cdn.jsdelivr.net/gh/keef60/DigiFactory@f562b1d9f0a7be5c4615753cf734e93060f4cb74/searchBar.js"></script>
+  
+    <script type="module" src="https://cdn.jsdelivr.net/gh/keef60/DigiFactory@f562b1d9f0a7be5c4615753cf734e93060f4cb74/pickList.js"></script>
+  
+    <script type="module" src="https://cdn.jsdelivr.net/gh/keef60/DigiFactory@f562b1d9f0a7be5c4615753cf734e93060f4cb74/lookupPane.js"></script>
+  
+    <script type="module" src="https://cdn.jsdelivr.net/gh/keef60/DigiFactory@f562b1d9f0a7be5c4615753cf734e93060f4cb74/goalAndProgress.js"></script>
+   -->
+  
+  
+  
+ 
+<script type="module" src="components/chart.js"></script>
+<script type="module" src="/components/chooseLine.js"></script>
+  <script type="module" src="/components/detailPane.js"></script>
+  <script type="module" src="/components/newRecordModal.js"></script>
+  <script type="module" src="/components/searchBar.js"></script>
+  <script type="module" src="/components/pickList.js"></script>
+  <script type="module" src="/components/lookupPane.js"></script>
+  <script type="module" src="/components/goalAndProgress.js"></script>
+  <script type="module" src="/js/gitDb.js"></script>
+  <script type="module" src="/js/spMethod.js"></script>
+  <script type="module" src="/js/frames_Editor.js"></script>
+  <script type="module" src="/js/handles_Editor.js"></script>
+  <script type="module" src="/js/packout_Editor.js"></script>
+  <script type="module" src="/js/paint_Editor.js"></script>
+  <script type="module" src="/app2 Update.js"></script>
+
+
+
+
+ 
+    <!-- Include your precompiled app.js -->
+   
+    <div id="root"></div>
+    
+    
+</body>
+</html>
+
