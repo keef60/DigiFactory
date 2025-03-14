@@ -4,19 +4,26 @@ const { useState, useEffect } = React;
 const PackOutEditor = (props) => {
     // Access the function from props
     const {
-        gAFucntion,
+        spMethod,
         pickListApp,
         selectedDepartment,
         displayPane,
         lookupComponent,
         departmentName,
-        goalProgressInput,           
-        searchQueryLifted, 
+        goalProgressInput,
+        searchQueryLifted,
         visibleLifted,
         dataLifted,
-        sheetNameLifted,setData} = props;
+        sheetNameLifted, 
+        setData, 
+        lookuptable,
+        issue,
+        lineSelection,
+        selectedNumber,
+        setSelectedNumber,
+        chart } = props;
 
-   /*  const [data, setData] = useState([]); */
+    /*  const [data, setData] = useState([]); */
     const [sheetName, setSheetName] = useState('');
     const [searchQuery, setSearchQuery] = useState(searchQueryLifted);
     const [newRecord, setNewRecord] = useState({});
@@ -49,7 +56,10 @@ const PackOutEditor = (props) => {
         const storedData = JSON.parse(localStorage.getItem(`goalProgress-packout-${row?.id}`)); // Assuming `row.id` is unique
 
         /* TODO make sure gAFucntion only works when localstorage is not blank */
-        gAFucntion.createOrUpdateFile(JSON.stringify(savedNotes), 'saved-notes-packout').then(e => console.log(e)).catch(err => console.log(err));
+        spMethod.fetchSharePointData('NOTES',departmentName,false,'','');
+        spMethod.fetchSharePointData('REPORTS',departmentName,false,'','');
+        spMethod.fetchSharePointData('ISSUES',departmentName,false,'','');
+
 
         if (storedData) {
             /* TODO use gAFucntion to set the units for the schedule */
@@ -86,7 +96,7 @@ const PackOutEditor = (props) => {
             await Promise.all(
                 dataLifted.map(async (row) => {
                     const path = await getImagePath(row);
-                    imageMap[row[1]] = path; // Store path using a unique identifier
+                    imageMap[row[0]] = path; // Store path using a unique identifier
                 })
             );
             setImagePaths(imageMap);
@@ -174,7 +184,8 @@ const PackOutEditor = (props) => {
                     savedNotes[noteId][rowIndex].push(newNote);
                     localStorage.setItem('saved-notes-packout', JSON.stringify(savedNotes));
                     /* TODO make sure gAFucntion only works when localstorage is not blank */
-                    gAFucntion.createOrUpdateFile(JSON.stringify(savedNotes), 'saved-notes-packout').then(e => console.log(e)).catch(err => console.log(err));
+                 
+                    spMethod.handleSubmit(noteId, JSON.stringify(savedNotes), 'packout','NOTES').then(e => console.log(e)).catch(err => console.log(err));
                     setSavedNotes(savedNotes); // Update state to re-render with the latest saved notes
                 }
             } else {
@@ -296,7 +307,7 @@ const PackOutEditor = (props) => {
     };
 
     const getImagePath = async (row) => {
-        const imageName = row[1];
+        const imageName = row[0];
         const extensions = ['jpg', 'jpeg', 'png', 'gif', 'avif', 'webp'];
 
         for (let ext of extensions) {
@@ -323,33 +334,38 @@ const PackOutEditor = (props) => {
 
     return React.createElement('div', { className: 'ui container  grid ', style: { marginTop: '20px' } },
 
-  
-
         // **Display each row in its own segment with name on top**
-        React.createElement(displayPane,{
-            departmentName,
-            goalProgressInput,
+        React.createElement(displayPane, {
+            pickListApp,
+            selectedDepartment,
+            filteredData,
+            imagePaths,
+            headers,
+            getPdfPath,
+            openPdfModal,
+            openNoteModal,
+            setPdfPath,
+            setPdfPath2,
+            setPdfPath3,
+            setNotePath,
+            setWorkingThisRow,
+            setGoal,
+            setProgress,
+            goal,
+            progress,
+            calculateCompletion,
+            calculateRemaining,
+            workingThisRow,
             lookupComponent,
-            pickListApp, 
-            selectedDepartment, 
-            filteredData, 
-            imagePaths, 
-            headers, 
-            getPdfPath, 
-            openPdfModal, 
-            openNoteModal, 
-            setPdfPath, 
-            setPdfPath2, 
-            setPdfPath3, 
-            setNotePath, 
-            setWorkingThisRow, 
-            setGoal, 
-            setProgress, 
-            goal, 
-            progress, 
-            calculateCompletion, 
-            calculateRemaining, 
-            workingThisRow
+            goalProgressInput,
+            departmentName,
+            lookuptable,
+            spMethod,
+            issue,
+            lineSelection,
+            selectedNumber,
+            setSelectedNumber,
+            chart
         }),
 
         // **Modal for adding new record**
@@ -460,8 +476,8 @@ const PackOutEditor = (props) => {
                 // Tab Content Wrapper
                 React.createElement('div', { className: `ui bottom attached  tab segment`, 'data-tab': 'current' },
                     dataLifted.map((row, rowIndex) =>
-                        notePath === row[1] && React.createElement('div', { key: rowIndex, className: 'ui segment basic' },
-                            React.createElement('h3', {}, `Model ${row[1]}`),
+                        notePath === row[0] && React.createElement('div', { key: rowIndex, className: 'ui segment basic' },
+                            React.createElement('h3', {}, `Model ${row[0]}`),
                             React.createElement('div', { className: 'ui comments' },
                                 React.createElement('div', { className: 'comment' },
                                     React.createElement('div', { className: 'content' },
@@ -470,8 +486,8 @@ const PackOutEditor = (props) => {
                                             React.createElement('div', { className: 'date' }, 'Just now')
                                         ),
                                         React.createElement('div', { className: 'text' },
-                                            notes[row[1]] && notePath === notes[row[1]].noteId
-                                                ? notes[row[1]][rowIndex] ?? 'No notes yet...'
+                                            notes[row[0]] && notePath === notes[row[0]].noteId
+                                                ? notes[row[0]][rowIndex] ?? 'No notes yet...'
                                                 : 'No notes yet...'
                                         ),
                                         React.createElement('form', { className: 'ui reply form' },
@@ -480,7 +496,7 @@ const PackOutEditor = (props) => {
                                                     className: 'note-area',
                                                     placeholder: 'Enter your note...',
                                                     'data-rowIndex': rowIndex,
-                                                    'data-noteId': row[1]
+                                                    'data-noteId': row[0]
                                                 })
                                             )
                                         ),
@@ -488,7 +504,7 @@ const PackOutEditor = (props) => {
                                         React.createElement('button', {
                                             className: 'ui primary labeled icon button save-note-packout',
                                             'data-rowIndexSave': rowIndex,
-                                            'data-noteIdSave': row[1],
+                                            'data-noteIdSave': row[0],
                                         },
                                             React.createElement('i', { className: 'icon edit' }),
                                             'Add Note'
