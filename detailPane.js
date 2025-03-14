@@ -11,28 +11,88 @@ const DetailPane = ({
   calculateCompletion,
   calculateRemaining,
   departmentName,
+  spMethod,
+  selectedNumber,
+  issue
 }) => {
 
   console.log("detail Pane: ", departmentName);
 
-  const rowState = departmentName === 'packout' ? row[1] : row[0];
-  const storedGoalData = JSON.parse(localStorage.getItem(`goalProgress-${departmentName}-${rowState}`));
+  const modelId = departmentName === 'packout' ? row[0] : row[0];
+  const isLine = localStorage.getItem(`goalProgress-${departmentName}${departmentName === 'line' ? selectedNumber : ''}-${modelId}`)
+  const notLine = localStorage.getItem(`goalProgress-${departmentName}-${modelId}`);
+  const storedGoalData = isLine ? JSON.parse(isLine) : JSON.parse(notLine);
+
+
+  const trackProgressPerHour = () => {
+    const now = new Date();
+    const currentHour = now.getHours();
+    const storedProgress = JSON.parse(localStorage.getItem(`hourlyProgress-${departmentName}${departmentName === 'line' ? selectedNumber : ''}-${modelId}`)) || [];
+  
+    // Find the index of the hour that matches the current hour, or start fresh
+    const hourIndex = storedProgress.findIndex(item => item.hour === currentHour);
+  
+    // Remove entries older than 24 hours
+    const updatedProgress = storedProgress.filter(item => {
+      const itemTime = new Date(item.date);
+      const diffInHours = (now - itemTime) / (1000 * 60 * 60); // time difference in hours
+      return diffInHours < 24; // Only keep entries within the last 24 hours
+    });
+  
+    // If the hour exists in the array, overwrite it, otherwise add a new entry for that hour
+    if (hourIndex !== -1) {
+      updatedProgress[hourIndex] = { hour: currentHour, progress: progress, date: now.toISOString() };
+    } else {
+      // Push new entry
+      updatedProgress.push({ hour: currentHour, progress: progress, date: now.toISOString() });
+    }
+  
+    // Ensure only 12 hours worth of data is kept (from hour1 to hour12)
+    if (updatedProgress.length > 12) {
+      updatedProgress.splice(0, updatedProgress.length - 12);
+    }
+  
+    // Update the localStorage
+    localStorage.setItem(`hourlyProgress-${departmentName}${departmentName === 'line' ? selectedNumber : ''}-${modelId}`, JSON.stringify(updatedProgress));
+  };
+  
+  
+
+
 
   const handleGoalChange = (e) => {
-    setWorkingThisRow(rowState);
+    setWorkingThisRow(modelId);
     setGoal(e.target.value);
   };
 
   const handleProgressChange = (e) => {
-    setWorkingThisRow(rowState);
+    setWorkingThisRow(modelId);
     setProgress(Number(e.target.value) + Number(storedGoalData?.progress));
   };
 
   const handleSave = () => {
+
+    const listName = 'REPORTS'
+
     storedGoalData.progress = progress;
-    localStorage.setItem(`goalProgress-${departmentName}-${rowState}`, JSON.stringify(storedGoalData));
-    setProgress('')
+
+    localStorage.setItem(`goalProgress-${departmentName}${departmentName === 'line' ? selectedNumber : ''}-${modelId}`, JSON.stringify(storedGoalData));
+
+    const currentDepartmentName = departmentName === 'line' ? `line${selectedNumber}` : departmentName;
+
+    spMethod.handleSubmit(
+      modelId,
+      JSON.stringify(storedGoalData),
+      currentDepartmentName,
+      listName
+    ).then(e => console.log(e)).catch(err => console.log(err));
+
+      // Track the hourly progress
+  trackProgressPerHour();
+    setProgress('');
+
     alert('Goal and progress saved!');
+
   };
 
   const handleReset = () => {
@@ -48,55 +108,57 @@ const DetailPane = ({
 
   // Steps at the Bottom - UI Ordered Steps
   const steps = () => {
-    return React.createElement(
-      'div',
-      { className: 'ui ordered four steps bottom attached mini' },
-
-      // Step 1: No Order
+    return React.createElement('div', { className: "ui four wide column" },
       React.createElement(
         'div',
-        { className: `step ${getStepStatus(progress, storedGoalData?.goal) === 'no order' ? 'completed' : 'disabled'}` },
-        React.createElement(
-          'div',
-          { className: 'content' },
-          React.createElement('div', { className: 'title' }, 'No Order'),
-          React.createElement('div', { className: 'description' }, 'No progress made yet')
-        )
-      ),
+        { className: 'ui ordered  fluid vertical steps mini ' },
 
-      // Step 2: Ordered
-      React.createElement(
-        'div',
-        { className: `step ${storedGoalData?.isActive ? 'active' : 'disabled'}` },
+        // Step 1: No Order
         React.createElement(
           'div',
-          { className: 'content' },
-          React.createElement('div', { className: 'title' }, 'Ordered'),
-          React.createElement('div', { className: 'description' }, 'Progress has been initiated')
-        )
-      ),
+          { className: `step ${getStepStatus(progress, storedGoalData?.goal) === 'no order' ? 'completed' : 'disabled'}` },
+          React.createElement(
+            'div',
+            { className: 'content' },
+            React.createElement('div', { className: 'title' }, 'No Order'),
+            React.createElement('div', { className: 'description' }, 'No progress made yet')
+          )
+        ),
 
-      // Step 3: WIP (Work in Progress)
-      React.createElement(
-        'div',
-        { className: `step ${getStepStatus(storedGoalData?.progress > 0 ? storedGoalData?.progress : progress, storedGoalData?.goal) === 'wip' ? 'active' : 'disabled'}` },
+        // Step 2: Ordered
         React.createElement(
           'div',
-          { className: 'content' },
-          React.createElement('div', { className: 'title' }, 'WIP'),
-          React.createElement('div', { className: 'description' }, 'Work in progress')
-        )
-      ),
+          { className: `step ${storedGoalData?.isActive ? 'active' : 'disabled'}` },
+          React.createElement(
+            'div',
+            { className: 'content' },
+            React.createElement('div', { className: 'title' }, 'Ordered'),
+            React.createElement('div', { className: 'description' }, 'Order initiated')
+          )
+        ),
 
-      // Step 4: Completed
-      React.createElement(
-        'div',
-        { className: `step ${getStepStatus(storedGoalData?.progress, storedGoalData?.goal) === 'completed' ? 'completed' : 'disabled'}` },
+        // Step 3: WIP (Work in Progress)
         React.createElement(
           'div',
-          { className: 'content' },
-          React.createElement('div', { className: 'title' }, 'Completed'),
-          React.createElement('div', { className: 'description' }, 'Order is complete')
+          { className: `step ${getStepStatus(storedGoalData?.progress > 0 ? storedGoalData?.progress : progress, storedGoalData?.goal) === 'wip' ? 'active' : 'disabled'}` },
+          React.createElement(
+            'div',
+            { className: 'content' },
+            React.createElement('div', { className: 'title' }, 'WIP'),
+            React.createElement('div', { className: 'description' }, 'Work in progress')
+          )
+        ),
+
+        // Step 4: Completed
+        React.createElement(
+          'div',
+          { className: `step ${getStepStatus(storedGoalData?.progress, storedGoalData?.goal) === 'completed' ? 'completed' : 'disabled'}` },
+          React.createElement(
+            'div',
+            { className: 'content' },
+            React.createElement('div', { className: 'title' }, 'Completed'),
+            React.createElement('div', { className: 'description' }, 'Order is complete')
+          )
         )
       )
     )
@@ -105,8 +167,8 @@ const DetailPane = ({
   const stats = () => {
     return React.createElement(
       'div',
-      { className: 'ui grid' },
-
+      { className: 'ui grid internally celled ' },
+      steps(),
       // Goal Statistic
       React.createElement(
         'div',
@@ -118,7 +180,6 @@ const DetailPane = ({
           React.createElement('div', { className: 'label' }, 'Goal')
         )
       ),
-
       // Remaining Statistic
       React.createElement(
         'div',
@@ -129,7 +190,7 @@ const DetailPane = ({
           React.createElement('div', { className: 'value' },
             Math.round(
               calculateRemaining(
-                storedGoalData?.goal, workingThisRow === rowState ? progress : storedGoalData?.progress
+                storedGoalData?.goal, workingThisRow === modelId ? progress : storedGoalData?.progress
               )
             )
           ),
@@ -139,18 +200,18 @@ const DetailPane = ({
 
       React.createElement(
         'div',
-        { className: 'eight wide column' },
+        { className: 'four wide column' },
         // Progress Statistic
         React.createElement(
           'div',
-          { className: 'eight wide column grid' },
+          { className: 'eight wide column grid ' },
           React.createElement(
             'div',
-            { className: 'ui statistic' },
+            { className: 'ui statistic  ' },
             React.createElement('div', { className: 'value' }, progress || storedGoalData?.progress || 0),
             React.createElement('div', { className: 'label' }, 'Progress')
           ),
-    
+
           // Progress Input
           React.createElement(
             'div',
@@ -177,33 +238,31 @@ const DetailPane = ({
             { className: 'ui buttons' },
             React.createElement(
               'button',
-              { className: 'ui primary blue button', onClick: handleSave },
+              { className: 'ui  green  button', onClick: handleSave },
               'Save'
             ),
             React.createElement(
               'button',
-              { className: 'ui red small button', onClick: handleReset },
+              { className: 'ui  small button', onClick: handleReset },
               'Reset'
             )
           )
         )
-      )
+      ),
     )
   }
 
+
   return React.createElement(
     'div',
-    { className: 'ui eleven wide column' },
+    { className: 'ui sixteen wide column   ' },
     React.createElement(
       'div',
-      { className: 'ui ' },
-
+      null,
       // Title
-      React.createElement('h2', { className: 'ui header' }, 'Goal and Progress Overview'),
-
       stats(),
-      React.createElement('div', { className: 'ui divider' }),
-    ), steps());
+
+    ));
 };
 
 export default DetailPane;
