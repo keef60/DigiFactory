@@ -2,7 +2,8 @@ const { useState, useEffect } = React;
 
 const FramesEditor = (props) => {
     // Access the function from props    
-    const { gAFucntion,
+    const { 
+        spMethod,
         pickListApp,
         selectedDepartment,
         displayPane,
@@ -12,7 +13,14 @@ const FramesEditor = (props) => {
         searchQueryLifted, 
         visibleLifted,
         dataLifted,
-        sheetNameLifted,setData } = props
+        sheetNameLifted,
+        setData,
+        lookuptable,
+        issue,
+        lineSelection,
+        selectedNumber,
+        setSelectedNumber,
+        chart } = props
   /*   const [data, setData] = useState([]); */
     const [sheetName, setSheetName] = useState('');
     const [searchQuery, setSearchQuery] = useState(searchQueryLifted);
@@ -48,7 +56,10 @@ const FramesEditor = (props) => {
         const storedData = JSON.parse(localStorage.getItem(`goalProgress-frames-${row?.id}`)); // Assuming `row.id` is unique
 
         /* TODO make sure gAFucntion only works when localstorage is not blank */
-        gAFucntion.createOrUpdateFile(JSON.stringify(savedNotes), 'saved-notes-frames').then(e => console.log(e)).catch(err => console.log(err));
+        spMethod.fetchSharePointData('NOTES',departmentName);
+        spMethod.fetchSharePointData('REPORTS',departmentName);
+        spMethod.fetchSharePointData('ISSUES',departmentName);
+
 
         if (storedData) {
             /* TODO use gAFucntion to set the units for the schedule */
@@ -174,7 +185,7 @@ const FramesEditor = (props) => {
                     localStorage.setItem('saved-notes-frames', JSON.stringify(savedNotes));
 
                     /* TODO make sure gAFucntion only works when localstorage is not blank */
-                    gAFucntion.createOrUpdateFile(JSON.stringify(savedNotes), 'saved-notes-frames').then(e => console.log(e)).catch(err => console.log(err));
+                    spMethod.handleSubmit(noteId,JSON.stringify(savedNotes), 'frames','NOTES').then(e => console.log(e)).catch(err => console.log(err));            
                     setSavedNotes(savedNotes); // Update state to re-render with the latest saved notes
                 }
             } else {
@@ -333,8 +344,6 @@ const FramesEditor = (props) => {
 
 
         React.createElement(displayPane, {
-            goalProgressInput,
-            departmentName,
             pickListApp,
             selectedDepartment,
             filteredData,
@@ -355,7 +364,16 @@ const FramesEditor = (props) => {
             calculateCompletion,
             calculateRemaining,
             workingThisRow,
-            lookupComponent
+            lookupComponent,
+            goalProgressInput,
+            departmentName,
+            lookuptable,
+            spMethod,
+            issue,
+            lineSelection,
+            selectedNumber,
+            setSelectedNumber,
+            chart
         }),
 
 
