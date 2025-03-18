@@ -1,7 +1,7 @@
 const { useState, useEffect } = React;
 
 const IssueSelect = (props) => {
-  const { spMethod, departmentName, modelId } = props;
+  const { spMethod, departmentName, modelId,responseBoxTitle } = props;
 
   // State to store the selected skills
   const [selectedSkills, setSelectedSkills] = useState([]);
@@ -41,7 +41,7 @@ const IssueSelect = (props) => {
 
   return React.createElement(
     "div", // Wrapper div to hold the select and button
-    { className: "ui segment basic  grid four wide column row" },
+    { className: "ui segment   grid  four wide column " },
     React.createElement(
       "h2",
       { className: "ui header small red " },
@@ -49,7 +49,7 @@ const IssueSelect = (props) => {
       React.createElement(
         "div",
         { className: "content" },
-        "Issue with Order"
+       responseBoxTitle
       )
     ),
     React.createElement(
