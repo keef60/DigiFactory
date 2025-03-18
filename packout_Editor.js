@@ -21,7 +21,9 @@ const PackOutEditor = (props) => {
         lineSelection,
         selectedNumber,
         setSelectedNumber,
-        chart } = props;
+        chart,
+        clearLoading
+     } = props;
 
     /*  const [data, setData] = useState([]); */
     const [sheetName, setSheetName] = useState('');
@@ -365,7 +367,8 @@ const PackOutEditor = (props) => {
             lineSelection,
             selectedNumber,
             setSelectedNumber,
-            chart
+            chart,
+            clearLoading
         }),
 
         // **Modal for adding new record**
