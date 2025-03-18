@@ -20,7 +20,8 @@ const FramesEditor = (props) => {
         lineSelection,
         selectedNumber,
         setSelectedNumber,
-        chart } = props
+        chart,
+        clearLoading } = props
   /*   const [data, setData] = useState([]); */
     const [sheetName, setSheetName] = useState('');
     const [searchQuery, setSearchQuery] = useState(searchQueryLifted);
@@ -373,7 +374,8 @@ const FramesEditor = (props) => {
             lineSelection,
             selectedNumber,
             setSelectedNumber,
-            chart
+            chart,
+            clearLoading
         }),
 
 
