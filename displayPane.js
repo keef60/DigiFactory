@@ -30,7 +30,7 @@ const DisplayPane = ({
     lineSelection,
     selectedNumber,
     setSelectedNumber,
-    chart
+    chart,clearLoading
 }) => {
     const [activeTab, setActiveTab] = useState('lookup'); // default to "Look Up" tab
 console.log('display Pane',departmentName);
@@ -62,10 +62,11 @@ console.log('display Pane',departmentName);
             lineSelection,
             selectedNumber,
             setSelectedNumber,
-            chart
+            chart,
+            clearLoading
             
         }),
-        pickList: React.createElement(pickListApp, { selectedDepartment, departmentName}),
+        pickList: React.createElement(pickListApp, { selectedDepartment, departmentName,selectedNumber}),
     };
 
     return React.createElement('div', null,
@@ -79,7 +80,7 @@ console.log('display Pane',departmentName);
                 onClick: () => setActiveTab('pickList')
             }, 'My Pick List')
         ),
-        React.createElement('div', { className: 'ui bottom attached segment ' },
+        React.createElement('div', { className: `ui bottom attached segment basic ${clearLoading? 'loading':''}`  },
             tabContent[activeTab]  // Render content based on the active tab
         )
     );
