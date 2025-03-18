@@ -17,7 +17,8 @@ const PaintEditor = (props) => {
         setData, 
         lookuptable,
         issue,
-        chart
+        chart,
+        clearLoading
     } = props;
 
     /* const [data, setData] = useState(dataLifted); */
@@ -372,7 +373,8 @@ const PaintEditor = (props) => {
                 lookuptable,
                 spMethod,
                 issue,
-                chart
+                chart,
+                clearLoading
             }),
 
 
