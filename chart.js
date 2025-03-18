@@ -1,32 +1,41 @@
-const { useEffect, useRef } = React;
+const { useEffect, useRef, useState } = React;
 
-const ChartComponent = ({   
-    departmentName,selectedNumber,modelId}) => {
-
+const ChartComponent = ({
+    departmentName,
+    selectedNumber,
+    modelId,
+    progress
+}) => {
     const canvasRef = useRef(null);
+    const chartRef = useRef(null); // Store the chart instance
 
     useEffect(() => {
         const ctx = canvasRef.current.getContext('2d');
 
         const getHourlyProgress = () => {
-            const storedProgress = JSON.parse(localStorage.getItem(`hourlyProgress-${departmentName}${departmentName === 'line' ? selectedNumber : ''}-${modelId}`)) || [];
-           
+            const storedProgress = JSON.parse(localStorage.getItem(
+                `hourlyProgress-${departmentName}${departmentName === 'line' ? selectedNumber : ''}-${modelId}`
+            )) || [];
             return storedProgress.map(item => item.progress);
-          };
-          
-          console.log(getHourlyProgress())
+        };
 
-        const dataSet = getHourlyProgress()
+        const dataSet = getHourlyProgress();
 
-        new Chart(ctx, {
-            type: 'line', // Change to other types like 'bar' or 'pie' if needed
+        // Destroy the existing chart if there is one
+        if (chartRef.current) {
+            chartRef.current.destroy();
+        }
+
+        // Create a new chart
+        chartRef.current = new Chart(ctx, {
+            type: 'bar', // Change to other types like 'bar' or 'pie' if needed
             data: {
                 labels: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], // Hours from 1 to 12
                 datasets: [
                     {
-                        label: 'Amount',
+                        label: 'Completed',
                         data: dataSet, // Example data
-                        borderColor: 'rgb(83, 192, 75)',
+                        borderColor: 'rgb(21, 159, 63)',
                         fill: true,
                     },
                 ],
@@ -43,43 +52,45 @@ const ChartComponent = ({
                     y: {
                         title: {
                             display: true,
-                            text: 'Amount',
+                            text: 'Completed',
                         },
                     },
                 },
             },
         });
-    }, []);
+
+
+    }, [progress, departmentName, selectedNumber, modelId]);
 
     return React.createElement('canvas', {
         ref: canvasRef,
-        width: 400,
-        height: 400,
+        width: 800,
+        height: 600,
     });
 };
 
-const ChartContainer = ({ 
+const ChartContainer = ({
     columnSize,
     headers,
     row,
     departmentName,
     selectedNumber,
-    modelId }) => {
-
-        
+    modelId,
+    progress
+}) => {
     return React.createElement(
         'div',
         { className: `ui segement ${columnSize} wide column` },
-        //Header Goal and Progress 
-        React.createElement('div', { 
-            className: ' ui header huge four wide column' 
-        }, `${headers[0]} ${row[0] || 'Unnamed'}`
-    ),
+        React.createElement('div', {
+            className: ' ui header huge four wide column'
+        }, `${headers[0]} ${row[0] || 'Unnamed'}`),
 
-        React.createElement(ChartComponent,{     
+        React.createElement(ChartComponent, {
             departmentName,
             selectedNumber,
-            modelId})
+            modelId,
+            progress
+        })
     );
 };
 
