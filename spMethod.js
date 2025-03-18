@@ -64,6 +64,11 @@ export const main = {
       });
 
       const itemsData = await itemsResponse.json();
+      
+
+      if(departmentName === 'inventory'||departmentName === 'sage'){
+        return itemsData
+      }
 
       if (log) {
         selectedDepartment !== 'PACKOUTTABLE' ? 
@@ -183,14 +188,3 @@ console.log({modelNumber, rowData, departmentName, list})
 };
 
 
-/* 
-// Usage Example
-const selectedDepartment = 'Sales'; // Example department name
-main.fetchSharePointData(selectedDepartment);
-
-// Example call to handleSubmit after you have the required data
-const modelNumber = '12345';  // Your actual model number here
-const rowData = { field1: 'value1', field2: 'value2' };  // Example row data to pass in
-
-main.handleSubmit(modelNumber, siteId, postName, accessToken, rowData);
- */
