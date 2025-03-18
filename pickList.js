@@ -1,7 +1,8 @@
 const { useState, useEffect } = React;
 
 const PickListApp = (props) => {
-    const { selectedDepartment, departmentName } = props
+    const { selectedDepartment, departmentName, selectedNumber,
+        clearLoading } = props
     const [accessToken, setAccessToken] = useState(null);
     const [error, setError] = useState(null);
     const [sharePointData, setSharePointData] = useState([]);
@@ -163,94 +164,93 @@ const PickListApp = (props) => {
     const handleSubmit = async (modelNumber) => {
 
         const delFieldData = JSON.stringify(rowData);
-    
+
         // Construct the URL to get the list items with a filter by Title (modelNumber)
         const itemsUrl = `https://graph.microsoft.com/v1.0/sites/${siteID}/lists/${postName}/items?$filter=fields/Title eq '${modelNumber}'&$expand=fields`;
-//        const itemsUrl2 = `https://graph.microsoft.com/v1.0/sites/${siteID}/lists/${postName}/items?$expand=fields`;
-   
+        //        const itemsUrl2 = `https://graph.microsoft.com/v1.0/sites/${siteID}/lists/${postName}/items?$expand=fields`;
+        const sharePointColumnName = selectedNumber ? departmentName + selectedNumber : departmentName
         const headers = {
             "Authorization": `Bearer ${accessToken}`,
             "Content-Type": "application/json",
-            "Prefer": "HonorNonIndexedQueriesWarningMayFailRandomly" // Add this header to allow non-indexed queries
+            "Prefer": "HonorNonIndexedQueriesWarningMayFailRandomly" // Allow non-indexed queries
         };
-    
+
         try {
             // Step 1: Fetch the item based on the modelNumber (Title)
             const itemsResponse = await fetch(itemsUrl, {
                 method: 'GET',
                 headers: headers,
             });
-    
+
             if (!itemsResponse.ok) {
                 const errorData = await itemsResponse.json();
                 throw new Error(`Failed to fetch list items: ${errorData.error.message}`);
             }
-    
+
             const itemsData = await itemsResponse.json();
-            console.log(itemsData)
-    
+
             // Step 2: Check if the item exists
             if (itemsData.value.length > 0) {
                 // If item exists, update it using PATCH
                 const itemId = itemsData.value[0].id;
                 const updateUrl = `https://graph.microsoft.com/v1.0/sites/${siteID}/lists/${postName}/items/${itemId}`;
-    
+
                 const updateBody = {
                     fields: {
-                        Title: modelNumber,  // Adjust this field as per the requirement
-                        [departmentName.charAt(0).toUpperCase()+departmentName.slice(1)]: delFieldData // Include any other fields you want to update
+                        Title: modelNumber,
+                        [sharePointColumnName]: delFieldData
                     },
                 };
-    
+
                 // Step 3: Send the update request
                 const updateResponse = await fetch(updateUrl, {
                     method: 'PATCH',  // Use PATCH to update an existing item
                     headers: headers,
                     body: JSON.stringify(updateBody),
                 });
-    
+
                 if (!updateResponse.ok) {
                     const errorData = await updateResponse.json();
                     throw new Error(`Failed to update item: ${errorData.error.message}`);
                 }
-    
+
                 const result = await updateResponse.json();
                 console.log("Updated item:", result);
                 setConfirmedPickList(updateResponse.ok);
-    
+
             } else {
                 // If the item doesn't exist, create a new one using POST
                 const url = `https://graph.microsoft.com/v1.0/sites/${siteID}/lists/${postName}/items`;
-    
+
                 const body = {
                     fields: {
-                        Title: modelNumber,  // Adjust this field as per your SharePoint list
-                        [departmentName.charAt(0).toUpperCase()+departmentName.slice(1)]: delFieldData // Add other fields as needed
+                        Title: modelNumber,
+                        [sharePointColumnName]: delFieldData
                     },
                 };
-    
+
                 // Step 4: Create the new item
                 const createResponse = await fetch(url, {
                     method: "POST",
                     headers: headers,
                     body: JSON.stringify(body),
                 });
-    
+
                 if (!createResponse.ok) {
                     const errorData = await createResponse.json();
                     throw new Error(`Failed to create list item: ${errorData.error.message}`);
                 }
-    
+
                 const result = await createResponse.json();
                 console.log("Created new item:", result);
                 setConfirmedPickList(createResponse.ok);
             }
-    
+
         } catch (err) {
             console.error("Error:", err);
         }
     };
-    
+
     const createTable = (matchingDescription, matchingUom, matchingQtyToPick, pn) => {
         return React.createElement(
             'tbody',
@@ -332,7 +332,7 @@ const PickListApp = (props) => {
     };
 
     const displaySharePointData = (data) => {
-  
+
         return React.createElement('div', { className: 'ui items divided' },
             data.map(item => {
                 const fields = item.fields;
@@ -476,7 +476,7 @@ const PickListApp = (props) => {
         ),
         error && React.createElement('div', { className: 'ui red message' }, error),
         sharePointData.length > 0 ? (
-            React.createElement('div', { id: 'sharePointData', className: 'ui segment' },
+            React.createElement('div', { id: 'sharePointData', className: `ui segment ${clearLoading? 'loading':''}` },
                 displaySharePointData(sharePointData)
             )
         ) : (
