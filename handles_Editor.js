@@ -21,7 +21,9 @@ const HandlesEditor = (props) => {
         lineSelection,
         selectedNumber,
         setSelectedNumber,
-        chart } = props;
+        chart,
+        clearLoading
+     } = props;
        
        
       /*  const [data, setData] = useState([]); */
@@ -376,7 +378,8 @@ const calculateCompletion = (goal, progress) => {
             lineSelection,
             selectedNumber,
             setSelectedNumber,
-            chart
+            chart,
+            clearLoading
             
             }),
 
