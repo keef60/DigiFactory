@@ -20,7 +20,8 @@ const LinesEditor = (props) => {
         lineSelection,
         selectedNumber,
         setSelectedNumber,
-        chart
+        chart,
+        clearLoading
     } = props;
 
     /* const [data, setData] = useState(dataLifted); */
@@ -386,7 +387,8 @@ const LinesEditor = (props) => {
                 lineSelection,
                 selectedNumber,
                 setSelectedNumber,
-                chart
+                chart,
+                clearLoading
 
             }),
 
