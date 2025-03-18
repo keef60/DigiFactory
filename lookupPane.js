@@ -27,17 +27,35 @@ const LookupComponent = ({
     lineSelection,
     selectedNumber,
     setSelectedNumber,
-    chart
+    chart,
 }) => {
     console.log('lookup Pane', departmentName);
-
-
+    const [toggleFilter,setToggleFilter] = useState(true);
+    const [filterBtnName,setFilterBtnName] = useState('Show Weekly Orders');
     const departmentRefName = departmentName.charAt(0).toUpperCase() + departmentName.slice(1);
+    const toggle = ()=>{
+        toggleFilter?setToggleFilter(false): setToggleFilter(true) 
+        toggleFilter? setFilterBtnName('Hide Weekly Orders'):setFilterBtnName('Show Weekly Orders') 
+    }
+    // Filtered data based on localStorage if toggleFilter is on
+    const filteredDataWithStorageCheck = filteredData.filter(row => {
+        if (!toggleFilter) {
+            // Create the key to check in localStorage
+            const localStorageKey = `goalProgress-${departmentName}-${row[0]}`;
+            const storedValue = localStorage.getItem(localStorageKey);
+
+            // If the item exists in localStorage, we filter it out
+            return storedValue;
+        }
+        return true; // If the filter is off, return all data
+    });
+
+
 
     return React.createElement('div', { className: 'ui divided items sixteen wide column ' },
-
-        filteredData.slice(0).map((row, rowIndex) =>
-            React.createElement('div', { key: rowIndex, className: `ui segment basic ` },
+        React.createElement('div', { className: " ui button black ", onClick:toggle }, filterBtnName),
+        filteredDataWithStorageCheck.map((row, rowIndex) =>
+            React.createElement('div', { key: rowIndex, className: `ui segment black ` },
                 React.createElement('div', { className: 'ui divider' }),
                 React.createElement('div', { className: 'ui divider hidden ' }),
                 departmentName === 'line' && React.createElement(
@@ -76,55 +94,55 @@ const LookupComponent = ({
                                 }
                             }, 'Notes')
                         ),
-
-
                     ),
-
                     React.createElement(chart, {
                         columnSize: 'six',
                         headers,
                         row,
                         departmentName,
                         selectedNumber,
-                        modelId:row[0]
+                        modelId: row[0],
+                        progress
                     }),
-
                     React.createElement('div', { className: ' ui  sixteen wide column row', style: { padding: "2.5%" } },
                         React.createElement('div', { className: ' ui header huge ' }, `Performance and Goal Monitoring Dashboard`,
                             React.createElement('div', { className: ' ui sub header' }, `${departmentRefName}`)
                         )
                     ),
-
-                    // New section for Goal and Progress input
-                    React.createElement(goalProgressInput, {
-                        row,
-                        workingThisRow,
-                        goal,
-                        progress,
-                        setWorkingThisRow,
-                        setGoal,
-                        setProgress,
-                        calculateCompletion,
-                        calculateRemaining,
-                        departmentName,
-                        spMethod,
-                        selectedNumber,
-                        issue
-                    }),
-
-                    //Header Goal and Progress 
+                    React.createElement('div', { className: "ui grid sixteen wide column row", style: { padding: "2%" } },
+                        React.createElement(goalProgressInput, {
+                            row,
+                            workingThisRow,
+                            goal,
+                            progress,
+                            setWorkingThisRow,
+                            setGoal,
+                            setProgress,
+                            calculateCompletion,
+                            calculateRemaining,
+                            departmentName,
+                            spMethod,
+                            selectedNumber,
+                            issue
+                        })),
                     React.createElement('div', { className: ' ui  sixteen wide column row', style: { padding: '2.5%' } },
-
                         React.createElement('div', { className: ' ui header huge ' }, `Manufacturing Issues and Action Dashboard`,
                             React.createElement('div', { className: ' ui sub header' }, `${departmentRefName}`)
                         )),
-
-                    React.createElement(issue, {
-                        spMethod,
-                        departmentName,
-                        modelId: row[0]
-                    }),
-
+                    React.createElement('div', { className: "ui grid sixteen wide column row", style: { padding: "2%" } },
+                        React.createElement(issue, {
+                            spMethod,
+                            departmentName,
+                            modelId: row[0],
+                            responseBoxTitle: "Issue with Current Order"
+                        }),
+                        React.createElement(issue, {
+                            spMethod,
+                            departmentName,
+                            modelId: row[0],
+                            responseBoxTitle: "Maintenance Issue"
+                        })
+                    ),
                     departmentName === 'paint' && React.createElement(lookuptable, {
                         headers,
                         row
