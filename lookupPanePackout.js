@@ -19,7 +19,7 @@ const PackoutLookup = ({
     workingThisRow,
     calculateCompletion,
     calculateRemaining,
-    goalProgressInput, 
+    goalProgressInput,
     departmentName,
     spMethod,
     issue,
@@ -30,16 +30,37 @@ const PackoutLookup = ({
 }) => {
     console.log('look packout Pane');
 
+    
+
+    const [toggleFilter,setToggleFilter] = useState(true);
+    const [filterBtnName,setFilterBtnName] = useState('Show Weekly Orders');
     const departmentRefName = departmentName.charAt(0).toUpperCase() + departmentName.slice(1);
+    const toggle = ()=>{
+        toggleFilter?setToggleFilter(false): setToggleFilter(true) 
+        toggleFilter? setFilterBtnName('Hide Weekly Orders'):setFilterBtnName('Show Weekly Orders') 
+    }
+    // Filtered data based on localStorage if toggleFilter is on
+    const filteredDataWithStorageCheck = filteredData.filter(row => {
+        if (!toggleFilter) {
+            // Create the key to check in localStorage
+            const localStorageKey = `goalProgress-${departmentName}-${row[0]}`;
+            const storedValue = localStorage.getItem(localStorageKey);
+
+            // If the item exists in localStorage, we filter it out
+            return storedValue;
+        }
+        return true; // If the filter is off, return all data
+    });
+
 
     return React.createElement('div', { className: 'ui divided items sixteen wide column ' },
-        filteredData.slice().map((row, rowIndex) =>
-            React.createElement('div', { key: rowIndex, className: 'ui segment basic' },
+        React.createElement('div', { className: " ui button black ", onClick:toggle }, filterBtnName),
+        filteredDataWithStorageCheck.map((row, rowIndex) =>
+            React.createElement('div', { key: rowIndex, className: `ui segment black ` },
                 React.createElement('div', { className: 'ui divider' }),
-                React.createElement('h1', { className: 'ui header' },
-                    React.createElement('div', { className: 'ui  label black' }, ` ${headers[0]} ${row[0] || 'Unnamed'}`),
-                ),
-                React.createElement('div', { className: 'ui grid internally celled ' },
+                React.createElement('div', { className: 'ui divider hidden ' }),
+
+                React.createElement('div', { className: 'ui grid  internally celled ' },
                     React.createElement('div', { className: 'four wide column', style: { textAlign: 'center' } },
                         imagePaths[row[0]] && imagePaths[row[0]] !== 'img/default_image.jpg' ?
                             React.createElement('img', { className: 'ui fluid image', src: imagePaths[row[0]], alt: 'Loaded Image' }) :
@@ -78,7 +99,9 @@ const PackoutLookup = ({
                         columnSize: 'six',
                         headers,
                         row,
-                        goal,
+                        departmentName,
+                        selectedNumber,
+                        modelId: row[0],
                         progress
                     }),
 
@@ -87,23 +110,23 @@ const PackoutLookup = ({
                             React.createElement('div', { className: ' ui sub header' }, `${departmentRefName}`)
                         )
                     ),
-
-                    // New section for Goal and Progress input
-                    React.createElement(goalProgressInput, {
-                        row,
-                        workingThisRow,
-                        goal,
-                        progress,
-                        setWorkingThisRow,
-                        setGoal,
-                        setProgress,
-                        calculateCompletion,
-                        calculateRemaining,
-                        departmentName,
-                        spMethod,
-                        selectedNumber,
-                        issue
-                    }),
+                    React.createElement('div', { className: "ui grid sixteen wide column row ", style: { padding: "2%" } },
+                        // New section for Goal and Progress input
+                        React.createElement(goalProgressInput, {
+                            row,
+                            workingThisRow,
+                            goal,
+                            progress,
+                            setWorkingThisRow,
+                            setGoal,
+                            setProgress,
+                            calculateCompletion,
+                            calculateRemaining,
+                            departmentName,
+                            spMethod,
+                            selectedNumber,
+                            issue
+                        })),
 
                     //Header Goal and Progress 
                     React.createElement('div', { className: ' ui  sixteen wide column row', style: { padding: '2.5%' } },
@@ -112,12 +135,21 @@ const PackoutLookup = ({
                             React.createElement('div', { className: ' ui sub header' }, `${departmentRefName}`)
                         )),
 
-                    React.createElement(issue, {
-                        spMethod,
-                        departmentName,
-                        modelId: row[0]
-                    }),
+                    React.createElement('div', { className: "ui grid sixteen wide column row ", style: { padding: "2%" } },
 
+                        React.createElement(issue, {
+                            spMethod,
+                            departmentName,
+                            modelId: row[0],
+                            responseBoxTitle: "Issue with Order"
+                        }),
+                        React.createElement(issue, {
+                            spMethod,
+                            departmentName,
+                            modelId: row[0],
+                            responseBoxTitle: "Maintenance Issue"
+                        }),
+                    ),
                     departmentName === 'paint' && React.createElement(lookuptable, {
                         headers,
                         row
