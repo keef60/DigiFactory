@@ -11,12 +11,7 @@ const LineSelection = (props) => {
         options.push({ key: i, text: `${i}`, value: i });
     }
 
-    // useEffect to track the selected number
-    useEffect(() => {
-        if (selectedNumber !== null) {
-            console.log('Selected number:', selectedNumber);
-        }
-    }, [selectedNumber]);
+
 
     // Handler for dropdown change
     const handleDropdownChange = (value) => {
