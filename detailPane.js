@@ -22,7 +22,7 @@ const DetailPane = ({
   const isLine = localStorage.getItem(`goalProgress-${departmentName}${departmentName === 'line' ? selectedNumber : ''}-${modelId}`)
   const notLine = localStorage.getItem(`goalProgress-${departmentName}-${modelId}`);
   const storedGoalData = isLine ? JSON.parse(isLine) : JSON.parse(notLine);
-
+  const [currentProgressUpdate,setCurrentProgressUpdate] = useState()
 
   const trackProgressPerHour = () => {
     const now = new Date();
@@ -41,10 +41,10 @@ const DetailPane = ({
   
     // If the hour exists in the array, overwrite it, otherwise add a new entry for that hour
     if (hourIndex !== -1) {
-      updatedProgress[hourIndex] = { hour: currentHour, progress: progress, date: now.toISOString() };
+      updatedProgress[hourIndex] = { hour: currentHour, progress: currentProgressUpdate, date: now.toISOString() };
     } else {
       // Push new entry
-      updatedProgress.push({ hour: currentHour, progress: progress, date: now.toISOString() });
+      updatedProgress.push({ hour: currentHour, progress: currentProgressUpdate, date: now.toISOString() });
     }
   
     // Ensure only 12 hours worth of data is kept (from hour1 to hour12)
@@ -68,6 +68,7 @@ const DetailPane = ({
   const handleProgressChange = (e) => {
     setWorkingThisRow(modelId);
     setProgress(Number(e.target.value) + Number(storedGoalData?.progress));
+    setCurrentProgressUpdate(Number(e.target.value))
   };
 
   const handleSave = () => {
