@@ -12,8 +12,6 @@ const TopMenuBar = ({
    
   }) => {
 
-
-
   // Handlers for file upload and saving
   const handleFileUpload = (event) => {
     let file = event.target.files[0];
@@ -53,15 +51,11 @@ const TopMenuBar = ({
   return React.createElement(
     'div',
     {
-      className: 'ui top attached menu   ',
-      style: { position: 'sticky', top: 0, zIndex: 1000, background: 'white' },
+      className: 'ui top attached      ',
+      style: { background: 'white' },
     },
-    React.createElement('div', { className: 'item' },
-      React.createElement('img', { className: '', src: 'img/logo.jpg', alt: 'Logo' }),
-      React.createElement('span', {style:{width:'143px'}} )
-    ),
     // **Left Dropdown Menu**
-    React.createElement(
+   /*  React.createElement(
       'div',
       { className: 'ui dropdown icon item' },
       React.createElement('i', { className: 'bars icon' }),
@@ -83,17 +77,17 @@ const TopMenuBar = ({
         React.createElement('div', { className: 'item', onClick: saveFile }, 'Save...'),
         React.createElement('div', { className: 'divider' }),
         React.createElement('div', { className: 'header' }, 'Export'),
-        React.createElement('div', { className: 'item disabled' }, 'Share...')
-      )
+        React.createElement('div', { className: 'item disabled' }, 'Share...'),  // **New Record Tab**
+        selectedDepartment =='Paint' && React.createElement(
+           'div',
+           { className: 'ui item', onClick: openModal, style: { cursor: 'pointer' } },
+           React.createElement('i', { className: 'plus icon grey' }),
+           'Add Record'
+         )
+      ),
     ),
-
-    // **New Record Tab**
-   selectedDepartment =='Paint' && React.createElement(
-      'div',
-      { className: 'ui item', onClick: openModal, style: { cursor: 'pointer' } },
-      React.createElement('i', { className: 'plus icon grey' }),
-      'Add Record'
-    ),
+ */
+  
 
     // **Save Warning Message**
     visible
@@ -132,7 +126,7 @@ const TopMenuBar = ({
       { className: '  menu right ' ,},
       React.createElement(
         'div',
-        { className: 'ui   category search item',style:{width:"300px"} },
+        { className: 'ui   category search item' },
         React.createElement(
           'div',
           { className: 'ui  icon input ' },
