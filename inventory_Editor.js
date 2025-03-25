@@ -100,12 +100,17 @@ const InventoryLookup = (props) => {
     pageNumbers.push(i);
   }
 
-  return React.createElement(
+  return React.createElement('div', { className: 'ui', style: {
+    position: 'center',
+    marginLeft: '5%',
+    width: '90%' // Optional, you can set a specific width if desired
+  } },
+  React.createElement(
     'div',
-    { className: `ui segment ${clearLoading? 'loading':''}` },
+    { className: `ui segment ${clearLoading? 'loading':''} sixteen wide column` },
     React.createElement('div',{className:"ui buttons"},
-      React.createElement('button',{className:'ui button black',onClick:()=>{setValuePostionInArray(0);setSlectedTableName(departmentName[0]);}},'Find Item'),
-      React.createElement('button',{className:'ui button green',onClick:()=>{setValuePostionInArray(1);setSlectedTableName(departmentName[1]);}},'Sage')
+      React.createElement('button',{className:'ui button black',onClick:()=>{setValuePostionInArray(0);setSlectedTableName(departmentName[0]);}},'Item Location'),
+      React.createElement('button',{className:'ui button green',onClick:()=>{setValuePostionInArray(1);setSlectedTableName(departmentName[1]);}},'On-Hand')
     ),
     React.createElement(
       'table',
@@ -142,7 +147,7 @@ const InventoryLookup = (props) => {
           null,
           React.createElement(
             'th',
-            { colSpan: '5' },
+            { colSpan: `${ Object.keys(data).length}` },
             React.createElement('div', { className: 'ui right floated pagination menu' },
               React.createElement(
                 'a',
@@ -170,7 +175,7 @@ const InventoryLookup = (props) => {
         )
       )
     )
-  );
+  ));
 };
 
 export default InventoryLookup;
