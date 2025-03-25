@@ -22,7 +22,10 @@ const HandlesEditor = (props) => {
         selectedNumber,
         setSelectedNumber,
         chart,
-        clearLoading
+        clearLoading,
+        detailPaneMini,
+        setWOnDev,
+        woNdev
      } = props;
        
        
@@ -343,7 +346,7 @@ const calculateCompletion = (goal, progress) => {
     // This function would simulate the image existence check.
     // In practice, this would need to be an actual file existence check (e.g., API request or file system check).
 
-    return React.createElement('div', { className: 'ui container grid ', style: { marginTop: '20px' } },
+    return React.createElement('div', { className: 'ui grid ', style: { marginTop: '20px' } },
 
  
 
@@ -379,7 +382,10 @@ const calculateCompletion = (goal, progress) => {
             selectedNumber,
             setSelectedNumber,
             chart,
-            clearLoading
+            clearLoading,
+            detailPaneMini,
+            setWOnDev,
+            woNdev
             
             }),
 
