@@ -64,10 +64,10 @@ export const main = {
       });
 
       const itemsData = await itemsResponse.json();
-      
+      const regex = /^(inventory|sage|runRates|frames|paint|handles|packout|maintenance|issues|.*line.*)$/;
 
-      if(departmentName === 'inventory'||departmentName === 'sage'){
-        return itemsData
+      if (regex.test(departmentName)) {
+          return itemsData;
       }
 
       if (log) {
@@ -97,7 +97,7 @@ export const main = {
     let createResponse = null;
     let itemsResponse = null;
 
-console.log({modelNumber, rowData, departmentName, list})
+
 
     // Construct the URL to get the list items with a filter by Title (modelNumber)
     const itemsUrl = `https://graph.microsoft.com/v1.0/sites/${siteID}/lists/${postName}/items?$filter=fields/Title eq '${modelNumber}'&$expand=fields`;
