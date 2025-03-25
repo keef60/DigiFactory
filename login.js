@@ -1,9 +1,9 @@
 const { useState, useEffect } = React;
 
-const LoginToken = () => {
+const LoginToken = (props) => {
+    const {getMe} = props;
     const [accessToken, setAccessToken] = useState(null);
     const [error, setError] = useState(null);
-    const [sharePointData, setSharePointData] = useState([]);
     const [tokenInput, setTokenInput] = useState('');
 
     const extractAccessToken = (url) => {
@@ -16,7 +16,7 @@ const LoginToken = () => {
         if (tokenFromUrl) {
             setAccessToken(tokenFromUrl);
             sessionStorage.setItem('access_token', tokenFromUrl);
-            fetchSharePointData(tokenFromUrl);
+            getMe()      
         } else {
             setError('Please enter a valid URL containing the access token');
         }
@@ -35,18 +35,22 @@ const LoginToken = () => {
     };
     
     useEffect(() => {
+
         const storedToken = sessionStorage.getItem('access_token');
         if (storedToken) {
             setAccessToken(storedToken);
-
+         
         }
     }, []);
 
-    return React.createElement('div', null,
+    return React.createElement('div', {className:'ui segment'},
         accessToken ? (
             React.createElement('div', { className: 'ui message' },
-                React.createElement('h2', null, 'You are logged in.'),
-                React.createElement('button', { className: 'ui red button', onClick: () => setAccessToken(null) }, 'Logout')
+                 React.createElement('h2', { className: ' ui header' },"Centralized Automated Real-Time Reporting", React.createElement('div',{className:'ui sub header'},'Streamlining Efficiency and Data-Driven Decisions')),
+                React.createElement('h2', null, 'You are logged in.'),   
+                
+
+                React.createElement('button', { className: 'ui red button basic', onClick: () => setAccessToken(null) }, 'Logout')
             )
         ) : (
             React.createElement('div', { id: 'loginSection', className: 'ui raised very padded text container segment basic' },
