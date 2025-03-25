@@ -18,7 +18,10 @@ const PaintEditor = (props) => {
         lookuptable,
         issue,
         chart,
-        clearLoading
+        clearLoading,
+        detailPaneMini,
+        setWOnDev,
+        woNdev
     } = props;
 
     /* const [data, setData] = useState(dataLifted); */
@@ -342,7 +345,7 @@ const PaintEditor = (props) => {
     // This function would simulate the image existence check.
     // In practice, this would need to be an actual file existence check (e.g., API request or file system check).
 
-    return React.createElement('div', { className: 'ui container grid ', style: { marginTop: '20px' } },
+    return React.createElement('div', { className: 'ui  grid ', style: { marginTop: '20px' } },
 
         // **Display each row in its own segment with name on top**
         React.createElement(displayPane,
@@ -374,7 +377,10 @@ const PaintEditor = (props) => {
                 spMethod,
                 issue,
                 chart,
-                clearLoading
+                clearLoading,
+                detailPaneMini,
+                setWOnDev,
+                woNdev
             }),
 
 
