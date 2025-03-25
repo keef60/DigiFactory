@@ -21,7 +21,10 @@ const LinesEditor = (props) => {
         selectedNumber,
         setSelectedNumber,
         chart,
-        clearLoading
+        clearLoading,
+        detailPaneMini,
+        setWOnDev,
+        woNdev
     } = props;
 
     /* const [data, setData] = useState(dataLifted); */
@@ -98,10 +101,7 @@ const LinesEditor = (props) => {
 
     }, []);
 
-    useEffect(() => {
-        localStorage.setItem(`saved-notes-line${selectedNumber}`, JSON.stringify(notes));
-        //  localStorage.setItem('quantities', JSON.stringify(quantities));
-    }, [notes, quantities]);
+
 
     useEffect(() => {
 
@@ -353,7 +353,7 @@ const LinesEditor = (props) => {
     // This function would simulate the image existence check.
     // In practice, this would need to be an actual file existence check (e.g., API request or file system check).
 
-    return React.createElement('div', { className: 'ui container grid ', style: { marginTop: '20px' } },
+    return React.createElement('div', { className: 'ui  grid ', style: { marginTop: '20px' } },
 
         // **Display each row in its own segment with name on top**
         React.createElement(displayPane,
@@ -388,7 +388,10 @@ const LinesEditor = (props) => {
                 selectedNumber,
                 setSelectedNumber,
                 chart,
-                clearLoading
+                clearLoading,
+                detailPaneMini,
+                setWOnDev,
+                woNdev
 
             }),
 
