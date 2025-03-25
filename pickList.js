@@ -1,8 +1,11 @@
 const { useState, useEffect } = React;
 
 const PickListApp = (props) => {
-    const { selectedDepartment, departmentName, selectedNumber,
-        clearLoading } = props
+    const { selectedDepartment,
+        departmentName,
+        selectedNumber,
+        clearLoading,
+        setWOnDev } = props
     const [accessToken, setAccessToken] = useState(null);
     const [error, setError] = useState(null);
     const [sharePointData, setSharePointData] = useState([]);
@@ -104,6 +107,8 @@ const PickListApp = (props) => {
 
             const itemsData = await itemsResponse.json();
             setSharePointData(itemsData.value);
+
+            setWOnDev(itemsData.value)
             setError(null);  // Clear any previous errors
 
             // Fetch images after fetching data
@@ -280,12 +285,12 @@ const PickListApp = (props) => {
                     null,
                     React.createElement(
                         'div',
-                        { className: 'ui input' },
+                        { className: 'ui input fluid' },
                         React.createElement(
                             'input',
                             {
                                 type: 'number',
-                                className: 'qty-picked',
+                                className: 'qty-picked ',
                                 name: `qtyPicked_${pn.ref}`,
                                 placeholder: 'Qty Picked',
                                 onChange: (e) => setRowDataIn(prevData => ({
@@ -307,7 +312,7 @@ const PickListApp = (props) => {
                     null,
                     React.createElement(
                         'div',
-                        { className: 'ui input' },
+                        { className: 'ui input fluid' },
                         React.createElement(
                             'input',
                             {
@@ -361,7 +366,7 @@ const PickListApp = (props) => {
                     // Render Part Information and Table
                     React.createElement('div', { className: 'content aligned left' },
                         React.createElement('a', { className: 'header huge ui' }, fields.Title),
-                        React.createElement('table', { className: 'ui celled table striped' },
+                        React.createElement('table', { className: 'ui celled table fixed  striped' },
                             React.createElement('thead', null,
                                 React.createElement('tr', null,
                                     React.createElement('th', null, 'Part Number'),
@@ -386,10 +391,19 @@ const PickListApp = (props) => {
                         React.createElement(
                             'tr',
                             {
-                                className: `ui button fluid ${confirmPickList ? "disabled" : "green"}`,
+                                className: `ui button  ${confirmPickList ? "disabled" : "green"}`,
                                 onClick: async () => handleSubmit(fields.Title)
                             },
                             !confirmPickList ? "Confirm" : "Comfirmed"
+
+                        ),
+                        React.createElement(
+                            'tr',
+                            {
+                                className: `ui button `,
+                                onClick: async () => handleSubmit(fields.Title)
+                            },
+                            "Print"
 
                         )
 
@@ -476,7 +490,7 @@ const PickListApp = (props) => {
         ),
         error && React.createElement('div', { className: 'ui red message' }, error),
         sharePointData.length > 0 ? (
-            React.createElement('div', { id: 'sharePointData', className: `ui segment ${clearLoading? 'loading':''}` },
+            React.createElement('div', { id: 'sharePointData', className: `ui segment ${clearLoading ? 'loading' : ''}` },
                 displaySharePointData(sharePointData)
             )
         ) : (
