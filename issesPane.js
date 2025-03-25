@@ -1,11 +1,21 @@
 const { useState, useEffect } = React;
 
 const IssueSelect = (props) => {
-  const { spMethod, departmentName, modelId,responseBoxTitle } = props;
+  const { spMethod, departmentName, modelId, responseBoxTitle, selectedNumber, listName, issueArrayName } = props;
 
   // State to store the selected skills
   const [selectedSkills, setSelectedSkills] = useState([]);
+  const [correctiveAction, setCorrectiveAction] = useState('');
+  const [reportIssueList, setReportIssueList] = useState([])
 
+
+  const handleChange = (event) => {
+    setCorrectiveAction(event.target.value);
+  };
+
+  const handleClear = () => {
+    setCorrectiveAction('');
+  };
   // Initialize dropdown when the component is mounted
   useEffect(() => {
     $('.ui.dropdown').dropdown({
@@ -13,20 +23,39 @@ const IssueSelect = (props) => {
     });
   }, [selectedSkills]);
 
+  useEffect(() => {
+
+    const r = async () => {
+      try {
+        await spMethod.fetchSharePointData('IssueList', issueArrayName)
+        .then(e => setReportIssueList(JSON.parse(e.value[0].fields[issueArrayName])))
+
+      } catch (error) {
+        return error
+      }
+    }
+    if (reportIssueList.length === 0) r().then(e => e)
+
+
+  });
+
   // Handle submit and get selected options
   const handleSubmit = (event) => {
-    const listName = 'ISSUES';
+
     event.preventDefault(); // Prevent default form submission behavior
 
     // Get selected options from the form
     const selectedOptions = Array.from(event.target.skills.selectedOptions).map(option => option.value);
-    setSelectedSkills(selectedOptions);
+    const actionText = event.target.action.value;
+
+    setSelectedSkills({ selectedOptions: selectedOptions, actionText: actionText });
+    const currentDepartmentName = departmentName === 'line' ? `line${selectedNumber}` : departmentName;
 
     // Submit the selected options
     spMethod.handleSubmit(
       modelId,
-      JSON.stringify(selectedOptions),
-      departmentName,
+      { selectedOptions: selectedOptions, actionText: actionText },
+      currentDepartmentName,
       listName
     ).then(e => {
       console.log(e);
@@ -38,18 +67,43 @@ const IssueSelect = (props) => {
 
     }).catch(err => console.log(err));
   };
+  //Form input
+  const form = () => {
+    return React.createElement('div', { className: 'ui form' },
+      React.createElement('div', { className: ' ui  equal width fields' },
+        React.createElement('div', { className: 'field' },
+          React.createElement('label', null, 'Corrective Action'),
+          React.createElement('textarea', {
+            name: "action",
+            rows: 2,
+            placeholder: 'Enter corrective action',
+            value: correctiveAction,
+            onChange: handleChange
+          })
+        )
+      )
+
+    )
+
+  }
+
+  const createList = () => {
+    return reportIssueList.map(i => {
+      return React.createElement("option", { value: i }, i)
+    })
+  }
 
   return React.createElement(
     "div", // Wrapper div to hold the select and button
-    { className: "ui segment   grid  four wide column " },
+    { className: "ui segment  grid container  six wide column " },
     React.createElement(
       "h2",
-      { className: "ui header small red " },
+      { className: "ui header  red " },
       React.createElement("i", { className: "  exclamation circle icon", }),
       React.createElement(
         "div",
         { className: "content" },
-       responseBoxTitle
+        responseBoxTitle
       )
     ),
     React.createElement(
@@ -63,25 +117,9 @@ const IssueSelect = (props) => {
           className: "ui dropdown fluid "
         },
         React.createElement("option", { value: "" }, "Report Issue"),
-        React.createElement("option", { value: "angular" }, "Angular"),
-        React.createElement("option", { value: "css" }, "CSS"),
-        React.createElement("option", { value: "design" }, "Graphic Design"),
-        React.createElement("option", { value: "ember" }, "Ember"),
-        React.createElement("option", { value: "html" }, "HTML"),
-        React.createElement("option", { value: "ia" }, "Information Architecture"),
-        React.createElement("option", { value: "javascript" }, "Javascript"),
-        React.createElement("option", { value: "mech" }, "Mechanical Engineering"),
-        React.createElement("option", { value: "meteor" }, "Meteor"),
-        React.createElement("option", { value: "node" }, "NodeJS"),
-        React.createElement("option", { value: "plumbing" }, "Plumbing"),
-        React.createElement("option", { value: "python" }, "Python"),
-        React.createElement("option", { value: "rails" }, "Rails"),
-        React.createElement("option", { value: "react" }, "React"),
-        React.createElement("option", { value: "repair" }, "Kitchen Repair"),
-        React.createElement("option", { value: "ruby" }, "Ruby"),
-        React.createElement("option", { value: "ui" }, "UI Design"),
-        React.createElement("option", { value: "ux" }, "User Experience")
+        createList()
       ),
+      form(),
       React.createElement(
         "button",
         { className: "ui button fluid", type: "submit" },
