@@ -26,37 +26,84 @@ const PackoutLookup = ({
     lineSelection,
     selectedNumber,
     setSelectedNumber,
-    chart
+    chart,
+    detailPaneMini,
+    setWOnDev,
+    woNdev
 }) => {
     console.log('look packout Pane');
-
-    
-
-    const [toggleFilter,setToggleFilter] = useState(true);
-    const [filterBtnName,setFilterBtnName] = useState('Show Weekly Orders');
+    const [toggleFilter, setToggleFilter] = useState(true);
+    const [filterBtnName, setFilterBtnName] = useState('Hide Weekly Orders');
+    const [quickVeiw, setQuickVeiw] = useState(true);
+    const [quickVeiwTitle, setQuickVeiwTitle] = useState('Expand Details');
     const departmentRefName = departmentName.charAt(0).toUpperCase() + departmentName.slice(1);
-    const toggle = ()=>{
-        toggleFilter?setToggleFilter(false): setToggleFilter(true) 
-        toggleFilter? setFilterBtnName('Hide Weekly Orders'):setFilterBtnName('Show Weekly Orders') 
-    }
-    // Filtered data based on localStorage if toggleFilter is on
-    const filteredDataWithStorageCheck = filteredData.filter(row => {
-        if (!toggleFilter) {
-            // Create the key to check in localStorage
-            const localStorageKey = `goalProgress-${departmentName}-${row[0]}`;
-            const storedValue = localStorage.getItem(localStorageKey);
 
-            // If the item exists in localStorage, we filter it out
-            return storedValue;
-        }
-        return true; // If the filter is off, return all data
-    });
+    useEffect(() => {
+        $('.ui.checkbox').checkbox();
+
+
+    })
+    const toggle = () => {
+        setToggleFilter(!toggleFilter);
+        setFilterBtnName(toggleFilter ? 'Show Weekly Orders' : 'Hide Weekly Orders');
+    };
+
+    const toggleQuickVeiw = () => {
+        setQuickVeiw(!quickVeiw);
+        setQuickVeiwTitle(!quickVeiw ? 'Expand Details' : 'View Summary');
+
+    };
+
+    // Filtered data based on localStorage if toggleFilter is on
+    const filteredDataWithStorageCheck = toggleFilter && departmentName !== 'paint' ? filteredData.filter(row => {
+        // Create the key to check in localStorage
+        const localStorageKey = `goalProgress-${departmentName}-${row[0]}`;
+        const storedValue = localStorage.getItem(localStorageKey);
+
+        // If the item exists in localStorage, we filter it out
+        return storedValue;
+
+    }) : filteredData;
 
 
     return React.createElement('div', { className: 'ui divided items sixteen wide column ' },
-        React.createElement('div', { className: " ui button black ", onClick:toggle }, filterBtnName),
+        //Filter toggles
+        React.createElement('div', { className: 'ui segment  ' },
+            React.createElement('h4', { className: 'header' }, 'Filter Settings'),
+            React.createElement('div',
+                {
+                    className: 'ui toggle checkbox',
+                    style: { padding: '1%' },
+                    onClick: toggle
+                },
+                React.createElement('input', {
+                    type: 'checkbox',
+                    tabIndex: '0',
+                    className: 'hidden',
+                    checked: toggleFilter,
+                    readOnly: true
+                }),
+                React.createElement('label', null, filterBtnName)
+            ),
+
+            React.createElement('div',
+                {
+                    className: 'ui toggle checkbox inline field',
+                    style: { padding: '1%' },
+                    onClick: toggleQuickVeiw
+                },
+                React.createElement('input', {
+                    type: 'checkbox',
+                    tabIndex: '0',
+                    className: 'hidden',
+                    checked: quickVeiw,
+                    readOnly: true
+                }),
+                React.createElement('label', null, quickVeiwTitle)
+            ),
+        ),
         filteredDataWithStorageCheck.map((row, rowIndex) =>
-            React.createElement('div', { key: rowIndex, className: `ui segment black ` },
+            !quickVeiw ? React.createElement('div', { key: rowIndex, className: `ui segment black ` },
                 React.createElement('div', { className: 'ui divider' }),
                 React.createElement('div', { className: 'ui divider hidden ' }),
 
@@ -135,26 +182,87 @@ const PackoutLookup = ({
                             React.createElement('div', { className: ' ui sub header' }, `${departmentRefName}`)
                         )),
 
-                    React.createElement('div', { className: "ui grid sixteen wide column row ", style: { padding: "2%" } },
+                    React.createElement('div', { className: "ui grid  sixteen wide column row ", style: { padding: '2.5%' } },
 
                         React.createElement(issue, {
                             spMethod,
                             departmentName,
                             modelId: row[0],
-                            responseBoxTitle: "Issue with Order"
+                            responseBoxTitle: "Issue with Current Order",
+                            selectedNumber,
+                            listName: 'ISSUES',
+                            issueArrayName: 'issues'
+
                         }),
                         React.createElement(issue, {
                             spMethod,
                             departmentName,
                             modelId: row[0],
-                            responseBoxTitle: "Maintenance Issue"
-                        }),
+                            responseBoxTitle: "Maintenance Issue",
+                            selectedNumber,
+                            listName: 'Maintenance',
+                            issueArrayName: 'maintenance'
+                        })
+
                     ),
                     departmentName === 'paint' && React.createElement(lookuptable, {
                         headers,
                         row
                     })
                 )
+            ) : React.createElement('div',
+                { className: `ui items segment`, style: { padding: '3%' }, key: rowIndex },
+                // First Item: Image and Details
+                departmentName === 'line' && React.createElement(lineSelection, { selectedNumber, setSelectedNumber }),
+
+                React.createElement('div', { className: 'item', style: { marginRight: '60px' } },
+
+                    React.createElement('div', { className: 'image', style: { padding: '.5%' } },
+                        imagePaths[row[0]] && imagePaths[row[0]] !== 'img/default_image.jpg' ?
+                            React.createElement('img', { className: 'ui fluid image', src: imagePaths[row[0]], alt: 'Loaded Image' }) :
+                            React.createElement('div', { className: 'ui placeholder' },
+                                React.createElement('div', { className: 'image' })
+                            )
+                    ),
+                    // Second Item: Goal Monitoring and Progress
+                    React.createElement('div', { className: 'item' },
+                        React.createElement('h2', { className: 'header' }, row[0]),
+
+                        React.createElement('div', { className: 'image' },
+                            React.createElement('i', { className: 'ui icon chart bar' })
+                        ),
+
+                        React.createElement('div', { className: 'content' },
+                            React.createElement('h4', { className: 'header' }, 'Performance and Goal Monitoring'),
+                            React.createElement('div', { className: 'meta' },
+                                React.createElement('span', null, departmentRefName)
+                            ),
+                            React.createElement('div', { className: 'description' },
+                                React.createElement('p', null, 'Monitor the progress and goals associated with this item.')
+                            ),
+                            React.createElement('div', { className: 'extra' },
+                                React.createElement(detailPaneMini, {
+                                    row,
+                                    workingThisRow,
+                                    goal,
+                                    progress,
+                                    setWorkingThisRow,
+                                    setGoal,
+                                    setProgress,
+                                    calculateCompletion,
+                                    calculateRemaining,
+                                    departmentName,
+                                    spMethod,
+                                    selectedNumber,
+                                    issue
+                                })
+                            )
+                        )
+                    ),
+                ),
+
+
+
             )
         )
     )
