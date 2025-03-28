@@ -1,0 +1,3911 @@
+<!DOCTYPE html>
+<html lang="en">
+<!-- ✅ Load jQuery First -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+
+<!-- ✅ Load Semantic UI JavaScript After jQuery -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.4.1/semantic.min.js"></script>
+
+<!-- ✅ Load Semantic UI CSS -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.4.1/semantic.min.css">
+
+<!-- ✅ Load React and ReactDOM -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+
+<!-- XLSX Library (from CDN) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<!-- Babel CDN to transpile JSX -->
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+
+<!-- CDN for Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+
+<style>
+    body {
+        background-color: #F2F0EF;
+    }
+
+    .ui.placeholder {
+        display: block;
+        height: 200px;
+        width: 100%;
+    }
+
+    .header.huge {
+        font-size: 2.5em;
+    }
+
+    .ui.table td,
+    .ui.table th {
+        text-align: center;
+    }
+</style>
+
+<body>
+    <!-- Include your precompiled app.js -->
+
+    <div id="root"></div>
+
+   <script type="text/babel">
+    const { useEffect, useRef, useState } = React
+
+const Dashboard = (props) => {
+    const { spMethod } = props;
+    const [tableView, setTableView] = useState('bar');
+    const [data, setData] = useState([]); 
+    const chartRef = useRef(null); 
+    const [notes, setNotes] = useState([]);
+    const [departmentClick, setDepartmentClick] = useState();
+    const [departmentTitle, setDepartmentTitle] = useState();
+
+    async function convertToTableData() {
+        const data = [];
+        const noteData = []
+        try {
+            const runRates = await spMethod.fetchSharePointData('RunRates', 'runRates', false)
+                .then(e => JSON.parse(e.value[0].fields.runRates))
+                .catch(err => console.log(err));
+
+            const issues = await spMethod.fetchSharePointData('ISSUES', departmentClick, false)
+                .then(e => e.value)
+                .catch(err => console.log(err));
+
+            const keys = Object.keys(localStorage);
+
+            let goal = [];
+            keys.forEach(key => {
+                if (key.includes('goalProgress')) {
+                    const model = key.split('-')[2];
+                    const thisDepartment = key.split('-')[1];
+                    const currentGoal = JSON.parse(localStorage.getItem(key));
+                    goal.push({ [thisDepartment]: { model: model, goal: currentGoal.goal } });
+
+                    issues.forEach(key => {
+                        const t = key.fields['Title'];
+                        const thisDepartmentExist = key.fields[thisDepartment];
+                        if (thisDepartmentExist) {
+                            const isThere = String(t) === String(model);
+                            isThere ? noteData.push(JSON.parse(thisDepartmentExist).selectedOptions.join(' , ')) : null;
+                        }
+
+                    });
+                }
+            });
+
+            keys.forEach((key) => {
+                if (key.includes('hourlyProgress')) {
+                    const storedData = JSON.parse(localStorage.getItem(key));
+                    storedData.forEach(item => {
+                        const hour = `H ${item.hour - 6}`;
+                        const model = key.split('-')[2];
+                        const thisSpot = key.split('-')[1];
+                        let runRate;
+
+                        const departmentExists = goal.find(item => thisSpot === departmentClick ? item.hasOwnProperty(thisSpot) : null);
+
+                        if (departmentExists) {
+                            let y = runRates.find(i => String(i['Unit']) === String(model));
+                            if (y) {
+                                runRate = y["Run Rate"];
+                                const machinePrd = item.progress;
+                                const machVar = machinePrd - runRate;
+                                const varPercentage = ((machinePrd / runRate) * 100).toFixed(2);
+                                data.push({
+                                    hour,
+                                    model,
+                                    machinePrd,
+                                    runRate,
+                                    machVar,
+                                    varPercentage: `${varPercentage}%`
+                                });
+                            }
+                        }
+                    });
+                }
+            });
+
+            setData(data);
+            setNotes(noteData);
+
+        } catch (err) {
+            console.log(err);
+        }
+    }
+
+    useEffect(() => {
+        convertToTableData(); 
+    }, [departmentClick]);
+
+    const totalProduction = data.reduce((sum, row) => sum + row.machinePrd, 0);
+    const totalRunRate = data.reduce((sum, row) => sum + row.runRate, 0);
+    const totalVariance = data.reduce((sum, row) => sum + row.machVar, 0);
+
+    const chartData = {
+        labels: data.map((row) => row.hour),
+        datasets: [
+            {
+                label: "Machine Production",
+                data: data.map((row) => row.machinePrd),
+                backgroundColor: "rgba(75, 192, 192, 0.6)",
+                borderColor: "rgba(75, 192, 192, 1)",
+                borderWidth: 1,
+            },
+            {
+                label: "Run Rate",
+                data: data.map((row) => row.runRate),
+                backgroundColor: "rgba(153, 102, 255, 0.6)",
+                borderColor: "rgba(153, 102, 255, 1)",
+                borderWidth: 1,
+            },
+        ],
+    };
+
+    useEffect(() => {
+        if (window.Chart) {
+            const ctx = document.getElementById("productionChart").getContext("2d");
+
+            if (chartRef.current) {
+                chartRef.current.destroy();
+            }
+
+            chartRef.current = new window.Chart(ctx, {
+                type: tableView,
+                data: chartData,
+                options: {
+                    responsive: true,
+                },
+            });
+        }
+    }, [tableView, data]);
+
+    useEffect(() => {
+        $('.ui.dropdown.line').dropdown()
+    }, []);
+
+    const selectionTab = () => {
+        return (
+            <div className="ui vertical menu">
+                <div className="ui item header grey">Department</div>
+                {['Paint', 'Handles', 'Pumps', 'Packout', 'Hose', 'Frames', 'Line'].map(department => {
+                    if (department === 'Line') {
+                        return (
+                            <div key={department} className="item">
+                                <div className="ui dropdown button line">
+                                    <span className="text">Line</span>
+                                    <i className="dropdown icon" />
+                                    <div className="menu">
+                                        {[1, 2, 3, 4, 5, 6, 7].map(number => 
+                                            <div
+                                                key={number}
+                                                className="item"
+                                                onClick={() => {
+                                                    setDepartmentClick(`line${number}`);
+                                                    setDepartmentTitle(`Line ${number}`);
+                                                }}
+                                            >
+                                                {`Line ${number}`}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    }
+
+                    return (
+                        <a
+                            key={department}
+                            className="item"
+                            onClick={() => {
+                                setDepartmentClick(department.toLocaleLowerCase());
+                                setDepartmentTitle(department);
+                            }}
+                        >
+                            {department}
+                        </a>
+                    );
+                })}
+            </div>
+        );
+    };
+
+    return (
+        <div className="ui" style={{ position: 'center', marginLeft: '5%', width: '90%' }}>
+            <div className="ui segment basic sixteen wide column" style={{ marginTop: "2px" }}>
+                <div className="ui grid">
+                    <div className="row">
+                        {selectionTab()}
+                        <div className="twelve wide column">
+                            <div className="ui segment">
+                                <div className="content">
+                                    <div className="ui header">
+                                        {`Production vs Run Rate ${departmentTitle ? departmentTitle : ''}`}
+                                    </div>
+                                </div>
+                                <div className="ui small">
+                                    <button className="ui button small circular" onClick={() => setTableView('bar')}>Bar</button>
+                                    <button className="ui button small circular" onClick={() => setTableView('line')}>Line</button>
+                                    <button className="ui button small circular" onClick={() => setTableView('pie')}>Pie</button>
+                                </div>
+                                <div className="content">
+                                    <canvas
+                                        id="productionChart"
+                                        width="900px"
+                                        height="300px"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="row">
+                        <div className="five wide column" style={{ left: '5%' }}>
+                            <div className="ui statistic">
+                                <div className="label">Total Production</div>
+                                <div className="value">{totalProduction}</div>
+                            </div>
+                        </div>
+                        <div className="five wide column" style={{ left: '10%' }}>
+                            <div className="ui statistic">
+                                <div className="label">Total Run Rate</div>
+                                <div className="value">{totalRunRate}</div>
+                            </div>
+                        </div>
+                        <div className="five wide column" style={{ left: '15%' }}>
+                            <div className="ui statistic">
+                                <div className="label">Total Variance</div>
+                                <div className="value">{totalVariance}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="row">
+                        <div className="sixteen wide column">
+                            <div className="ui segment">
+                                <div className="content">
+                                    <div className="ui huge header">
+                                        {departmentTitle ? `Assembly ${departmentTitle} Hour by Hour` : 'Please select a department'}
+                                    </div>
+                                </div>
+                                {departmentTitle && (
+                                    <div className="content">
+                                        <table className="ui celled striped table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Hour</th>
+                                                    <th>Model</th>
+                                                    <th>Mach. Prd.</th>
+                                                    <th>Run Rate</th>
+                                                    <th>Mach. Var.</th>
+                                                    <th>Var. %</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {data.map((row, index) => (
+                                                    <tr key={index}>
+                                                        <td>{row.hour}</td>
+                                                        <td>{row.model}</td>
+                                                        <td>{row.machinePrd}</td>
+                                                        <td>{row.runRate}</td>
+                                                        <td>{row.machVar}</td>
+                                                        <td>{row.varPercentage}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="row">
+                        <div className="sixteen wide column">
+                            <div className="ui segment">
+                                <div className="content">
+                                    <div className="ui huge header">
+                                        {departmentTitle ? `Assembly ${departmentTitle} Notes` : 'No data'}
+                                    </div>
+                                </div>
+                                {departmentTitle && (
+                                    <div className="content">
+                                        <table className="ui celled striped table">
+                                            <thead>
+                                                <tr>
+                                                    <th>#</th>
+                                                    <th>Notes</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {notes.map((row, index) => (
+                                                    <tr key={index}>
+                                                        <td>{index + 1}</td>
+                                                        <td>{row}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+
+
+   </script>
+    <script type="text/babel">
+        const { useEffect, useRef, useState } = React
+
+const LoginTokenNew = ({ setIsLoggedIn, isLoggedIn }) => {
+
+  const [accessToken, setAccessToken] = useState(null);
+  const [error, setError] = useState(null);
+  const [tokenInput, setTokenInput] = useState('');
+
+  const extractAccessToken = (url) => {
+    const urlParams = new URLSearchParams(url.split('#')[1] || '');
+    return urlParams.get('access_token');
+  };
+
+  const handleTokenSubmit = () => {
+    const tokenFromUrl = extractAccessToken(tokenInput);
+    if (tokenFromUrl) {
+      setAccessToken(tokenFromUrl);
+      sessionStorage.setItem('access_token', tokenFromUrl);
+      setIsLoggedIn();      
+    } else {
+      setError('Please enter a valid URL containing the access token');
+    }
+  };
+
+  const startOAuthLogin = () => {
+    const tenant = "a8585420-4088-4906-a78d-06b2693cc3aa"; // Replace with your tenant ID
+    const clientId = "8db3d71f-62b7-457d-b653-9f874424f89e"; // Replace with your client ID
+    const redirectUri = 'http://localhost'; // Replace with your redirect URI
+
+    const scopes = 'Sites.Read.All';
+    const responseType = 'token';
+    const authUrl = `https://login.microsoftonline.com/${tenant}/oauth2/v2.0/authorize?client_id=${clientId}&response_type=${responseType}&redirect_uri=${redirectUri}&scope=${scopes}`;
+
+    window.open(authUrl, '_blank', 'width=600,height=400,scrollbars=yes');
+  };
+
+  useEffect(() => {
+    const storedToken = sessionStorage.getItem('access_token');
+    if (storedToken) {
+      setAccessToken(storedToken);
+    }
+  }, []);
+
+  return (
+    <div className="ui segment">
+      {accessToken && isLoggedIn ? (
+        <div className="ui message">
+          <h2 className="ui header">
+            Centralized Automated Real-Time Reporting
+            <div className="ui sub header">Streamlining Efficiency and Data-Driven Decisions</div>
+          </h2>
+          <h2>You are logged in.</h2>
+          <button
+            className="ui red button basic"
+            onClick={() => setAccessToken(null)}
+          >
+            Logout
+          </button>
+        </div>
+      ) : (
+        <div id="loginSection" className="ui raised very padded text container segment basic">
+          <h2 className="ui header">Click here to log in and get your token.</h2>
+          <button
+            className="ui blue button"
+            onClick={startOAuthLogin}
+          >
+            Get Access Token
+          </button>
+          <h3>Manually paste your access token URL below:</h3>
+          <div className="ui action input fluid">
+            <input
+              type="text"
+              value={tokenInput}
+              onChange={(e) => setTokenInput(e.target.value)}
+              placeholder="Paste the URL containing your access token here"
+            />
+            <button
+              className="ui button"
+              onClick={handleTokenSubmit}
+            >
+              Submit Token
+            </button>
+          </div>
+        </div>
+      )}
+      {error && <div className="ui red message">{error}</div>}
+    </div>
+  );
+};
+
+
+
+    </script>
+    <script type="text/babel">
+        const { useEffect, useRef, useState } = React
+
+
+const ChartComponent = ({
+    departmentName,
+    selectedNumber,
+    modelId,
+    progress
+}) => {
+    const canvasRef = useRef(null);
+    const chartRef = useRef(null); // Store the chart instance
+
+    useEffect(() => {
+        const ctx = canvasRef.current.getContext('2d');
+
+        const getHourlyProgress = () => {
+            const storedProgress = JSON.parse(localStorage.getItem(
+                `hourlyProgress-${departmentName}${departmentName === 'line' ? selectedNumber : ''}-${modelId}`
+            )) || [];
+            return storedProgress.map(item => item.progress);
+        };
+
+        const dataSet = getHourlyProgress();
+
+        // Destroy the existing chart if there is one
+        if (chartRef.current) {
+            chartRef.current.destroy();
+        }
+
+        // Create a new chart
+        chartRef.current = new Chart(ctx, {
+            type: 'bar', // Change to other types like 'bar' or 'pie' if needed
+            data: {
+                labels: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], // Hours from 1 to 12
+                datasets: [
+                    {
+                        label: 'Completed',
+                        data: dataSet, // Example data
+                        borderColor: 'rgb(21, 159, 63)',
+                        fill: true,
+                    },
+                ],
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Hours',
+                        },
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Completed',
+                        },
+                    },
+                },
+            },
+        });
+
+    }, [progress, departmentName, selectedNumber, modelId]);
+
+    return (
+        <canvas
+            ref={canvasRef}
+            width={800}
+            height={600}
+        />
+    );
+};
+
+const ChartContainer = ({
+    columnSize,
+    headers,
+    row,
+    departmentName,
+    selectedNumber,
+    modelId,
+    progress
+}) => {
+    return (
+        <div className={`ui segment ${columnSize} wide column`}>
+            <div className="ui header huge four wide column">
+                {`${headers[0]} ${row[0] || 'Unnamed'}`}
+            </div>
+
+            <ChartComponent
+                departmentName={departmentName}
+                selectedNumber={selectedNumber}
+                modelId={modelId}
+                progress={progress}
+            />
+        </div>
+    );
+};
+
+
+
+    </script>
+    <script type="text/babel">
+        const { useEffect, useRef, useState } = React
+
+const LineSelectionNew = ({ selectedNumber, setSelectedNumber }) => {
+    // Options for the dropdown
+    const options = [];
+    const lineName = selectedNumber === null ? "Choose Line #" : `Line ${selectedNumber}`;
+    
+    // Create number of lines options
+    for (let i = 1; i <= 7; i++) {
+        options.push({ key: i, text: `${i}`, value: i });
+    }
+
+    // Handler for dropdown change
+    const handleDropdownChange = (value) => {
+        setSelectedNumber(value); // Set selected value
+    };
+
+    return (
+        <div className="ui compact menu">
+            <div className="ui simple dropdown item right">
+                {lineName} {/* Dropdown label */}
+                <i className="dropdown icon" /> {/* Dropdown icon */}
+                <div className="menu">
+                    {options.map(option => (
+                        <div
+                            className="item"
+                            key={option.key}
+                            onClick={() => handleDropdownChange(option.value)} // Handle item selection
+                        >
+                            {option.text}
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+
+
+    </script>
+    <script type="text/babel">
+        const { useEffect, useRef, useState } = React
+
+const DetailPaneNew = ({
+  row,
+  workingThisRow,
+  goal,
+  progress,
+  setWorkingThisRow,
+  setGoal,
+  setProgress,
+  calculateCompletion,
+  calculateRemaining,
+  departmentName,
+  spMethod,
+  selectedNumber,
+
+}) => {
+
+  console.log("detail Pane: ", departmentName);
+
+  const modelId = departmentName === 'packout' ? row[0] : row[0];
+  const isLine = localStorage.getItem(`goalProgress-${departmentName}${departmentName === 'line' ? selectedNumber : ''}-${modelId}`);
+  const notLine = localStorage.getItem(`goalProgress-${departmentName}-${modelId}`);
+  const storedGoalData = isLine ? JSON.parse(isLine) : JSON.parse(notLine);
+  const [currentProgressUpdate, setCurrentProgressUpdate] = useState();
+
+  const trackProgressPerHour = () => {
+    const now = new Date();
+    const currentHour = now.getHours();
+    const storedProgress = JSON.parse(localStorage.getItem(`hourlyProgress-${departmentName}${departmentName === 'line' ? selectedNumber : ''}-${modelId}`)) || [];
+  
+    const hourIndex = storedProgress.findIndex(item => item.hour === currentHour);
+  
+    const updatedProgress = storedProgress.filter(item => {
+      const itemTime = new Date(item.date);
+      const diffInHours = (now - itemTime) / (1000 * 60 * 60);
+      return diffInHours < 24;
+    });
+  
+    if (hourIndex !== -1) {
+      updatedProgress[hourIndex] = { hour: currentHour, progress: currentProgressUpdate, date: now.toISOString() };
+    } else {
+      updatedProgress.push({ hour: currentHour, progress: currentProgressUpdate, date: now.toISOString() });
+    }
+  
+    if (updatedProgress.length > 12) {
+      updatedProgress.splice(0, updatedProgress.length - 12);
+    }
+  
+    localStorage.setItem(`hourlyProgress-${departmentName}${departmentName === 'line' ? selectedNumber : ''}-${modelId}`, JSON.stringify(updatedProgress));
+  };
+
+  const handleGoalChange = (e) => {
+    setWorkingThisRow(modelId);
+    setGoal(e.target.value);
+  };
+
+  const handleProgressChange = (e) => {
+    setWorkingThisRow(modelId);
+    setProgress(Number(e.target.value) + Number(storedGoalData?.progress));
+    setCurrentProgressUpdate(Number(e.target.value));
+  };
+
+  const handleSave = () => {
+    const listName = 'REPORTS';
+    storedGoalData.progress = progress;
+
+    localStorage.setItem(`goalProgress-${departmentName}${departmentName === 'line' ? selectedNumber : ''}-${modelId}`, JSON.stringify(storedGoalData));
+
+    const currentDepartmentName = departmentName === 'line' ? `line${selectedNumber}` : departmentName;
+
+    spMethod.handleSubmit(
+      modelId,
+      JSON.stringify(storedGoalData),
+      currentDepartmentName,
+      listName
+    ).then(e => console.log(e)).catch(err => console.log(err));
+
+    trackProgressPerHour();
+    setProgress('');
+    alert('Goal and progress saved!');
+  };
+
+  const handleReset = () => {
+    setGoal('');
+    setProgress('');
+  };
+
+  const getStepStatus = (progress, goal) => {
+    if (progress > 0 && progress < goal) return 'wip';
+    if (progress - goal === 0) return 'completed';
+  };
+
+  const steps = () => (
+    <div className="ui four wide column">
+      <div className="ui ordered fluid vertical steps mini">
+        <div className={`step ${getStepStatus(progress, storedGoalData?.goal) === 'no order' ? 'completed' : 'disabled'}`}>
+          <div className="content">
+            <div className="title">No Order</div>
+            <div className="description">No progress made yet</div>
+          </div>
+        </div>
+
+        <div className={`step ${storedGoalData?.isActive ? 'active' : 'disabled'}`}>
+          <div className="content">
+            <div className="title">Ordered</div>
+            <div className="description">Order initiated</div>
+          </div>
+        </div>
+
+        <div className={`step ${getStepStatus(storedGoalData?.progress > 0 ? storedGoalData?.progress : progress, storedGoalData?.goal) === 'wip' ? 'active' : 'disabled'}`}>
+          <div className="content">
+            <div className="title">WIP</div>
+            <div className="description">Work in progress</div>
+          </div>
+        </div>
+
+        <div className={`step ${getStepStatus(storedGoalData?.progress, storedGoalData?.goal) === 'completed' ? 'completed' : 'disabled'}`}>
+          <div className="content">
+            <div className="title">Completed</div>
+            <div className="description">Order is complete</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const stats = () => (
+    <div className="ui grid internally celled">
+      {steps()}
+      <div className="four wide column">
+        <div className="ui statistic">
+          <div className="value">{goal || storedGoalData?.goal || 0}</div>
+          <div className="label">Goal</div>
+        </div>
+      </div>
+      <div className="four wide column">
+        <div className="ui statistic">
+          <div className="value">
+            {Math.round(calculateRemaining(storedGoalData?.goal, workingThisRow === modelId ? progress : storedGoalData?.progress))}
+          </div>
+          <div className="label">Remaining</div>
+        </div>
+      </div>
+      <div className="four wide column">
+        <div className="eight wide column grid">
+          <div className="ui statistic">
+            <div className="value">{progress || storedGoalData?.progress || 0}</div>
+            <div className="label">Progress</div>
+          </div>
+          <div className="ui grid">
+            <div className="sixteen wide column">
+              <div className="ui input">
+                <input
+                  type="number"
+                  placeholder="Current Progress"
+                  onChange={handleProgressChange}
+                  min="0"
+                />
+              </div>
+            </div>
+          </div>
+          <div className="ui divider hidden" />
+          <div className="ui buttons">
+            <button className="ui green button" onClick={handleSave}>Save</button>
+            <button className="ui small button" onClick={handleReset}>Reset</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="ui sixteen wide column">
+      <div>
+        {stats()}
+      </div>
+    </div>
+  );
+};
+
+
+
+    </script>
+    <script type="text/babel">
+        const { useEffect, useRef, useState } = React
+
+const DetailPaneMiniNew = ({
+  row,
+  workingThisRow,
+  goal,
+  progress,
+  setWorkingThisRow,
+  setGoal,
+  setProgress,
+  calculateCompletion,
+  calculateRemaining,
+  departmentName,
+  spMethod,
+  selectedNumber,
+  issue
+}) => {
+
+  console.log("detail Pane: ", departmentName);
+
+  const modelId = departmentName === 'packout' ? row[0] : row[0];
+  const isLine = localStorage.getItem(`goalProgress-${departmentName}${departmentName === 'line' ? selectedNumber : '1'}-${modelId}`);
+  const notLine = localStorage.getItem(`goalProgress-${departmentName}-${modelId}`);
+  const storedGoalData = isLine ? JSON.parse(isLine) : JSON.parse(notLine);
+  const [currentProgressUpdate, setCurrentProgressUpdate] = useState();
+
+  const trackProgressPerHour = () => {
+    const now = new Date();
+    const currentHour = now.getHours();
+    const storedProgress = JSON.parse(localStorage.getItem(`hourlyProgress-${departmentName}${departmentName === 'line' ? selectedNumber : ''}-${modelId}`)) || [];
+
+    const hourIndex = storedProgress.findIndex(item => item.hour === currentHour);
+
+    const updatedProgress = storedProgress.filter(item => {
+      const itemTime = new Date(item.date);
+      const diffInHours = (now - itemTime) / (1000 * 60 * 60);
+      return diffInHours < 24;
+    });
+
+    if (hourIndex !== -1) {
+      updatedProgress[hourIndex] = { hour: currentHour, progress: currentProgressUpdate, date: now.toISOString() };
+    } else {
+      updatedProgress.push({ hour: currentHour, progress: currentProgressUpdate, date: now.toISOString() });
+    }
+
+    if (updatedProgress.length > 12) {
+      updatedProgress.splice(0, updatedProgress.length - 12);
+    }
+
+    localStorage.setItem(`hourlyProgress-${departmentName}${departmentName === 'line' ? selectedNumber : ''}-${modelId}`, JSON.stringify(updatedProgress));
+  };
+
+  const handleGoalChange = (e) => {
+    setWorkingThisRow(modelId);
+    setGoal(e.target.value);
+  };
+
+  const handleProgressChange = (e) => {
+    setWorkingThisRow(modelId);
+    setProgress(Number(e.target.value) + Number(storedGoalData?.progress));
+    setCurrentProgressUpdate(Number(e.target.value));
+  };
+
+  const handleSave = () => {
+    const listName = 'REPORTS';
+
+    storedGoalData.progress = progress;
+
+    localStorage.setItem(`goalProgress-${departmentName}${departmentName === 'line' ? selectedNumber : ''}-${modelId}`, JSON.stringify(storedGoalData));
+
+    const currentDepartmentName = departmentName === 'line' ? `line${selectedNumber}` : departmentName;
+
+    spMethod.handleSubmit(
+      modelId,
+      JSON.stringify(storedGoalData),
+      currentDepartmentName,
+      listName
+    ).then(e => console.log(e)).catch(err => console.log(err));
+
+    trackProgressPerHour();
+    setProgress('');
+
+    alert('Goal and progress saved!');
+  };
+
+  const handleReset = () => {
+    setGoal('');
+    setProgress('');
+  };
+
+  // Step status logic
+  const getStepStatus = (progress, goal) => {
+    if (progress > 0 && progress < goal) return 'wip';
+    if (progress - goal === 0) return 'completed';
+  };
+
+  // Steps at the Bottom - UI Ordered Steps
+  const steps = () => {
+    return (
+      <div className="ui five wide column">
+        <div className="ui ordered steps mini">
+          <div className={`step ${getStepStatus(progress, storedGoalData?.goal) === 'no order' ? 'completed' : 'disabled'}`}>
+            <div className="content">
+              <div className="title">No Order</div>
+              <div className="description">No progress made yet</div>
+            </div>
+          </div>
+
+          <div className={`step ${storedGoalData?.isActive ? 'active' : 'disabled'}`}>
+            <div className="content">
+              <div className="title">Ordered</div>
+              <div className="description">Order initiated</div>
+            </div>
+          </div>
+
+          <div className={`step ${getStepStatus(storedGoalData?.progress > 0 ? storedGoalData?.progress : progress, storedGoalData?.goal) === 'wip' ? 'active' : 'disabled'}`}>
+            <div className="content">
+              <div className="title">WIP</div>
+              <div className="description">Work in progress</div>
+            </div>
+          </div>
+
+          <div className={`step ${getStepStatus(storedGoalData?.progress, storedGoalData?.goal) === 'completed' ? 'completed' : 'disabled'}`}>
+            <div className="content">
+              <div className="title">Completed</div>
+              <div className="description">Order is complete</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const stats = () => {
+    return (
+      <div className="ui grid internally celled">
+        <div className="five wide column">
+          <div className="ui statistic tiny">
+            <div className="value">{goal || storedGoalData?.goal || 0}</div>
+            <div className="label">Goal</div>
+          </div>
+        </div>
+        <div className="five wide column">
+          <div className="ui statistic tiny">
+            <div className="value">
+              {Math.round(
+                calculateRemaining(
+                  storedGoalData?.goal, workingThisRow === modelId ? progress : storedGoalData?.progress
+                )
+              )}
+            </div>
+            <div className="label">Remaining</div>
+          </div>
+        </div>
+        <div className="five wide column">
+          <div className="ui statistic tiny">
+            <div className="value">{progress || storedGoalData?.progress || 0}</div>
+            <div className="label">Progress</div>
+          </div>
+          <div className="ui grid">
+            <div className="sixteen wide column">
+              <div className="ui input">
+                <input
+                  type="number"
+                  placeholder="Current Progress"
+                  onChange={handleProgressChange}
+                  min="0"
+                />
+              </div>
+            </div>
+          </div>
+          <div className="ui divider hidden" />
+          <div className="ui buttons">
+            <button className="ui green button" onClick={handleSave}>
+              Save
+            </button>
+            <button className="ui small button" onClick={handleReset}>
+              Reset
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="ui sixteen wide column">
+      <div>
+        {steps()}
+        {/* isLine ? stats() : notLine ? stats() : 'No Statistic' */}
+        {/* Steps - move to the bottom */}
+      </div>
+    </div>
+  );
+};
+
+
+
+    </script>
+    <script type="text/babel">
+        const { useEffect, useRef, useState } = React
+
+const DisplayPaneNew = ({
+
+    selectedDepartment,
+    filteredData,
+    imagePaths,
+    headers,
+    getPdfPath,
+    openPdfModal,
+    openNoteModal,
+    setPdfPath,
+    setPdfPath2,
+    setPdfPath3,
+    setNotePath,
+    setWorkingThisRow,
+    setGoal,
+    setProgress,
+    goal,
+    progress,
+    calculateCompletion,
+    calculateRemaining,
+    workingThisRow,
+
+
+    departmentName,
+
+    spMethod,
+
+
+    selectedNumber,
+    setSelectedNumber,
+
+    clearLoading,
+    setWOnDev,
+    woNdev
+}) => {
+    const [activeTab, setActiveTab] = useState('lookup'); // default to "Look Up" tab
+    console.log('display Pane', departmentName);
+
+    const tabContent = {
+        lookup: (
+            <LookupComponent
+                filteredData={filteredData}
+                headers={headers}
+                imagePaths={imagePaths}
+                getPdfPath={getPdfPath}
+                openPdfModal={openPdfModal}
+                openNoteModal={openNoteModal}
+                setPdfPath={setPdfPath}
+                setPdfPath2={setPdfPath2}
+                setPdfPath3={setPdfPath3}
+                setNotePath={setNotePath}
+                setWorkingThisRow={setWorkingThisRow}
+                setGoal={setGoal}
+                setProgress={setProgress}
+                goal={goal}
+                progress={progress}
+                workingThisRow={workingThisRow}
+                calculateCompletion={calculateCompletion}
+                calculateRemaining={calculateRemaining}
+                departmentName={departmentName}
+                spMethod={spMethod}
+                selectedNumber={selectedNumber}
+                setSelectedNumber={setSelectedNumber}
+                clearLoading={clearLoading}
+                setWOnDev={setWOnDev}
+                woNdev={woNdev}
+            />
+        ),
+        pickList: (
+            <PickListAppNew
+                selectedDepartment={selectedDepartment}
+                departmentName={departmentName}
+                selectedNumber={selectedNumber}
+                setWOnDev={setWOnDev}
+            />
+        ),
+    };
+
+    return (
+        <div style={{ position: 'center', marginLeft: '5%', width: '95%' }}>
+            <div className="ui menu">
+                <a
+                    className={`item ${activeTab === 'lookup' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('lookup')}
+                >
+                    All Builds
+                </a>
+                <a
+                    className={`item ${activeTab === 'pickList' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('pickList')}
+                >
+                    My Pick List
+                </a>
+            </div>
+            <div className={`ui bottom segment basic ${clearLoading ? 'ui active centered inline loader' : ''}`}>
+                {tabContent[activeTab]} {/* Render content based on the active tab */}
+            </div>
+        </div>
+    );
+};
+
+
+
+    </script>
+    <script type="text/babel">
+        const { useEffect, useRef, useState } = React
+
+const InventoryLookup = (props) => {
+  const { spMethod, selectedDepartment, departmentName, searchQueryLifted, clearLoading } = props;
+
+  // Inventory data
+  const [data, setData] = useState({});
+  const [valuePostionInArray, setValuePostionInArray] = useState(0);
+  const [slectedTableName, setSlectedTableName] = useState(departmentName[valuePostionInArray]);
+
+  // Convert the data to an array of rows, where each row is a position from all keys
+  const rows = [];
+  const maxLength = Math.max(...Object.values(data).map(arr => arr.length));
+
+  for (let i = 0; i < maxLength; i++) {
+    const row = {};
+    delete data['Pugatory'];
+    delete data['SAGE'];
+    delete data['Rplnshmnt Pos'];
+    Object.keys(data).forEach(key => {
+      row[key] = data[key][i] || '';  // Handle if the array length is different for keys
+    });
+    rows.push(row);
+  }
+
+  // State for filtered rows, current page, and total pages
+  const [filteredData, setFilteredData] = useState(rows);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(10);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const d = await spMethod.fetchSharePointData(selectedDepartment, slectedTableName, false)
+          .then(e => JSON.parse(e.value[valuePostionInArray].fields[slectedTableName]));
+        setData(d);
+      } catch (err) {
+        console.log(err);
+      }
+    };
+
+    fetchData();
+  }, [selectedDepartment, valuePostionInArray]); // Dependencies added for re-fetching when they change
+
+  // useEffect to filter the data when searchQueryLifted changes
+  useEffect(() => {
+    if (searchQueryLifted) {
+      const queryLower = searchQueryLifted.toLowerCase();
+      const filteredRows = rows.filter(row => {
+        return Object.values(row).some(value => value.toString().toLowerCase().includes(queryLower));
+      });
+      setFilteredData(filteredRows);
+    } else {
+      setFilteredData(rows); // Reset to original rows if no search query
+    }
+  }, [searchQueryLifted, rows]);
+
+  // Get current page's data
+  const currentPageData = filteredData.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
+
+  // Total number of pages
+  const totalPages = Math.ceil(filteredData.length / pageSize);
+
+  // Handle next page
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  // Handle previous page
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  // Get the page numbers to display (up to 10)
+  const pageNumbers = [];
+  const range = 5; // Show 5 pages before and after the current page
+  let startPage = Math.max(currentPage - range, 1);
+  let endPage = Math.min(currentPage + range, totalPages);
+
+  // Ensure we only show 10 page numbers at most
+  if (endPage - startPage + 1 < 10) {
+    if (startPage === 1) {
+      endPage = Math.min(10, totalPages);
+    } else if (endPage === totalPages) {
+      startPage = Math.max(totalPages - 9, 1);
+    }
+  }
+
+  for (let i = startPage; i <= endPage; i++) {
+    pageNumbers.push(i);
+  }
+
+  return (
+    <div
+      className="ui"
+      style={{
+        position: 'center',
+        marginLeft: '5%',
+        width: '90%', // Optional, you can set a specific width if desired
+      }}
+    >
+      <div className={`ui segment ${clearLoading ? 'loading' : ''} sixteen wide column`}>
+        <div className="ui buttons">
+          <button
+            className="ui button black"
+            onClick={() => {
+              setValuePostionInArray(0);
+              setSlectedTableName(departmentName[0]);
+            }}
+          >
+            Item Location
+          </button>
+          <button
+            className="ui button green"
+            onClick={() => {
+              setValuePostionInArray(1);
+              setSlectedTableName(departmentName[1]);
+            }}
+          >
+            On-Hand
+          </button>
+        </div>
+        <table className="ui celled table">
+          <thead>
+            <tr>
+              {Object.keys(data).map((key) => (
+                <th key={key}>{key}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {currentPageData.map((row, rowIndex) => (
+              <tr key={rowIndex}>
+                {Object.keys(row).map((key, colIndex) => (
+                  <td key={colIndex}>{row[key]}</td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+          <tfoot>
+            <tr>
+              <th colSpan={Object.keys(data).length}>
+                <div className="ui right floated pagination menu">
+                  <a
+                    className="icon item"
+                    onClick={handlePreviousPage}
+                    disabled={currentPage === 1}
+                  >
+                    <i className="left chevron icon" />
+                  </a>
+                  {pageNumbers.map((pageNumber) => (
+                    <a
+                      key={pageNumber}
+                      className={`item ${currentPage === pageNumber ? 'active' : ''}`}
+                      onClick={() => setCurrentPage(pageNumber)}
+                    >
+                      {pageNumber}
+                    </a>
+                  ))}
+                  <a
+                    className="icon item"
+                    onClick={handleNextPage}
+                    disabled={currentPage === totalPages}
+                  >
+                    <i className="right chevron icon" />
+                  </a>
+                </div>
+              </th>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  );
+};
+
+
+
+    </script>
+    <script type="text/babel">
+        const LookUpTable = ({ headers, row }) => {
+    return (
+        <div className='sixteen wide column'>
+            <table className='ui celled striped table'>
+                <tbody>
+                    {headers.slice().map((header, colIndex) => (
+                        <tr key={colIndex}>
+                            <td style={{ fontWeight: 'bold' }}>{header || 'Field'}</td>
+                            <td>{row[colIndex] || 'N/A'}</td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </div>
+    );
+};
+
+
+
+    </script>
+    <script type="text/babel">
+        const { useEffect, useRef, useState } = React
+
+const IssueSelectNew = (props) => {
+  const {
+    spMethod,
+    departmentName,
+    modelId,
+    responseBoxTitle,
+    selectedNumber,
+    listName,
+    issueArrayName
+  } = props;
+
+  // State to store the selected skills
+  const [selectedSkills, setSelectedSkills] = useState([]);
+  const [correctiveAction, setCorrectiveAction] = useState('');
+  const [reportIssueList, setReportIssueList] = useState([]);
+
+  const handleChange = (event) => {
+    setCorrectiveAction(event.target.value);
+  };
+
+  const handleClear = () => {
+    setCorrectiveAction('');
+  };
+
+  // Initialize dropdown when the component is mounted
+  useEffect(() => {
+    $('.ui.dropdown').dropdown({
+      allowAdditions: true,
+    });
+  }, [selectedSkills]);
+
+  useEffect(() => {
+    const r = async () => {
+      try {
+        await spMethod.fetchSharePointData('IssueList', issueArrayName)
+          .then(e => setReportIssueList(JSON.parse(e.value[0].fields[issueArrayName])));
+      } catch (error) {
+        return error;
+      }
+    };
+    if (reportIssueList.length === 0) r().then(e => e);
+  }, [reportIssueList, spMethod, issueArrayName]);
+
+  // Handle submit and get selected options
+  const handleSubmit = (event) => {
+    event.preventDefault(); // Prevent default form submission behavior
+
+    // Get selected options from the form
+    const selectedOptions = Array.from(event.target.skills.selectedOptions).map(option => option.value);
+    const actionText = event.target.action.value;
+
+    setSelectedSkills({ selectedOptions: selectedOptions, actionText: actionText });
+    const currentDepartmentName = departmentName === 'line' ? `line${selectedNumber}` : departmentName;
+
+    // Submit the selected options
+    spMethod.handleSubmit(
+      modelId,
+      { selectedOptions: selectedOptions, actionText: actionText },
+      currentDepartmentName,
+      listName
+    )
+      .then(e => {
+        console.log(e);
+
+        // Reset the selected options after the submit is successful
+        $('.ui.dropdown').dropdown("clear");
+        setSelectedSkills([]); // Optionally reset the selected skills state
+      })
+      .catch(err => console.log(err));
+  };
+
+  // Form input
+  const form = () => (
+    <div className="ui form">
+      <div className="ui equal width fields">
+        <div className="field">
+          <label>Corrective Action</label>
+          <textarea
+            name="action"
+            rows="2"
+            placeholder="Enter corrective action"
+            value={correctiveAction}
+            onChange={handleChange}
+          />
+        </div>
+      </div>
+    </div>
+  );
+
+  // Create issue list options
+  const createList = () => (
+    reportIssueList.map(i => (
+      <option key={i} value={i}>{i}</option>
+    ))
+  );
+
+  return (
+    <div className="ui segment grid container six wide column">
+      <h2 className="ui header red">
+        <i className="exclamation circle icon" />
+        <div className="content">{responseBoxTitle}</div>
+      </h2>
+      <form className="ui sixteen wide column grid" onSubmit={handleSubmit}>
+        <select
+          name="skills"
+          multiple
+          className="ui dropdown fluid"
+        >
+          <option value="">Report Issue</option>
+          {createList()}
+        </select>
+        {form()}
+        <button className="ui button fluid" type="submit">
+          Submit
+        </button>
+      </form>
+    </div>
+  );
+};
+
+
+
+    </script>
+    <script type="text/babel">
+        const { useEffect, useRef, useState } = React
+
+const LinesEditorNew = ( {
+  spMethod,
+
+  selectedDepartment,
+
+  departmentName,
+  goalProgressInput,
+  searchQueryLifted,
+  visibleLifted,
+  dataLifted,
+  sheetNameLifted,
+
+  selectedNumber,
+  setSelectedNumber,
+
+  clearLoading,
+
+  setWOnDev,
+  woNdev,
+}) => {
+
+
+  const [sheetName, setSheetName] = useState(sheetNameLifted);
+  const [searchQuery, setSearchQuery] = useState(searchQueryLifted);
+  const [newRecord, setNewRecord] = useState({});
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [imagePaths, setImagePaths] = useState({});
+  const [pdfPath, setPdfPath] = useState({});
+  const [pdfPath2, setPdfPath2] = useState({});
+  const [pdfPath3, setPdfPath3] = useState({});
+  const [notePath, setNotePath] = useState({});
+  const [notes, setNotes] = useState({});
+  const [pickListActiveTab, setPickListActiveTab] = useState(false);
+  const [savedNotes, setSavedNotes] = useState(
+    JSON.parse(localStorage.getItem(`saved-notes-line${selectedNumber}`)) || {}
+  );
+  const [visible, setVisible] = useState(visibleLifted);
+  const [goal, setGoal] = useState(
+    JSON.parse(localStorage.getItem(`goalProgress-line${selectedNumber}-${notePath}`))?.goal
+  );
+  const [progress, setProgress] = useState(
+    JSON.parse(localStorage.getItem(`goalProgress-line${selectedNumber}-${notePath}`))?.progress
+  );
+  const [workingThisRow, setWorkingThisRow] = useState('');
+
+  const handleClose = () => {
+    setVisible(false);
+  };
+
+  const handleOpen = () => {
+    setVisible(true);
+  };
+
+  useEffect(() => {
+    if (selectedNumber !== null) {
+      spMethod.fetchSharePointData('NOTES', departmentName + selectedNumber);
+      spMethod.fetchSharePointData('REPORTS', departmentName + selectedNumber);
+      spMethod.fetchSharePointData('ISSUES', departmentName + selectedNumber);
+    }
+  }, [selectedNumber]);
+
+  useEffect(() => {
+    const row = dataLifted[workingThisRow];
+    const storedData = JSON.parse(
+      localStorage.getItem(`goalProgress-line${selectedNumber}-${row?.id}`)
+    );
+
+    if (storedData) {
+      setGoal(storedData.goal);
+      setProgress(storedData.progress);
+    }
+  }, [dataLifted, workingThisRow]);
+
+  useEffect(() => {
+    localStorage.setItem(`saved-notes-line${selectedNumber}`, JSON.stringify(savedNotes));
+  }, [savedNotes]);
+
+  useEffect(() => {
+    setSavedNotes(
+      JSON.parse(localStorage.getItem(`saved-notes-line${selectedNumber}`)) || {}
+    );
+  }, [selectedNumber]);
+
+  useEffect(() => {
+    $('.menu .item').tab();
+    $('.ui .item').tab();
+    $('.ui.dropdown').dropdown({ allowAdditions: true });
+    $('.ui.progress').progress();
+  }, []);
+
+  useEffect(() => {
+    const fetchImages = async () => {
+      const imageMap = {};
+      await Promise.all(
+        dataLifted.map(async (row) => {
+          const path = await getImagePath(row);
+          imageMap[row[0]] = path;
+        })
+      );
+      setImagePaths(imageMap);
+    };
+
+    if (dataLifted.length > 0) {
+      fetchImages();
+    }
+  }, [dataLifted]);
+
+  useEffect(() => {
+    $(document).on('click', `.save-new-record-line${selectedNumber}`, function () {
+      addNewRecord();
+    });
+
+    $(document).on('change', '.new-record', function (e) {
+      handleNewRecordChange(e, e.target.placeholder);
+    });
+
+    $(document).on('click', `.save-note-line`, function (e) {
+      let rowIndex = $(this).data('rowindexsave');
+      let noteId = $(this).data('noteidsave');
+      saveNoteToLocalStorage(noteId, rowIndex, notes[noteId]);
+    });
+
+    $(document).on('change', '.note-area', function (e) {
+      let rowIndex = $(this).data('rowindex');
+      let noteId = $(this).data('noteid');
+      handleNoteChange(rowIndex, e, noteId);
+    });
+  }, [newRecord]);
+
+  const formatTimestamp = (timestamp) => {
+    const date = new Date(timestamp);
+
+    return date.toLocaleString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    }).replace(',', '');
+  };
+
+  const handleNoteChange = (rowIndex, e, noteId) => {
+    setNotes((prevNotes) => ({
+      ...prevNotes,
+      [noteId]: {
+        [rowIndex]: e.target.value,
+        noteId: noteId,
+        date: Date.now(),
+      },
+    }));
+  };
+
+  const saveNoteToLocalStorage = (noteId, rowIndex, newNote) => {
+    let savedNotes = JSON.parse(localStorage.getItem(`saved-notes-line${selectedNumber}`)) || {};
+
+    if (!savedNotes[noteId]) {
+      savedNotes[noteId] = { noteId, date: Date.now() };
+    }
+
+    if (!savedNotes[noteId][rowIndex]) {
+      savedNotes[noteId][rowIndex] = [];
+    }
+
+    if (Array.isArray(savedNotes[noteId][rowIndex])) {
+      savedNotes[noteId][rowIndex] = savedNotes[noteId][rowIndex].filter((note) => note !== null);
+
+      if (newNote && newNote.noteId) {
+        const noteExists = savedNotes[noteId][rowIndex].some(
+          (note) => note.noteId === newNote.noteId && note.date === newNote.date
+        );
+
+        if (!noteExists) {
+          savedNotes[noteId][rowIndex].push(newNote);
+          localStorage.setItem(`saved-notes-line${selectedNumber}`, JSON.stringify(savedNotes));
+          spMethod.handleSubmit(noteId, JSON.stringify(savedNotes), `line${selectedNumber}`, 'NOTES')
+            .then((e) => console.log(e))
+            .catch((err) => console.log(err));
+          setSavedNotes(savedNotes);
+        }
+      } else {
+        console.error('Invalid newNote object', newNote);
+      }
+    } else {
+      console.error(`Expected an array for savedNotes[${noteId}][${rowIndex}], but found:`, savedNotes[noteId][rowIndex]);
+    }
+  };
+
+  const handleNewRecordChange = (e, field) => {
+    setNewRecord({ ...newRecord, [field]: e.target.value });
+  };
+
+  const getPdfPath = (row) => {
+    const pdfFolder = 'img/';
+
+    const pdfName = row[2],
+      pdfName2 = row[5],
+      pdfName3 = row[9];
+
+    const pdfFile = `${pdfFolder}${pdfName}.pdf`,
+      pdfFile2 = `${pdfFolder}${pdfName2}.pdf`,
+      pdfFile3 = `${pdfFolder}${pdfName3}.pdf`;
+
+    return [pdfFile, pdfFile2, pdfFile3];
+  };
+
+  const openPdfModal = (pdfFile) => {
+    $('.ui.fullscreen.modal.pdf-viewer.line').modal('show');
+  };
+
+  const filteredData = dataLifted.filter((row) => {
+    return row.some((cell) => {
+      const cellValue = (cell || '').toString().trim().toLowerCase();
+      return cellValue.includes(searchQueryLifted.toLowerCase().trim());
+    });
+  });
+
+  const headers = dataLifted[0] || [];
+
+  const openNoteModal = () => {
+    $('.ui.small.modal.note-viewer.line').modal('show');
+  };
+
+  const checkImageExists = (path) => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.src = path;
+      img.onerror = () => resolve(false);
+      img.onload = () => resolve(true);
+    });
+  };
+
+  const getImagePath = async (row) => {
+    const imageName = row[0];
+    const extensions = ['jpg', 'jpeg', 'png', 'gif', 'avif', 'webp'];
+
+    for (let ext of extensions) {
+      const path = `img/${imageName}.${ext}`;
+      if (await checkImageExists(path)) {
+        return path;
+      }
+    }
+  };
+
+  const calculateCompletion = (goal, progress) => {
+    if (!goal || !progress) return 0;
+    return Math.min((progress / goal) * 100, 100);
+  };
+
+  const calculateRemaining = (goal, progress) => {
+    if (!goal || !progress) return 0;
+    return goal - progress;
+  };
+
+  return (
+    <div className="ui grid" style={{ marginTop: '20px' }}>
+      <DisplayPaneNew
+        selectedDepartment={selectedDepartment}
+        filteredData={filteredData}
+        imagePaths={imagePaths}
+        headers={headers}
+        getPdfPath={getPdfPath}
+        openPdfModal={openPdfModal}
+        openNoteModal={openNoteModal}
+        setPdfPath={setPdfPath}
+        setPdfPath2={setPdfPath2}
+        setPdfPath3={setPdfPath3}
+        setNotePath={setNotePath}
+        setWorkingThisRow={setWorkingThisRow}
+        setGoal={setGoal}
+        setProgress={setProgress}
+        goal={goal}
+        progress={progress}
+        calculateCompletion={calculateCompletion}
+        calculateRemaining={calculateRemaining}
+        workingThisRow={workingThisRow}
+
+        goalProgressInput={goalProgressInput}
+        departmentName={departmentName}
+
+        spMethod={spMethod}
+
+        selectedNumber={selectedNumber}
+        setSelectedNumber={setSelectedNumber}
+
+        clearLoading={clearLoading}
+
+        setWOnDev={setWOnDev}
+        woNdev={woNdev}
+      />
+
+      <div className="ui fullscreen modal pdf-viewer line">
+        <div className="header">Drawing</div>
+        <div className="content">
+          <div className="ui top attached tabular menu">
+            <a className="item active" data-tab={headers[2]}>
+              {headers[2]}
+            </a>
+            <a className="item" data-tab={headers[5]}>
+              {headers[5]}
+            </a>
+            <a className="item" data-tab={headers[9]}>
+              {headers[9]}
+            </a>
+          </div>
+          <div className="ui bottom attached active tab segment" data-tab={headers[2]}>
+            <embed
+              id="pdf-embed"
+              src={pdfPath}
+              type="application/pdf"
+              width="100%"
+              height="600px"
+            />
+          </div>
+          <div className="ui bottom attached tab segment" data-tab={headers[5]}>
+            <embed
+              id="pdf-embed"
+              src={pdfPath2}
+              type="application/pdf"
+              width="100%"
+              height="600px"
+            />
+          </div>
+          <div className="ui bottom attached tab segment" data-tab={headers[9]}>
+            <embed
+              id="pdf-embed"
+              src={pdfPath3}
+              type="application/pdf"
+              width="100%"
+              height="600px"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="ui small modal note-viewer line">
+        <div className="header">Notes</div>
+        <div className="content">
+          <div className="ui top attached tabular menu">
+            <a className="item active" data-tab="current">
+              Current Notes
+            </a>
+            <a className="item" data-tab="saved">
+              Saved Notes
+            </a>
+          </div>
+          <div className="ui bottom attached tab segment" data-tab="current">
+            {dataLifted.map((row, rowIndex) =>
+              notePath === row[0] ? (
+                <div key={rowIndex} className="ui segment basic">
+                  <h3>{`Model ${row[0]}`}</h3>
+                  <div className="ui comments">
+                    <div className="comment">
+                      <div className="content">
+                        <a className="author">User</a>
+                        <div className="metadata">
+                          <div className="date">Just now</div>
+                        </div>
+                        <div className="text">
+                          {notes[row[0]] && notePath === notes[row[0]].noteId
+                            ? notes[row[0]][rowIndex] ?? 'No notes yet...'
+                            : 'No notes yet...'}
+                        </div>
+                        <form className="ui reply form">
+                          <div className="field">
+                            <textarea
+                              className="note-area"
+                              placeholder="Enter your note..."
+                              data-rowIndex={rowIndex}
+                              data-noteId={row[0]}
+                            />
+                          </div>
+                        </form>
+                        <div className="ui divider hidden" />
+                        <button
+                          className="ui primary labeled icon button save-note-line"
+                          data-rowIndexSave={rowIndex}
+                          data-noteIdSave={row[0]}
+                        >
+                          <i className="icon edit" />
+                          Add Note
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : null
+            )}
+          </div>
+          <div
+            className="ui bottom attached tab segment"
+            data-tab="saved"
+            style={{ maxHeight: '300px', overflowY: 'auto' }}
+          >
+            {Object.keys(savedNotes).map((noteId) => {
+              const note = savedNotes[noteId];
+              return noteId === notePath.toString() ? (
+                <div key={noteId} className="ui segment basic">
+                  <h3
+                    style={{
+                      top: '0',
+                      backgroundColor: 'white',
+                      zIndex: 1,
+                      padding: '3% 0',
+                    }}
+                  >
+                    {`Saved Notes for Model ${noteId}`}
+                  </h3>
+                  <div className="ui comments">
+                    {Object.keys(note)
+                      .filter((rowIndex) => rowIndex !== 'noteId' && rowIndex !== 'date')
+                      .map((rowIndex) =>
+                        Array.isArray(note[rowIndex])
+                          ? note[rowIndex].map((entry, index) => (
+                              <div key={index} className="comment">
+                                <div className="content">
+                                  <a className="author">User</a>
+                                  <div className="metadata">
+                                    <div className="date">{formatTimestamp(entry.date)}</div>
+                                  </div>
+                                  <div className="text">{entry.text}</div>
+                                </div>
+                              </div>
+                            ))
+                          : null
+                      )}
+                  </div>
+                </div>
+              ) : null;
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
+
+    </script>
+    <script type="text/babel">
+        const { useEffect, useRef, useState } = React
+
+const TopMenuBar = ({
+  searchQuery,
+  setSearchQuery,
+  visible,
+  setVisible,
+  setData,
+  setSheetName,
+  selectedDepartment,
+  saveFile,
+}) => {
+
+  // Handlers for file upload and saving
+  const handleFileUpload = (event) => {
+    let file = event.target.files[0];
+    if (!file) return;
+
+    let reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        let workbook = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+        let firstSheet = workbook.SheetNames[0];
+        setSheetName(firstSheet);
+        let worksheet = workbook.Sheets[firstSheet];
+        let jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+        console.log(jsonData);
+        setData(jsonData);
+      } catch (error) {
+        console.error('Error reading file:', error);
+        alert('Failed to load Excel file. Please check the file format.');
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  };
+
+  const handleClose = () => {
+    setVisible(false);
+  };
+
+  const openModal = () => {
+    $(`.addRecord.small.modal.${selectedDepartment.toLowerCase()}`).modal('show');
+  };
+
+  const handleSearchChange = (event) => {
+    setSearchQuery(event.target.value);
+  };
+
+  return (
+    <div className="ui top attached" style={{ background: 'white' }}>
+
+      {/* Save Warning Message */}
+      {visible && (
+        <div className="ui icon message yellow compact small">
+          <i className="close icon" onClick={handleClose} />
+          <i className="warning circle icon" />
+          <div className="content">
+            <div className="header">Remember to save your data!</div>
+            <p>Your changes will be lost if you refresh the page without saving.</p>
+            <button
+              className="ui button yellow"
+              onClick={() => {
+                saveFile();
+                handleClose();
+              }}
+            >
+              Save
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Right Search Menu */}
+      <div className="menu right">
+        <div className="ui category search item">
+          <div className="ui icon input">
+            <input
+              type="text"
+              placeholder="Search..."
+              value={searchQuery}
+              onChange={handleSearchChange}
+              className="prompt"
+            />
+            <i className="search link icon" />
+          </div>
+          <div className="results" />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
+
+    </script>
+    <script type="text/babel">
+        const { useEffect, useRef, useState } = React
+
+const PickListAppNew = (props) => {
+    const {
+        selectedDepartment,
+        departmentName,
+        selectedNumber,
+        clearLoading,
+        setWOnDev
+    } = props;
+    const [accessToken, setAccessToken] = useState(null);
+    const [error, setError] = useState(null);
+    const [sharePointData, setSharePointData] = useState([]);
+    const [tokenInput, setTokenInput] = useState('');
+    const [imagePaths, setImagePaths] = useState({});
+    const [postName, setPostName] = useState('');
+    const [siteID, setSiteID] = useState('');
+    const [confirmPickList, setConfirmedPickList] = useState(false);
+    const [rowData, setRowDataIn] = useState({});
+
+    const checkImageExists = async (url) => {
+        const img = new Image();
+        img.src = url;
+
+        return new Promise((resolve) => {
+            img.onload = () => resolve(true);
+            img.onerror = () => resolve(false);
+        });
+    };
+
+    const getImagePath = async (imageName) => {
+        const extensions = ['jpg', 'jpeg', 'png', 'gif', 'avif', 'webp'];
+        for (let ext of extensions) {
+            const path = departmentName === 'packout' ? `img/packout/${imageName}.${ext}` : `img/${imageName}.${ext}`;
+            if (await checkImageExists(path)) {
+                return path;
+            }
+        }
+        return 'img/placeholder.jpg'; 
+    };
+
+    const fetchSharePointData = async (token) => {
+        if (!token) {
+            setError('No valid access token provided. Please input a valid token.');
+            return;
+        }
+
+        const siteUrl = 'fnagroup.sharepoint.com';
+        const sitePath = '/sites/LineSupport';
+
+        try {
+            const siteResponse = await fetch(`https://graph.microsoft.com/v1.0/sites/${siteUrl}:${sitePath}`, {
+                method: 'GET',
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            if (!siteResponse.ok) {
+                const errorData = await siteResponse.json();
+                throw new Error(`Failed to fetch site data: ${errorData.error.message}`);
+            }
+
+            const siteData = await siteResponse.json();
+            const siteId = siteData.id;
+
+            if (!siteId) {
+                throw new Error('Unable to get site ID');
+            }
+
+            const listsResponse = await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists`, {
+                method: 'GET',
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            if (!listsResponse.ok) {
+                const errorData = await listsResponse.json();
+                throw new Error(`Failed to fetch lists: ${errorData.error.message}`);
+            }
+
+            const listsData = await listsResponse.json();
+            const list = listsData.value.find(l => l.name === selectedDepartment);
+            const pId = listsData.value.filter(e => e.displayName === 'PICKLIST')[0].id;
+            setPostName(pId);
+            setSiteID(siteId);
+
+            if (!list) {
+                throw new Error(`Unable to find the ${selectedDepartment} list`);
+            }
+
+            const listId = list.id;
+
+            const itemsResponse = await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${listId}/items?$expand=fields`, {
+                method: 'GET',
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            if (!itemsResponse.ok) {
+                const errorData = await itemsResponse.json();
+                throw new Error(`Failed to fetch list items: ${errorData.error.message}`);
+            }
+
+            const itemsData = await itemsResponse.json();
+            setSharePointData(itemsData.value);
+
+            setWOnDev(itemsData.value);
+            setError(null);
+
+            const fetchImages = async () => {
+                const imageMap = {};
+                await Promise.all(
+                    itemsData.value.map(async (item) => {
+                        const imagePath = await getImagePath(item.fields.Title);
+                        imageMap[item.fields.Title] = imagePath;
+                    })
+                );
+                setImagePaths(imageMap);
+            };
+
+            fetchImages();
+        } catch (err) {
+            setError('Error fetching SharePoint data: ' + err.message);
+            console.error(err);
+        }
+    };
+
+
+    useEffect(() => {
+        const storedToken = sessionStorage.getItem('access_token');
+        if (storedToken) {
+            setAccessToken(storedToken);
+            fetchSharePointData(storedToken);
+        }
+    }, [selectedDepartment]);
+
+    const handleSubmit = async (modelNumber) => {
+        const delFieldData = JSON.stringify(rowData);
+
+        const itemsUrl = `https://graph.microsoft.com/v1.0/sites/${siteID}/lists/${postName}/items?$filter=fields/Title eq '${modelNumber}'&$expand=fields`;
+        const sharePointColumnName = selectedNumber ? departmentName + selectedNumber : departmentName;
+        const headers = {
+            "Authorization": `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+            "Prefer": "HonorNonIndexedQueriesWarningMayFailRandomly",
+        };
+
+        try {
+            const itemsResponse = await fetch(itemsUrl, {
+                method: 'GET',
+                headers: headers,
+            });
+
+            if (!itemsResponse.ok) {
+                const errorData = await itemsResponse.json();
+                throw new Error(`Failed to fetch list items: ${errorData.error.message}`);
+            }
+
+            const itemsData = await itemsResponse.json();
+
+            if (itemsData.value.length > 0) {
+                const itemId = itemsData.value[0].id;
+                const updateUrl = `https://graph.microsoft.com/v1.0/sites/${siteID}/lists/${postName}/items/${itemId}`;
+
+                const updateBody = {
+                    fields: {
+                        Title: modelNumber,
+                        [sharePointColumnName]: delFieldData,
+                    },
+                };
+
+                const updateResponse = await fetch(updateUrl, {
+                    method: 'PATCH',
+                    headers: headers,
+                    body: JSON.stringify(updateBody),
+                });
+
+                if (!updateResponse.ok) {
+                    const errorData = await updateResponse.json();
+                    throw new Error(`Failed to update item: ${errorData.error.message}`);
+                }
+
+                const result = await updateResponse.json();
+                console.log("Updated item:", result);
+                setConfirmedPickList(updateResponse.ok);
+            } else {
+                const url = `https://graph.microsoft.com/v1.0/sites/${siteID}/lists/${postName}/items`;
+
+                const body = {
+                    fields: {
+                        Title: modelNumber,
+                        [sharePointColumnName]: delFieldData,
+                    },
+                };
+
+                const createResponse = await fetch(url, {
+                    method: "POST",
+                    headers: headers,
+                    body: JSON.stringify(body),
+                });
+
+                if (!createResponse.ok) {
+                    const errorData = await createResponse.json();
+                    throw new Error(`Failed to create list item: ${errorData.error.message}`);
+                }
+
+                const result = await createResponse.json();
+                console.log("Created new item:", result);
+                setConfirmedPickList(createResponse.ok);
+            }
+        } catch (err) {
+            console.error("Error:", err);
+        }
+    };
+
+    const createTable = (matchingDescription, matchingUom, matchingQtyToPick, pn) => {
+        return (
+            <tbody key={pn.ref}>
+                <tr>
+                    <td>{pn.pid}</td>
+                    <td>{matchingDescription ? matchingDescription.pid : 'No description available'}</td>
+                    <td>{matchingUom ? matchingUom.pid : 'No UOM available'}</td>
+                    <td>{matchingQtyToPick ? matchingQtyToPick.pid : 'No quantity to pick available'}</td>
+                    <td>
+                        <div className='ui input fluid'>
+                            <input
+                                type='number'
+                                className='qty-picked'
+                                name={`qtyPicked_${pn.ref}`}
+                                placeholder='Qty Picked'
+                                onChange={(e) => setRowDataIn(prevData => ({
+                                    ...prevData,
+                                    [pn.ref]: {
+                                        ...prevData[pn.ref],
+                                        partNumber: pn.pid,
+                                        qtyPicked: e.target.value,
+                                        qtyToPick: matchingQtyToPick.pid,
+                                    }
+                                }))}
+                            />
+                        </div>
+                    </td>
+                    <td>
+                        <div className='ui input fluid'>
+                            <input
+                                type='text'
+                                className='lot-serial'
+                                name={`lotSerial_${pn.ref}`}
+                                placeholder='Lot/Serial'
+                                onChange={(e) => setRowDataIn(prevData => ({
+                                    ...prevData,
+                                    [pn.ref]: {
+                                        ...prevData[pn.ref],
+                                        lotSerial: e.target.value,
+                                        partNumber: pn.pid,
+                                    }
+                                }))}
+                            />
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        );
+    };
+
+    const displaySharePointData = (data) => {
+        return (
+            <div className='ui items divided'>
+                {data.map(item => {
+                    const fields = item.fields;
+                    const partNumber = JSON.parse(fields.PartNumber);
+                    const partDescription = JSON.parse(fields.PartDescription);
+                    const partUom = JSON.parse(fields.UOM);
+                    const partQtyToPick = JSON.parse(fields['QtyToPick']);
+                    const workOrder = fields['WO'];
+
+                    const imageSrc = imagePaths[fields.Title] && imagePaths[fields.Title] !== 'img/placeholder.jpg'
+                        ? imagePaths[fields.Title]
+                        : 'img/placeholder.jpg';
+
+                    return (
+                        <div className='item' key={fields.Title}>
+                            {imageSrc !== 'img/placeholder.jpg' ? (
+                                <a className='ui small image'>
+                                    <img src={imageSrc} alt={fields.Title} />
+                                </a>
+                            ) : (
+                                <a className='ui small image'>
+                                    <div className='ui placeholder'>
+                                        <div className='image' />
+                                    </div>
+                                </a>
+                            )}
+                            <div className='content aligned left'>
+                                <a className='header huge ui'>{fields.Title}</a>
+                                <div className='ui divider' />
+                                <div className='header ui'>{workOrder}</div>
+                                <table className='ui celled table fixed striped'>
+                                    <thead>
+                                        <tr>
+                                            <th>Part Number</th>
+                                            <th>Description</th>
+                                            <th>UOM</th>
+                                            <th>QTY To Pick</th>
+                                            <th>Qty Picked</th>
+                                            <th>Lot/Serial</th>
+                                        </tr>
+                                    </thead>
+                                    {partNumber.map(pn => {
+                                        const matchingDescription = partDescription.find(pd => pd.ref === pn.ref);
+                                        const matchingQtyToPick = partQtyToPick.find(qtp => qtp.ref === pn.ref);
+                                        const matchingUom = partUom.find(uom => uom.ref === pn.ref);
+
+                                        return createTable(matchingDescription, matchingUom, matchingQtyToPick, pn);
+                                    })}
+                                </table>
+                                <tr
+                                    className={`ui button ${confirmPickList ? "disabled" : "green"}`}
+                                    onClick={() => handleSubmit(fields.Title)}
+                                >
+                                    {!confirmPickList ? "Confirm" : "Confirmed"}
+                                </tr>
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+        );
+    };
+
+    const createGoalsFromPickList = (data, departmentName) => {
+        // Get the start and end of the current week
+        const currentDate = new Date();
+        const currentDay = currentDate.getDay();
+        const daysToStartOfWeek = currentDay === 0 ? 6 : currentDay - 1; // Get days to Monday
+        const startOfWeek = new Date(currentDate.setDate(currentDate.getDate() - daysToStartOfWeek));
+        startOfWeek.setHours(0, 0, 0, 0); // Start of week at midnight
+
+        const endOfWeek = new Date(startOfWeek);
+        endOfWeek.setDate(startOfWeek.getDate() + 6); // End of the week (Sunday)
+        endOfWeek.setHours(23, 59, 59, 999); // End of week just before midnight
+
+        data.map(item => {
+            const fields = item.fields;
+            const runQuantity = fields.Quantity
+            const title = fields.Title;  // Assuming the title field is here 
+            const workOrder = fields['WO'];
+            const deviations = fields['DEV'];   
+            // Generating a timestamp for the record
+            const timestamp = new Date().toISOString();
+
+            // Check if the record already exists in localStorage
+            const existingGoalProgress = localStorage.getItem(`goalProgress-${departmentName}-${title}`);
+
+            // If the record exists, check its timestamp and isActive
+            if (existingGoalProgress) {
+                const existingData = JSON.parse(existingGoalProgress);
+                const existingTimestamp = new Date(existingData["creation date"]);
+
+                // If it's active, check if the timestamp is within the current week
+                if (existingData.isActive === true) {
+                    // If the timestamp is outside the current week, set isActive to false
+                    if (existingTimestamp < startOfWeek || existingTimestamp > endOfWeek) {
+                        existingData.isActive = false;
+                        // Update localStorage with isActive set to false
+                        localStorage.setItem(`goalProgress-${departmentName}-${title}`, JSON.stringify(existingData));
+                    }
+                    return; // Skip adding the new record if the existing record is active
+                }
+            }
+
+            // Create the object to store in localStorage if not exists or if it's inactive
+            const goalProgressData = {
+                goal: runQuantity,
+                progress: "0",
+                "creation date": timestamp,
+                isActive: true,
+                wo:workOrder,
+                dev:deviations
+            };
+
+            // Store the object in localStorage
+            localStorage.setItem(`goalProgress-${departmentName}-${title}`, JSON.stringify(goalProgressData));
+        });
+    };
+    createGoalsFromPickList(sharePointData, departmentName)
+
+
+    return (
+        <div>
+          {error && <div className="ui red message">{error}</div>}
+      
+          {sharePointData.length > 0 ? (
+            <div id="sharePointData" className={`ui segment black ${clearLoading ? 'loading' : ''}`}>
+              {!error ? displaySharePointData(sharePointData):'No data'}
+            </div>
+          ) : (
+            <p>No items found in the list.
+            {displaySharePointData([])}
+            </p>
+          )}
+        </div>
+      );
+      
+};
+
+
+
+    </script>
+    <script type="text/babel">
+        const { useEffect, useRef, useState } = React
+
+const LookupComponent = ({
+  filteredData,
+  headers,
+  imagePaths,
+  getPdfPath,
+  openPdfModal,
+  openNoteModal,
+  setPdfPath,
+  setPdfPath2,
+  setPdfPath3,
+  setNotePath,
+  setWorkingThisRow,
+  setGoal,
+  setProgress,
+  goal,
+  progress,
+  workingThisRow,
+  calculateCompletion,
+  calculateRemaining,
+
+  departmentName,
+
+  spMethod,
+
+
+  selectedNumber,
+  setSelectedNumber,
+
+  clearLoading,
+
+  setWOnDev,
+  woNdev
+}) => {
+  console.log('lookup Pane', departmentName);
+  console.log(woNdev);
+  
+  const [toggleFilter, setToggleFilter] = useState(true);
+  const [filterBtnName, setFilterBtnName] = useState('Hide Weekly Orders');
+  const [quickVeiw, setQuickVeiw] = useState(true);
+  const [quickVeiwTitle, setQuickVeiwTitle] = useState('Expand Details');
+  const departmentRefName = departmentName.charAt(0).toUpperCase() + departmentName.slice(1);
+
+  useEffect(() => {
+    $('.ui.checkbox').checkbox();
+  }, [toggleFilter]);
+
+  const toggle = () => {
+    setToggleFilter(!toggleFilter);
+    setFilterBtnName(toggleFilter ? 'Show Weekly Orders' : 'Hide Weekly Orders');
+  };
+
+  const toggleQuickVeiw = () => {
+    setQuickVeiw(!quickVeiw);
+    setQuickVeiwTitle(!quickVeiw ? 'Expand Details' : 'View Summary');
+  };
+
+  const findThisEntry =
+    departmentName === 'line' && selectedNumber !== null
+      ? departmentName + selectedNumber
+      : departmentName === 'line' && selectedNumber !== null
+      ? departmentName + 1
+      : departmentName;
+
+  let workDetails = [];
+  // Filtered data based on localStorage if toggleFilter is on
+  const filteredDataWithStorageCheck =
+    toggleFilter && departmentName !== 'paint'
+      ? filteredData.filter((row) => {
+          const localStorageKey = `goalProgress-${findThisEntry}-${row[0]}`;
+          const storedValue = localStorage.getItem(localStorageKey);
+          if (storedValue !== null && toggleFilter) {
+            workDetails.push(JSON.parse(storedValue));
+          }
+          if (!toggleFilter) {
+            workDetails.push(JSON.parse(storedValue));
+          }
+          return storedValue;
+        })
+      : filteredData;
+
+  return (
+    <div className="ui divided items">
+      {/* Filter toggles */}
+      <div className="ui segment">
+        <h4 className="header">Filter Settings</h4>
+        <div
+          className="ui toggle checkbox"
+          style={{ padding: '1%' }}
+          onClick={toggle}
+        >
+          <input
+            type="checkbox"
+            tabIndex="0"
+            className="hidden"
+            checked={toggleFilter}
+            readOnly
+          />
+          <label>{filterBtnName}</label>
+        </div>
+
+        <div
+          className="ui toggle checkbox inline field"
+          style={{ padding: '1%' }}
+          onClick={toggleQuickVeiw}
+        >
+          <input
+            type="checkbox"
+            tabIndex="0"
+            className="hidden"
+            checked={quickVeiw}
+            readOnly
+          />
+          <label>{quickVeiwTitle}</label>
+        </div>
+      </div>
+
+      {filteredDataWithStorageCheck.map((row, rowIndex) =>
+        !quickVeiw ? (
+          <div
+            key={rowIndex}
+            className={`ui segment black ${clearLoading ? 'loading' : ''}`}
+          >
+            <h1 className="ui header">{workDetails[rowIndex]?.wo}</h1>
+            <div
+              className={`ui message compact ${
+                workDetails[rowIndex]?.dev !== 'DEV - NONE' ? 'red' : 'grey'
+              }`}
+            >
+              <div className="ui sub header">{workDetails[rowIndex]?.dev}</div>
+            </div>
+            <div className="ui divider" />
+            <div className="ui divider hidden" />
+            {departmentName === 'line' && (
+              <LineSelectionNew selectedNumber={selectedNumber} setSelectedNumber={setSelectedNumber} />
+            )}
+            <div className="ui grid internally celled">
+              <div className="four wide column" style={{ textAlign: 'center' }}>
+                {imagePaths[row[0]] && imagePaths[row[0]] !== 'img/default_image.jpg' ? (
+                  <img
+                    className="ui fluid image"
+                    src={imagePaths[row[0]]}
+                    alt="Loaded Image"
+                  />
+                ) : (
+                  <div className="ui placeholder">
+                    <div className="image"></div>
+                  </div>
+                )}
+                <div className="ui divider hidden" />
+                <div className="ui buttons">
+                  <button
+                    className="ui black small button"
+                    onClick={async () => {
+                      const [pdf, pdf2, pdf3] = getPdfPath(row);
+                      setPdfPath(pdf);
+                      setPdfPath2(pdf2);
+                      setPdfPath3(pdf3);
+                      if (pdf) {
+                        openPdfModal(pdf, pdf2, pdf3);
+                      } else {
+                        alert('PDF not found.');
+                      }
+                    }}
+                  >
+                    Drawing
+                  </button>
+                  <button
+                    className="ui small button"
+                    onClick={() => {
+                      setNotePath(row[0]);
+                      openNoteModal();
+                    }}
+                  >
+                    Notes
+                  </button>
+                </div>
+              </div>
+              <ChartContainer
+                columnSize="six"
+                headers={headers}
+                row={row}
+                departmentName={departmentName}
+                selectedNumber={selectedNumber}
+                modelId={row[0]}
+                progress={progress}
+              />
+              <div
+                className="ui sixteen wide column row"
+                style={{ padding: '2.5%' }}
+              >
+                <div className="ui header huge">
+                  Performance and Goal Monitoring Dashboard
+                  <div className="ui sub header">{departmentRefName}</div>
+                </div>
+              </div>
+              <div
+                className="ui grid sixteen wide column row"
+                style={{ padding: '2%' }}
+              >
+                <DetailPaneNew
+                  row={row}
+                  workingThisRow={workingThisRow}
+                  goal={goal}
+                  progress={progress}
+                  setWorkingThisRow={setWorkingThisRow}
+                  setGoal={setGoal}
+                  setProgress={setProgress}
+                  calculateCompletion={calculateCompletion}
+                  calculateRemaining={calculateRemaining}
+                  departmentName={departmentName}
+                  spMethod={spMethod}
+                  selectedNumber={selectedNumber}
+
+                />
+              </div>
+              <div
+                className="ui sixteen wide column row"
+                style={{ padding: '2.5%' }}
+              >
+                <div className="ui header huge">
+                  Manufacturing Issues and Action Dashboard
+                  <div className="ui sub header">{departmentRefName}</div>
+                </div>
+              </div>
+              <div
+                className="ui grid sixteen wide column row"
+                style={{ padding: '2.5%' }}
+              >
+                <IssueSelectNew
+                  spMethod={spMethod}
+                  departmentName={departmentName}
+                  modelId={row[0]}
+                  responseBoxTitle="Issue with Order"
+                  selectedNumber={selectedNumber}
+                  listName="ISSUES"
+                  issueArrayName="issues"
+                />
+                <IssueSelectNew
+                  spMethod={spMethod}
+                  departmentName={departmentName}
+                  modelId={row[0]}
+                  responseBoxTitle="Maintenance Issue"
+                  selectedNumber={selectedNumber}
+                  listName="Maintenance"
+                  issueArrayName="maintenance"
+                />
+              </div>
+              {departmentName === 'paint' && (
+                <lookuptable headers={headers} row={row} />
+              )}
+            </div>
+          </div>
+        ) : (
+          <div
+            className="ui items segment black"
+            style={{ padding: '3%' }}
+            key={rowIndex}
+          >
+            {/* First Item: Image and Details */}
+            {departmentName === 'line' && (
+              <LineSelectionNew selectedNumber={selectedNumber} setSelectedNumber={setSelectedNumber} />
+            )}
+
+            <div className="item" style={{ marginRight: '60px' }}>
+              <div className="image">
+                {imagePaths[row[0]] && imagePaths[row[0]] !== 'img/default_image.jpg' ? (
+                  <img
+                    className="ui fluid image"
+                    src={imagePaths[row[0]]}
+                    alt="Loaded Image"
+                  />
+                ) : (
+                  <div className="ui placeholder">
+                    <div className="image"></div>
+                  </div>
+                )}
+              </div>
+              {/* Second Item: Goal Monitoring and Progress */}
+              <div className="item">
+                <h2 className="header">
+                  {row[0]}
+                  <div className="ui divider" />
+                  <h3 className="ui ">{workDetails[rowIndex]?.wo}</h3>
+                </h2>
+                <div
+                  className={`ui message compact small ${
+                    workDetails[rowIndex]?.dev !== 'DEV - NONE' ? 'red' : 'grey'
+                  }`}
+                >
+                  <p className="ui ">{workDetails[rowIndex]?.dev}</p>
+                </div>
+
+                <div className="ui divider" />
+
+                <div className="content">
+                  <h4 className="header">Performance and Goal Monitoring</h4>
+                  <div className="meta">
+                    <span>{departmentRefName}</span>
+                  </div>
+                  <div className="extra">
+                    <DetailPaneMiniNew
+                      row={row}
+                      workingThisRow={workingThisRow}
+                      goal={goal}
+                      progress={progress}
+                      setWorkingThisRow={setWorkingThisRow}
+                      setGoal={setGoal}
+                      setProgress={setProgress}
+                      calculateCompletion={calculateCompletion}
+                      calculateRemaining={calculateRemaining}
+                      departmentName={departmentName}
+                      spMethod={spMethod}
+                      selectedNumber={selectedNumber}
+
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )
+      )}
+    </div>
+  );
+};
+
+
+    </script>
+    <script type="text/babel">
+        const { useEffect, useRef, useState } = React
+
+const PackoutLookup = ({
+  filteredData,
+  headers,
+  imagePaths,
+  getPdfPath,
+  openPdfModal,
+  openNoteModal,
+  setPdfPath,
+  setPdfPath2,
+  setPdfPath3,
+  setNotePath,
+  setWorkingThisRow,
+  setGoal,
+  setProgress,
+  goal,
+  progress,
+  workingThisRow,
+  calculateCompletion,
+  calculateRemaining,
+  goalProgressInput,
+  departmentName,
+  spMethod,
+  issue,
+  lineSelection,
+  selectedNumber,
+  setSelectedNumber,
+  chart,
+  detailPaneMini,
+  setWOnDev,
+  woNdev
+}) => {
+  console.log('look packout Pane');
+  const [toggleFilter, setToggleFilter] = useState(true);
+  const [filterBtnName, setFilterBtnName] = useState('Hide Weekly Orders');
+  const [quickVeiw, setQuickVeiw] = useState(true);
+  const [quickVeiwTitle, setQuickVeiwTitle] = useState('Expand Details');
+  const departmentRefName = departmentName.charAt(0).toUpperCase() + departmentName.slice(1);
+
+  useEffect(() => {
+    $('.ui.checkbox').checkbox();
+  }, []);
+
+  const toggle = () => {
+    setToggleFilter(!toggleFilter);
+    setFilterBtnName(toggleFilter ? 'Show Weekly Orders' : 'Hide Weekly Orders');
+  };
+
+  const toggleQuickVeiw = () => {
+    setQuickVeiw(!quickVeiw);
+    setQuickVeiwTitle(!quickVeiw ? 'Expand Details' : 'View Summary');
+  };
+
+  let workDetails = [];
+  // Filtered data based on localStorage if toggleFilter is on
+  const filteredDataWithStorageCheck =
+    toggleFilter && departmentName !== 'paint'
+      ? filteredData.filter((row) => {
+          const localStorageKey = `goalProgress-${departmentName}-${row[0]}`;
+          const storedValue = localStorage.getItem(localStorageKey);
+          storedValue !== null && toggleFilter ? workDetails.push(JSON.parse(storedValue)) : '';
+          !toggleFilter ? workDetails.push(JSON.parse(storedValue)) : '';
+          return storedValue;
+        })
+      : filteredData;
+
+  return (
+    <div className="ui divided items sixteen wide column">
+      {/* Filter toggles */}
+      <div className="ui segment">
+        <h4 className="header">Filter Settings</h4>
+        <div className="ui toggle checkbox" style={{ padding: '1%' }} onClick={toggle}>
+          <input
+            type="checkbox"
+            tabIndex="0"
+            className="hidden"
+            checked={toggleFilter}
+            readOnly
+          />
+          <label>{filterBtnName}</label>
+        </div>
+
+        <div
+          className="ui toggle checkbox inline field"
+          style={{ padding: '1%' }}
+          onClick={toggleQuickVeiw}
+        >
+          <input
+            type="checkbox"
+            tabIndex="0"
+            className="hidden"
+            checked={quickVeiw}
+            readOnly
+          />
+          <label>{quickVeiwTitle}</label>
+        </div>
+      </div>
+
+      {filteredDataWithStorageCheck.map((row, rowIndex) =>
+        !quickVeiw ? (
+          <div key={rowIndex} className="ui segment black">
+            <h1 className="ui header">{workDetails[rowIndex]?.wo}</h1>
+            <div className={`ui message compact ${workDetails[rowIndex]?.dev !== 'DEV - NONE' ? 'red' : 'grey'}`}>
+              <div className="ui sub header">{workDetails[rowIndex]?.dev}</div>
+            </div>
+            <div className="ui divider" />
+            <div className="ui grid internally celled">
+              <div className="four wide column" style={{ textAlign: 'center' }}>
+                {imagePaths[row[0]] && imagePaths[row[0]] !== 'img/default_image.jpg' ? (
+                  <img className="ui fluid image" src={imagePaths[row[0]]} alt="Loaded Image" />
+                ) : (
+                  <div className="ui placeholder">
+                    <div className="image" />
+                  </div>
+                )}
+                <div className="ui divider hidden" />
+                <div className="ui buttons">
+                  <button
+                    className="ui black small button"
+                    onClick={async () => {
+                      const [pdf, pdf2, pdf3] = getPdfPath(row);
+                      setPdfPath(pdf);
+                      setPdfPath2(pdf2);
+                      setPdfPath3(pdf3);
+                      if (pdf) {
+                        openPdfModal(pdf, pdf2, pdf3);
+                      } else {
+                        alert('PDF not found.');
+                      }
+                    }}
+                  >
+                    Drawing
+                  </button>
+                  <button
+                    className="ui small button"
+                    onClick={() => {
+                      setNotePath(row[0]);
+                      openNoteModal();
+                    }}
+                  >
+                    Notes
+                  </button>
+                </div>
+              </div>
+
+              <chart
+                columnSize="six"
+                headers={headers}
+                row={row}
+                departmentName={departmentName}
+                selectedNumber={selectedNumber}
+                modelId={row[0]}
+                progress={progress}
+              />
+
+              <div className="ui sixteen wide column row" style={{ padding: '2.5%' }}>
+                <div className="ui header huge">
+                  Performance and Goal Monitoring Dashboard
+                  <div className="ui sub header">{departmentRefName}</div>
+                </div>
+              </div>
+
+              <div className="ui grid sixteen wide column row" style={{ padding: '2%' }}>
+                <goalProgressInput
+                  row={row}
+                  workingThisRow={workingThisRow}
+                  goal={goal}
+                  progress={progress}
+                  setWorkingThisRow={setWorkingThisRow}
+                  setGoal={setGoal}
+                  setProgress={setProgress}
+                  calculateCompletion={calculateCompletion}
+                  calculateRemaining={calculateRemaining}
+                  departmentName={departmentName}
+                  spMethod={spMethod}
+                  selectedNumber={selectedNumber}
+                  issue={issue}
+                />
+              </div>
+
+              <div className="ui sixteen wide column row" style={{ padding: '2.5%' }}>
+                <div className="ui header huge">
+                  Manufacturing Issues and Action Dashboard
+                  <div className="ui sub header">{departmentRefName}</div>
+                </div>
+              </div>
+
+              <div className="ui grid sixteen wide column row" style={{ padding: '2.5%' }}>
+                <issue
+                  spMethod={spMethod}
+                  departmentName={departmentName}
+                  modelId={row[0]}
+                  responseBoxTitle="Issue with Current Order"
+                  selectedNumber={selectedNumber}
+                  listName="ISSUES"
+                  issueArrayName="issues"
+                />
+                <issue
+                  spMethod={spMethod}
+                  departmentName={departmentName}
+                  modelId={row[0]}
+                  responseBoxTitle="Maintenance Issue"
+                  selectedNumber={selectedNumber}
+                  listName="Maintenance"
+                  issueArrayName="maintenance"
+                />
+              </div>
+
+              {departmentName === 'paint' && <lookuptable headers={headers} row={row} />}
+            </div>
+          </div>
+        ) : (
+          <div
+            className="ui items segment black"
+            style={{ padding: '3%' }}
+            key={rowIndex}
+          >
+            {departmentName === 'line' && <lineSelection selectedNumber={selectedNumber} setSelectedNumber={setSelectedNumber} />}
+            <div className="item" style={{ marginRight: '60px' }}>
+              <div className="image" style={{ padding: '.5%' }}>
+                {imagePaths[row[0]] && imagePaths[row[0]] !== 'img/default_image.jpg' ? (
+                  <img className="ui fluid image" src={imagePaths[row[0]]} alt="Loaded Image" />
+                ) : (
+                  <div className="ui placeholder">
+                    <div className="image" />
+                  </div>
+                )}
+              </div>
+
+              <div className="item">
+                <h2 className="header">
+                  {row[0]}
+                  <div className="ui divider" />
+                  <h3 className="ui">{workDetails[rowIndex]?.wo}</h3>
+                </h2>
+
+                <div className={`ui message compact small ${workDetails[rowIndex]?.dev !== 'DEV - NONE' ? 'red' : 'grey'}`}>
+                  <p className="ui">{workDetails[rowIndex]?.dev}</p>
+                </div>
+                <div className="ui divider" />
+                <div className="content">
+                  <h4 className="header">Performance and Goal Monitoring</h4>
+                  <div className="meta">
+                    <span>{departmentRefName}</span>
+                  </div>
+                  <div className="extra">
+                    <detailPaneMini
+                      row={row}
+                      workingThisRow={workingThisRow}
+                      goal={goal}
+                      progress={progress}
+                      setWorkingThisRow={setWorkingThisRow}
+                      setGoal={setGoal}
+                      setProgress={setProgress}
+                      calculateCompletion={calculateCompletion}
+                      calculateRemaining={calculateRemaining}
+                      departmentName={departmentName}
+                      spMethod={spMethod}
+                      selectedNumber={selectedNumber}
+                      issue={issue}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )
+      )}
+    </div>
+  );
+};
+
+
+
+    </script>
+    <script type="text/JavaScript">
+        const main = {
+  fetchSharePointData: async (selectedDepartment, departmentName, log, setTableData, setPackoutTableData) => {
+    // Retrieve the token from sessionStorage
+    const token = sessionStorage.getItem('access_token');
+
+    if (!token) {
+      console.error('No valid access token found. Please ensure the token is stored in sessionStorage.');
+      return;
+    }
+
+    const siteUrl = 'fnagroup.sharepoint.com';
+    const sitePath = '/sites/LineSupport';
+
+    try {
+      const siteResponse = await fetch(`https://graph.microsoft.com/v1.0/sites/${siteUrl}:${sitePath}`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!siteResponse.ok) {
+        const errorData = await siteResponse.json();
+        throw new Error(`Failed to fetch site data: ${errorData.error.message}`);
+      }
+
+      const siteData = await siteResponse.json();
+      const siteId = siteData.id;
+
+      if (!siteId) {
+        throw new Error('Unable to get site ID');
+      }
+
+      // Store the site ID in sessionStorage
+      sessionStorage.setItem(`siteId-${departmentName}-${selectedDepartment}`, siteId);
+
+      const listsResponse = await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!listsResponse.ok) {
+        const errorData = await listsResponse.json();
+        throw new Error(`Failed to fetch lists: ${errorData.error.message}`);
+      }
+
+      const listsData = await listsResponse.json();
+      const list = listsData.value.find(l => l.name === selectedDepartment);
+
+      if (!list) {
+        throw new Error(`Unable to find the ${selectedDepartment} list`);
+      }
+
+      const listId = list.id;
+      sessionStorage.setItem(`postName-${departmentName}-${selectedDepartment}`, listId); // Store postName (listId) in sessionStorage
+
+      const itemsResponse = await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${listId}/items?$expand=fields`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const itemsData = await itemsResponse.json();
+      const regex = /^(inventory|sage|runRates|frames|paint|handles|packout|maintenance|issues|.*line.*)$/;
+
+      if (regex.test(departmentName)) {
+          return itemsData;
+      }
+
+      if (log) {
+        selectedDepartment !== 'PACKOUTTABLE' ? 
+        setTableData(itemsData.value) : setPackoutTableData(itemsData.value);
+        
+        console.log('Data fetched and stored in sessionStorage successfully.');
+      };
+
+      console.log('Data fetched and stored in sessionStorage successfully.');
+
+
+    } catch (err) {
+      console.error('Error fetching SharePoint data: ' + err.message);
+    }
+  },
+
+  handleSubmit: async (modelNumber, rowData, departmentName, list) => {
+
+    const siteID = sessionStorage.getItem(`siteId-${departmentName}-${list}`);
+    const postName = sessionStorage.getItem(`postName-${departmentName}-${list}`);
+    const accessToken = sessionStorage.getItem('access_token');
+    const delFieldData = JSON.stringify(rowData); // Assuming rowData is passed correctly
+    let itemsData = null;
+    let result = null;
+    let updateResponse = null;
+    let createResponse = null;
+    let itemsResponse = null;
+
+
+
+    // Construct the URL to get the list items with a filter by Title (modelNumber)
+    const itemsUrl = `https://graph.microsoft.com/v1.0/sites/${siteID}/lists/${postName}/items?$filter=fields/Title eq '${modelNumber}'&$expand=fields`;
+
+    const headers = {
+      "Authorization": `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+      "Prefer": "HonorNonIndexedQueriesWarningMayFailRandomly" // Add this header to allow non-indexed queries
+    };
+
+    try {
+      // Step 1: Fetch the item based on the modelNumber (Title)
+      itemsResponse = await fetch(itemsUrl, {
+        method: 'GET',
+        headers: headers,
+      });
+
+      if (!itemsResponse.ok) {
+        const errorData = await itemsResponse.json();
+        // throw new Error(`Failed to fetch list items: ${errorData.error.message}`);
+      } else {
+
+        itemsData = await itemsResponse.json();
+        console.log(itemsData);
+
+      }
+      // Step 2: Check if the item exists
+      if (itemsData.value.length > 0) {
+        // If item exists, update it using PATCH
+        const itemId = itemsData.value[0].id;
+        const updateUrl = `https://graph.microsoft.com/v1.0/sites/${siteID}/lists/${postName}/items/${itemId}`;
+
+        const updateBody = {
+          fields: {
+            Title: modelNumber.toString(),  // Adjust this field as per the requirement
+            [departmentName]: delFieldData // Include any other fields you want to update
+          },
+        };
+
+        // Step 3: Send the update request
+        updateResponse = await fetch(updateUrl, {
+          method: 'PATCH',  // Use PATCH to update an existing item
+          headers: headers,
+          body: JSON.stringify(updateBody),
+        });
+
+        if (!updateResponse.ok) {
+          const errorData = await updateResponse.json();
+          // throw new Error(`Failed to update item: ${errorData.error.message}`);
+        } else {
+
+          result = await updateResponse.json();
+          console.log("Updated item:", result);
+
+        }
+      } else if (!itemsResponse || !updateResponse) {
+        // If the item doesn't exist, create a new one using POST
+        const url = `https://graph.microsoft.com/v1.0/sites/${siteID}/lists/${postName}/items`;
+
+
+        const body = {
+          fields: {
+            Title: modelNumber.toString(),  // Adjust this field as per your SharePoint list
+            [departmentName]: delFieldData // Add other fields as needed
+          },
+        };
+
+        // Step 4: Create the new item
+        createResponse = await fetch(url, {
+          method: "POST",
+          headers: headers,
+          body: JSON.stringify(body),
+        });
+
+        if (!createResponse.ok) {
+          const errorData = await createResponse.json();
+          throw new Error(`Failed to create list item: ${errorData.error.message}`);
+        }
+
+        const result = await createResponse.json();
+        console.log("Created new item:", result);
+      }
+
+    } catch (err) {
+      console.error("Error:", err);
+    }
+  },
+};
+
+    </script>
+    <script type="text/babel">
+        const { useEffect, useRef, useState } = React
+
+const Editor = (props) => {
+    // Access the function from props
+    const {
+        spMethod,
+        selectedDepartment,
+        departmentName,
+        searchQueryLifted,
+        visibleLifted,
+        dataLifted,
+        sheetNameLifted,
+        setData,
+        clearLoading,
+        setWOnDev,
+        woNdev
+    } = props;
+
+    const [sheetName, setSheetName] = useState(sheetNameLifted);
+    const [searchQuery, setSearchQuery] = useState(searchQueryLifted);
+    const [imagePaths, setImagePaths] = useState({});
+    const [pdfPath, setPdfPath] = useState({});
+    const [pdfPath2, setPdfPath2] = useState({});
+    const [pdfPath3, setPdfPath3] = useState({});
+    const [notePath, setNotePath] = useState({});
+    const [notes, setNotes] = useState({});
+    const [savedNotes, setSavedNotes] = useState(JSON.parse(localStorage.getItem('saved-notes-paint')) || {});
+    const [visible, setVisible] = useState(visibleLifted);
+    const [goal, setGoal] = useState(JSON.parse(localStorage.getItem(`goalProgress-paint-${notePath}`))?.goal);
+    const [progress, setProgress] = useState(JSON.parse(localStorage.getItem(`goalProgress-paint-${notePath}`))?.progress);
+    const [workingThisRow, setWorkingThisRow] = useState('');
+
+    const handleClose = () => setVisible(false);
+    const handleOpen = () => setVisible(true);
+
+    useEffect(() => {
+        const row = dataLifted[workingThisRow];
+        const storedData = JSON.parse(localStorage.getItem(`goalProgress-paint-${row?.id}`));
+
+        spMethod.fetchSharePointData('NOTES', departmentName);
+        spMethod.fetchSharePointData('REPORTS', departmentName);
+        spMethod.fetchSharePointData('ISSUES', departmentName);
+
+        if (storedData) {
+            setGoal(storedData.goal);
+            setProgress(storedData.progress);
+        }
+    }, [dataLifted, workingThisRow]);
+
+    $(document).on('click', '.icon.close', handleClose);
+
+    useEffect(() => {
+        $('.menu .item').tab();
+        $('.ui .item').tab();
+        $('.ui.dropdown').dropdown({ allowAdditions: true });
+        $('.ui.progress').progress();
+    }, []);
+
+    useEffect(() => {
+        const fetchImages = async () => {
+            const imageMap = {};
+            await Promise.all(
+                dataLifted.map(async (row) => {
+                    const path = await getImagePath(row);
+                    imageMap[row[0]] = path;
+                })
+            );
+            setImagePaths(imageMap);
+        };
+
+        if (dataLifted.length > 0) fetchImages();
+    }, [dataLifted]);
+
+
+    $(document).on('click', '.save-note-paint', function (e) {
+        e.preventDefault()
+        let rowIndex = $(this).data('rowindexsave');
+        let noteId = $(this).data('noteidsave');
+        saveNoteToLocalStorage(noteId, rowIndex, notes[noteId]);
+    });
+
+     $(document).on('change', '.note-area', function (e) {
+        let rowIndex = $(this).data('rowindex');
+        let noteId = $(this).data('noteid');
+        handleNoteChange(rowIndex, e, noteId);
+    }); 
+
+    const formatTimestamp = (timestamp) => {
+        const date = new Date(timestamp);
+        return date.toLocaleString('en-US', {
+            weekday: 'short',
+            month: 'short',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
+        }).replace(',', '');
+    };
+
+    const handleNoteChange = (rowIndex, e, noteId) => {
+        setNotes(prevNotes => ({
+            ...prevNotes,
+            [noteId]: {
+                [rowIndex]: e.target.value,
+                noteId: noteId,
+                date: Date.now()
+            }
+        }));
+    };
+
+    const saveNoteToLocalStorage = (noteId, rowIndex, newNote) => {
+        let saveNotes = JSON.parse(localStorage.getItem('saved-notes-paint')) || {};
+
+        if (!saveNotes[noteId]) saveNotes[noteId] = { noteId, date: Date.now() };
+        if (!saveNotes[noteId][rowIndex]) saveNotes[noteId][rowIndex] = [];
+
+        if (Array.isArray(saveNotes[noteId][rowIndex])) {
+           // saveNotes[noteId][rowIndex] = saveNotes[noteId][rowIndex].filter(note => note !== null);
+
+            if (newNote && newNote.noteId) {
+                const noteExists = saveNotes[noteId][rowIndex].find(note => note.noteId === newNote.noteId && note.date === newNote.date);
+                
+                console.log(noteExists)
+                if (!noteExists) {
+                    saveNotes[noteId][rowIndex].push(newNote);
+                    localStorage.setItem('saved-notes-paint', JSON.stringify(saveNotes));
+                   
+                    /* spMethod.handleSubmit(noteId, JSON.stringify(savedNotes), 'paint', 'NOTES')
+                        .then(e => console.log(e))
+                        .catch(err => console.log(err)); */
+                    setSavedNotes(saveNotes);
+                }
+            } else {
+                console.error('Invalid newNote object', newNote);
+            }
+        } else {
+            console.error(`Expected an array for savedNotes[${noteId}][${rowIndex}], but found:`, saveNotes[noteId][rowIndex]);
+        }
+    };
+
+
+    const getPdfPath = (row) => {
+        const pdfFolder = "img/";
+        const pdfName = row[2], pdfName2 = row[5], pdfName3 = row[9];
+        return [`${pdfFolder}${pdfName}.pdf`, `${pdfFolder}${pdfName2}.pdf`, `${pdfFolder}${pdfName3}.pdf`];
+    };
+
+    const openPdfModal = (pdfFile) => $('.ui.fullscreen.modal.pdf-viewer.paint').modal('show');
+    const openNoteModal = () => $('.ui.small.modal.note-viewer.paint').modal('show');
+
+    const checkImageExists = (path) => {
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.src = path;
+            img.onerror = () => resolve(false);
+            img.onload = () => resolve(true);
+        });
+    };
+
+    const getImagePath = async (row) => {
+        const imageName = row[0];
+        const extensions = ['jpg', 'jpeg', 'png', 'gif', 'avif', 'webp'];
+
+        for (let ext of extensions) {
+            const path = `img/${imageName}.${ext}`;
+            if (await checkImageExists(path)) return path;
+        }
+    };
+
+    const calculateCompletion = (goal, progress) => {
+        if (!goal || !progress) return 0;
+        return Math.min((progress / goal) * 100, 100);
+    };
+
+    const calculateRemaining = (goal, progress) => {
+        if (!goal || !progress) return 0;
+        return goal - progress;
+    };
+
+    const filteredData = dataLifted.filter(row => {
+        return row.some(cell => (cell || '').toString().trim().toLowerCase().includes(searchQueryLifted.toLowerCase().trim()));
+    });
+
+    const headers = dataLifted[0] || [];
+
+    return (
+        <div className="ui grid" style={{ marginTop: '20px' }}>
+            {/* Display each row in its own segment with name on top */}
+            <DisplayPaneNew
+                selectedDepartment={selectedDepartment}
+                filteredData={filteredData}
+                imagePaths={imagePaths}
+                headers={headers}
+                getPdfPath={getPdfPath}
+                openPdfModal={openPdfModal}
+                openNoteModal={openNoteModal}
+                setPdfPath={setPdfPath}
+                setPdfPath2={setPdfPath2}
+                setPdfPath3={setPdfPath3}
+                setNotePath={setNotePath}
+                setWorkingThisRow={setWorkingThisRow}
+                setGoal={setGoal}
+                setProgress={setProgress}
+                goal={goal}
+                progress={progress}
+                calculateCompletion={calculateCompletion}
+                calculateRemaining={calculateRemaining}
+                workingThisRow={workingThisRow}
+                departmentName={departmentName}
+                spMethod={spMethod}
+                clearLoading={clearLoading}
+                setWOnDev={setWOnDev}
+                woNdev={woNdev}
+            />
+
+            {/* Modal for viewing pdf */}
+            <div className="ui fullscreen modal pdf-viewer paint">
+                <div className="header">Drawing</div>
+                <div className="content">
+                    {/* Tabs Menu */}
+                    <div className="ui top attached tabular menu">
+                        <a className="item active" data-tab={headers[2]}>{headers[2]}</a>
+                        <a className="item" data-tab={headers[5]}>{headers[5]}</a>
+                        <a className="item" data-tab={headers[9]}>{headers[9]}</a>
+                    </div>
+
+                    {/* Tab Content Wrapper */}
+                    <div className="ui bottom attached active tab segment" data-tab={headers[2]}>
+                        <embed id="pdf-embed" src={pdfPath} type="application/pdf" width="100%" height="600px" />
+                    </div>
+                    <div className="ui bottom attached tab segment" data-tab={headers[5]}>
+                        <embed id="pdf-embed" src={pdfPath2} type="application/pdf" width="100%" height="600px" />
+                    </div>
+                    <div className="ui bottom attached tab segment" data-tab={headers[9]}>
+                        <embed id="pdf-embed" src={pdfPath3} type="application/pdf" width="100%" height="600px" />
+                    </div>
+                </div>
+            </div>
+
+            {/* Modal for viewing notes */}
+            <div className="ui small modal note-viewer paint">
+  <div className="header">Notes</div>
+
+  <div className="content">
+    {/* Tabs Menu */}
+    <div className="ui top attached tabular menu">
+      <a className="item active" data-tab="current">Current Notes</a>
+      <a className="item" data-tab="saved">Saved Notes</a>
+    </div>
+
+    {/* Tab Content Wrapper */}
+    <div className="ui bottom attached tab segment" data-tab="current">
+      {dataLifted.map((row, rowIndex) =>
+        notePath === row[0] && (
+          <div key={rowIndex} className="ui segment basic">
+            <h3>Model {row[0]}</h3>
+            <div className="ui comments">
+              <div className="comment">
+                <div className="content">
+                  <a className="author">User</a>
+                  <div className="metadata">
+                    <div className="date">Just now</div>
+                  </div>
+                  <div className="text">
+                    {notes[row[0]] && notePath === notes[row[0]].noteId
+                      ? notes[row[0]][rowIndex] ?? 'No notes yet...'
+                      : 'No notes yet...'}
+                  </div>
+                  <form className="ui reply form">
+                    <div className="field">
+                      <textarea
+                        className="note-area"
+                        placeholder="Enter your note..."
+                        data-rowIndex={rowIndex}
+                        data-noteId={row[0]}
+                      />
+                    </div>
+                  </form>
+                  <div className="ui divider hidden" />
+                  <button
+                    className="ui primary labeled icon button save-note-paint"
+                    data-rowIndexSave={rowIndex}
+                    data-noteIdSave={row[0]}
+                  >
+                    <i className="icon edit" />
+                    Add Note
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )
+      )}
+    </div>
+
+    <div
+      className="ui bottom attached tab segment"
+      data-tab="saved"
+      style={{ maxHeight: '300px', overflowY: 'auto' }} // Add these styles for scrolling
+    >
+      {Object.keys(savedNotes).map((noteId) => {
+        const note = savedNotes[noteId];
+        return noteId === notePath.toString() && (
+          <div key={noteId} className="ui segment basic">
+            <h3 style={{ top: '0', backgroundColor: 'white', zIndex: 1, padding: '3% 0' }}>
+              Saved Notes for Model {noteId}
+            </h3>
+            <div className="ui comments">
+              {Object.keys(note).map((rowIndex) => {
+                if (rowIndex !== 'noteId' && rowIndex !== 'date') {
+                  return Array.isArray(note[rowIndex]) ? note[rowIndex].map((entry, index) => (
+                    <div key={index} className="comment">
+                      <div className="content">
+                        <a className="author">User</a>
+                        <div className="metadata">
+                          <div className="date">{formatTimestamp(entry.date)}</div>
+                        </div>
+                        <div className="text">{entry[rowIndex]}</div>
+                      </div>
+                    </div>
+                  )) : null;
+                }
+              })}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  </div>
+</div>
+
+        </div>
+    );
+};
+
+
+
+    </script>
+    <script type="text/babel">
+        const { useState, useEffect } = React
+/* import DisplayPane from './components_ jsx/detailPane.js';
+import Editor from './components_ jsx/editor.js'; // Import Editor component
+import PickListApp from './components_ jsx/pickList.js';
+import { main } from './js/spMethod.js';
+import LookupComponent from './components_ jsx/lookupPane.js'; // Import the new LookupComponent
+import PackoutLookup from './components_ jsx/lookupPanePackout.js';
+import TopMenuBar from './components_ jsx/searchBar.js';
+import DetailPane from './components_ jsx/detailPane.js';
+import DetailPaneMini from './components_ jsx/detailPaneMini.js';
+import LookUpTable from './components_ jsx/lookupTable.js';
+import IssueSelect from './components_ jsx/issuePane.js';
+import LinesEditor from './components_ jsx/editorLine.js';
+import LineSelection from './components_ jsx/chooseLine.js';
+import ChartContainer from './components_ jsx/chart.js';
+import InventoryLookup from './components_ jsx/inventory.js';
+import LoginToken from './components_ jsx/login.js';
+import Dashboard from './components_ jsx/dashboard.js';
+ */
+function DepartmentMenu() {
+
+    const [selectedDepartment, setSelectedDepartment] = useState('Reports');
+    const [departmentIcon, setDepartmentIcon] = useState('certificate');
+    // State for handling search query
+    const [searchQueryLifted, setSearchQuery] = useState('');
+    // State for controlling the visibility of the save warning message
+    const [visibleLifted, setVisible] = useState(false);
+    const [dataLifted, setData] = useState([]);
+    const [sheetNameLifted, setSheetName] = useState('');
+    const [tableData, setTableData] = useState(null);
+    const [packoutTableData, setPackoutTableData] = useState(null);
+    const [tableHeaders, setHeaders] = useState([
+        ["Model", "Description", "All of packout kits", "Oil", "Gun", "Lance", "Soap Hose / Filter", "knob bolts", "Hose", "Hose Hanger", "Gun Holder"],
+        ['Model #', 'Frame Color', 'Raw Frame', 'Frame #', 'Frame Description', 'Raw Handle', 'Handle', 'Handle Description', 'Raw 2nd Handle', '2nd Handle', '2nd Handle Description']
+    ])
+    // State to store the selected number
+    const [selectedNumber, setSelectedNumber] = useState(null);
+    const [loginModalOpen, setLoginModalOpen] = useState(false); // State to control login modal visibility
+    const [clearLoading, setClearLoading] = useState(true);
+    const [userInfo, setUserInfo] = useState(null);
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [woNdev, setWOnDev] = useState();
+    const [userName, setUserName] = useState(undefined);
+
+
+    useEffect(() => {
+        if (!tableData) {
+
+            main.fetchSharePointData('FRAMETABLE', 'all', true, setTableData, '')
+                .then(e => e)
+                .catch(err => console.log(err.error.message))
+
+            main.fetchSharePointData('PACKOUTTABLE', 'all', true, '', setPackoutTableData)
+                .then(e => e)
+                .catch(err => console.log(err.error.message));
+
+
+        } else if (dataLifted.length === 0 && Array.isArray(tableData) && selectedDepartment !== 'Packout') {
+
+            let table = [tableHeaders[1]];
+            let arry = [];
+            for (let t of tableData) {
+                arry = [t.fields.Title]
+                for (let i = 1; i <= 10; i++) {
+                    arry.push(t.fields[`field_${i}`]);
+                }
+                table.push(arry)
+            }
+            setData(table);
+            setClearLoading(false);
+
+
+        } else if (dataLifted.length === 0 && Array.isArray(packoutTableData) && selectedDepartment === 'Packout') {
+
+            let table = [tableHeaders[0]];
+            let arry = [];
+            for (let t of packoutTableData) {
+                arry = [t.fields.Title]
+                for (let i = 2; i <= 9; i++) {
+                    arry.push(t.fields[`field_${i}`]);
+                }
+                table.push(arry)
+            }
+            setData(table);
+            setClearLoading(false);
+
+        }
+
+
+    }, [tableData, packoutTableData, selectedDepartment])
+
+    useEffect(() => {
+
+        if (selectedDepartment === 'Paint') {
+            setDepartmentIcon('certificate')
+        } else if (selectedDepartment === 'Packout') {
+            setDepartmentIcon('certificate')
+        } else if (selectedDepartment === 'Handles') {
+            setDepartmentIcon('certificate')
+        } else if (selectedDepartment === 'Frames') {
+            setDepartmentIcon('certificate');
+        } else if (selectedDepartment === 'Lines') {
+            setDepartmentIcon('cog');
+        }
+
+    }, [selectedDepartment, isLoggedIn])
+
+    useEffect(() => {
+        $('.ui.login.dimmer').dimmer('hide')
+        getMe()
+    }, [userInfo, isLoggedIn])
+    useEffect(()=>{if(userInfo ){setUserName(userInfo.displayName); console.log(userName)}},[userInfo])
+
+    const getMe = async () => {
+        const accessToken = sessionStorage.getItem('access_token');
+        try {
+            if (!userInfo && accessToken)
+                fetch("https://graph.microsoft.com/v1.0/me", {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`
+                    }
+                })
+                    .then(response => response.json())
+                    .then(data => { setUserInfo(data); setIsLoggedIn(true); })
+                    .catch(error => setIsLoggedIn(false));
+        } catch (error) {
+            setIsLoggedIn(false);
+        }
+
+    }
+
+
+    const handleDepartmentClick = (department) => {
+        setData([]);
+        setSelectedDepartment(department);
+    };
+
+    const renderContent = () => {
+        switch (selectedDepartment) {
+            case 'Paint':
+                return (
+                    <div className="ui">
+                        <Editor
+                            spMethod={main}
+                            selectedDepartment="FRAMES KIT"
+                            departmentName='frames'
+                            searchQueryLifted={searchQueryLifted}
+                            visibleLifted={visibleLifted}
+                            dataLifted={dataLifted}
+                            sheetNameLifted={sheetNameLifted}
+                            setData={setData}
+                            clearLoading={clearLoading}
+                            setWOnDev={setWOnDev}
+                            woNdev={woNdev}
+                        />
+                    </div>
+                );
+            case 'Packout':
+                return (
+                    <div className="ui">
+                        <Editor
+                            spMethod={main}
+                            selectedDepartment="PACKOUT KIT"
+                            departmentName='packout'
+                            searchQueryLifted={searchQueryLifted}
+                            visibleLifted={visibleLifted}
+                            dataLifted={dataLifted}
+                            sheetNameLifted={sheetNameLifted}
+                            setData={setData}
+                            clearLoading={clearLoading}
+                            setWOnDev={setWOnDev}
+                            woNdev={woNdev}
+                        />
+                    </div>
+                );
+            case 'Handles':
+                return (
+                    <div className="ui">
+                        <Editor
+                            spMethod={main}
+
+                            selectedDepartment="HANDLE KIT"
+
+
+                            departmentName='handles'
+                            searchQueryLifted={searchQueryLifted}
+                            visibleLifted={visibleLifted}
+                            dataLifted={dataLifted}
+                            sheetNameLifted={sheetNameLifted}
+                            setData={setData}
+                            clearLoading={clearLoading}
+                            setWOnDev={setWOnDev}
+                            woNdev={woNdev}
+                        />
+                    </div>
+                );
+            case 'Frames':
+                return (
+                    <div className="ui">
+                        <Editor
+                            spMethod={main}
+
+                            selectedDepartment="FRAME KIT"
+
+                            departmentName='frames'
+                            searchQueryLifted={searchQueryLifted}
+                            visibleLifted={visibleLifted}
+                            dataLifted={dataLifted}
+                            sheetNameLifted={sheetNameLifted}
+                            setData={setData}
+                            clearLoading={clearLoading}
+                            setWOnDev={setWOnDev}
+                            woNdev={woNdev}
+                        />
+                    </div>
+                );
+            case 'Lines':
+                return (
+                    <div className="ui">
+                        <LinesEditorNew
+                            spMethod={main}
+
+                            selectedDepartment="LINES KIT"
+
+                            departmentName='line'
+                            searchQueryLifted={searchQueryLifted}
+                            visibleLifted={visibleLifted}
+                            dataLifted={dataLifted}
+                            sheetNameLifted={sheetNameLifted}
+                            setSelectedNumber={setSelectedNumber}
+                            selectedNumber={selectedNumber}
+                            clearLoading={clearLoading}
+                            setWOnDev={setWOnDev}
+                            woNdev={woNdev}
+                        />
+                    </div>
+                );
+            case 'Inventory':
+                return (
+                    <div className="ui">
+                        <InventoryLookup
+                            spMethod={main}
+                            selectedDepartment="Inventory"
+                            departmentName={['inventory', 'sage']}
+                            searchQueryLifted={searchQueryLifted}
+                            clearLoading={clearLoading}
+                        />
+                    </div>
+                );
+            case 'Reports':
+                return (
+                    <div className="ui">
+                        <Dashboard spMethod={main} />
+                    </div>
+                );
+            default:
+                return (
+                    <div className="ui sixteen wide column segment" style={{ position: 'absolute', top: '60%', left: '50%', transform: 'translate(-50%, 60%)' }}>
+                        <h2>No Access Yet</h2>
+                        <p>
+                            Please contact admin for access to this department.
+                            <a href={`mailto:${userInfo.mail}`}>{userInfo.mail}</a>
+                        </p>
+                    </div>
+                );
+        }
+    };
+
+    const topBar = () => (
+        <TopMenuBar
+            searchQueryLifted={searchQueryLifted}
+            setSearchQuery={setSearchQuery}
+            visibleLifted={visibleLifted}
+            setVisible={setVisible}
+            setData={setData}
+            dataLifted={dataLifted}
+            sheetNameLifted={sheetNameLifted}
+            setSheetName={setSheetName}
+        />
+    );
+
+    const header = () => {
+        return (
+            <div>
+                <h1 className="ui header huge" style={{ marginTop: '2%', marginLeft: '3%' }}>
+                    <div className="ui image avatar">
+                        <img
+                            src="img/logo.jpg" // replace with your image source
+                            alt="Department Image"
+                        />
+                    </div>
+                    {selectedDepartment}
+                </h1>
+            </div>
+        );
+    };
+
+    const leftMenuBar = () => {
+        return (
+            <div className="ui left fixed vertical menu">
+                <div className="item">
+                    <div className="ui header">{userName ? userName : 'Not Logged In'}</div>
+                </div>
+                {topBar()}
+                {['Reports', 'Paint', 'Handles', 'Pumps', 'Packout', 'Hose', 'Frames', 'Lines', 'Inventory'].map(department => (
+                    <a
+                        key={department}
+                        className={`item ${selectedDepartment === department ? 'active' : ''}`}
+                        onClick={() => {
+                            handleDepartmentClick(department);
+                            setClearLoading(true);
+                        }}
+                    >
+                        {department}
+                    </a>
+                ))}
+                {/* Login button to toggle the login modal */}
+                <a className="item">
+                    <button
+                        className={`ui ${userName !== undefined ? 'red' : 'primary'} button fluid`}
+                        onClick={() => setLoginModalOpen(!loginModalOpen)}
+                    >
+                        {userName !== undefined ? 'Logout' : 'Login'}
+                    </button>
+                </a>
+            </div>
+        );
+    };
+
+    const loginUser = ()=>{
+
+        setIsLoggedIn(true);
+        setSelectedDepartment('Paint');
+        setUserName(userInfo.displayName);
+
+      }
+      const loginModal = () => {
+        return (
+          <div className={`ui page dimmer login ${loginModalOpen ? 'active show' : 'hide'}`}>
+            <div className="header">Login</div>
+            <div className="content">
+              <LoginTokenNew 
+              setIsLoggedIn={loginUser} 
+              isLoggedIn={isLoggedIn}
+               />
+            </div>
+            <div className="actions">
+              <button
+                className="ui red button deny"
+                onClick={() => setLoginModalOpen(false)}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        );
+      };
+
+    return (
+        <div className="ui">
+            <div className="ui grid contentPane">
+                {/* Left Sidebar Menu */}
+                {leftMenuBar()}
+
+                {/* Content Area with manually created tabs */}
+                <div className="ui sixteen wide column" style={{ marginLeft: '15.5%', paddingRight: '5%' }}>
+                    {header()}
+                    {renderContent()}
+                    {loginModal()}
+                </div>
+            </div>
+        </div>
+    );
+}
+ReactDOM.render(<DepartmentMenu />, document.getElementById('root'));
+
+
+    </script>
+
+
+
+
+
+
+
+
+</body>
+
+</html>

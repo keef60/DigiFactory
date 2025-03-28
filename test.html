@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Excel with Colored Cells</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+  <h1>Create an Excel file with Colored Cells</h1>
+  <button onclick="generateExcel()">Download Excel</button>
+
+  <script>
+    function generateExcel() {
+      // Create a worksheet with sample data
+      const ws = XLSX.utils.aoa_to_sheet([
+        ["Header 1", "Header 2", "Header 3"],  // Row 1 (headers)
+        ["Data 1", "Data 2", "Data 3"],        // Row 2 (data)
+        ["Data 4", "Data 5", "Data 6"]         // Row 3 (data)
+      ]);
+
+      // Apply styles to the cells (background color)
+      ws["A1"].s = { 
+        fill: { 
+          fgColor: { rgb: "FFFF00" }  // Yellow
+        },
+        font: { bold: true }
+      }; 
+      
+      ws["B2"].s = { 
+        fill: { 
+          fgColor: { rgb: "00FF00" }  // Green
+        },
+        font: { bold: true }
+      };
+      
+      ws["C3"].s = { 
+        fill: { 
+          fgColor: { rgb: "FF0000" }  // Red
+        },
+        font: { bold: true }
+      };
+
+      // Create a new workbook
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+
+      // Write the workbook to a file
+      XLSX.writeFile(wb, "colored_cells.xlsx");
+    }
+  </script>
+</body>
+</html>
