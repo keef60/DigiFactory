@@ -1,4 +1,6 @@
-const { useState, useEffect } = React
+
+
+const { useState, useEffect, useRef } = React
 function DepartmentMenu() {
 
     const [selectedDepartment, setSelectedDepartment] = useState('Paint');
@@ -24,7 +26,34 @@ function DepartmentMenu() {
     const [woNdev, setWOnDev] = useState();
     const [userName, setUserName] = useState(undefined);
     const [newError, setError] = useState(undefined);
+    const [issesListData, setIssesListData] = useState([]);
 
+
+
+    useEffect(() => {
+        const r = async () => {
+            try {
+                await main.fetchSharePointData('IssueList', 'issues')
+                    .then((e) => {
+                        const fields = e.value[0].fields;
+                        console.log("===================>>", fields);
+                        // Save the data into the refs
+                        setIssesListData(fields);
+                        // Set other lists to the refs if needed
+                        // reportDowntimeDurationsListRef.current = fields['downtimeDurations'];
+                        // reportImpactListRef.current = fields['impact'];
+                        // reportMachineListRef.current = fields['machine'];
+                    });
+            } catch (error) {
+                console.log("<==========================", error)
+                return error;
+            }
+        };
+        if (issesListData.length === 0) {
+            r().then((e) => e).catch(er => console.log(er))
+
+        };
+    }, [issesListData]);
 
     useEffect(() => {
         if (!tableData) {
@@ -54,7 +83,6 @@ function DepartmentMenu() {
 
 
         } else if (dataLifted.length === 0 && Array.isArray(packoutTableData) && selectedDepartment === 'Packout') {
-
             let table = [tableHeaders[0]];
             let arry = [];
             for (let t of packoutTableData) {
@@ -67,8 +95,6 @@ function DepartmentMenu() {
             setData(table);
             setClearLoading(false);
         }
-
-
     }, [tableData, packoutTableData, selectedDepartment]);
 
     useEffect(() => {
@@ -118,6 +144,7 @@ function DepartmentMenu() {
 
     const contentMasterSeletor = (selectedDepartmentListName, departmentName) => {
         return (
+            departmentName === 'line' ? 
             <LinesEditorNew
                 spMethod={main}
                 selectedDepartment={selectedDepartmentListName}
@@ -131,12 +158,24 @@ function DepartmentMenu() {
                 clearLoading={clearLoading}
                 setWOnDev={setWOnDev}
                 woNdev={woNdev}
-            />
+                issesListData={issesListData}
+            /> :
+                <Editor
+                    spMethod={main}
+                    selectedDepartment={selectedDepartmentListName}
+                    departmentName={departmentName}
+                    searchQueryLifted={searchQueryLifted}
+                    visibleLifted={visibleLifted}
+                    dataLifted={dataLifted}
+                    sheetNameLifted={sheetNameLifted}
+                    setSelectedNumber={setSelectedNumber}
+                    selectedNumber={selectedNumber}
+                    clearLoading={clearLoading}
+                    setWOnDev={setWOnDev}
+                    woNdev={woNdev}
+                    issesListData={issesListData} />
         )
     }
-
-
-
 
 
     const renderContent = () => {
@@ -195,6 +234,11 @@ function DepartmentMenu() {
             case 'Maintenance Status': return (
                 <MaintenanceStatus />
             );
+
+            case 'Maintenance Request': return (
+                <MaintenanceRequest />
+            );
+
             case 'Throughput Report': return (
                 <ThroughputReport />
             );
