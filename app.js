@@ -4,7 +4,6 @@ const { useState, useEffect, useRef } = React
 function DepartmentMenu() {
 
     const [selectedDepartment, setSelectedDepartment] = useState('Paint');
-    const [departmentIcon, setDepartmentIcon] = useState('certificate');
     // State for handling search query
     const [searchQueryLifted, setSearchQuery] = useState('');
     // State for controlling the visibility of the save warning message
@@ -27,7 +26,28 @@ function DepartmentMenu() {
     const [userName, setUserName] = useState(undefined);
     const [newError, setError] = useState(undefined);
     const [issesListData, setIssesListData] = useState([]);
+    const [sage, setSage] = useState([]);
+    const [inventory, setInventory] = useState([]);
 
+useEffect(()=>{
+
+    
+      const stock = async()=>{   
+        try {
+            const sage = await spMethod.fetchSharePointData("Inventory", "sage", false).then(e=>e);
+    const inventory = await spMethod.fetchSharePointData("Inventory", "inventory", false).then(e=>e) ;
+    console.log(sage)
+    setInventory(inventory);
+    setSage(sage);
+        } catch (error) {
+            console.log("}}}}}}}}}}}}}}}}}}}}}}}>>>>>>>>>>>>>>>",error)
+            
+        }
+        
+        stock()
+   
+}
+},[sage,inventory])
 
 
     useEffect(() => {
@@ -107,6 +127,13 @@ function DepartmentMenu() {
             setUserName(userInfo.displayName);
         }
     }, [userInfo]);
+    
+    useEffect(() => {
+        $('.ui.sticky')
+            .sticky()
+
+    });
+
 
     const getMe = async () => {
         const accessToken = sessionStorage.getItem('access_token');
@@ -144,22 +171,23 @@ function DepartmentMenu() {
 
     const contentMasterSeletor = (selectedDepartmentListName, departmentName) => {
         return (
-            departmentName === 'line' ? 
-            <LinesEditorNew
-                spMethod={main}
-                selectedDepartment={selectedDepartmentListName}
-                departmentName={departmentName}
-                searchQueryLifted={searchQueryLifted}
-                visibleLifted={visibleLifted}
-                dataLifted={dataLifted}
-                sheetNameLifted={sheetNameLifted}
-                setSelectedNumber={setSelectedNumber}
-                selectedNumber={selectedNumber}
-                clearLoading={clearLoading}
-                setWOnDev={setWOnDev}
-                woNdev={woNdev}
-                issesListData={issesListData}
-            /> :
+            departmentName === 'line' ?
+                <LinesEditorNew
+                    spMethod={main}
+                    selectedDepartment={selectedDepartmentListName}
+                    departmentName={departmentName}
+                    searchQueryLifted={searchQueryLifted}
+                    visibleLifted={visibleLifted}
+                    dataLifted={dataLifted}
+                    sheetNameLifted={sheetNameLifted}
+                    setSelectedNumber={setSelectedNumber}
+                    selectedNumber={selectedNumber}
+                    clearLoading={clearLoading}
+                    setWOnDev={setWOnDev}
+                    woNdev={woNdev}
+                    issesListData={issesListData}
+                    setSearchQuery={setSearchQuery}
+                /> :
                 <Editor
                     spMethod={main}
                     selectedDepartment={selectedDepartmentListName}
@@ -173,7 +201,9 @@ function DepartmentMenu() {
                     clearLoading={clearLoading}
                     setWOnDev={setWOnDev}
                     woNdev={woNdev}
-                    issesListData={issesListData} />
+                    issesListData={issesListData}
+                    setSearchQuery={setSearchQuery}
+                />
         )
     }
 
@@ -224,7 +254,6 @@ function DepartmentMenu() {
                     />
 
                 );
-
             case 'Daily Production Overview': return (
                 <DailyProductionOverview />
             );
@@ -234,11 +263,9 @@ function DepartmentMenu() {
             case 'Maintenance Status': return (
                 <MaintenanceStatus />
             );
-
             case 'Maintenance Request': return (
                 <MaintenanceRequest />
             );
-
             case 'Throughput Report': return (
                 <ThroughputReport />
             );
@@ -313,7 +340,22 @@ function DepartmentMenu() {
     };
 
     return (
-        <div className="ui">
+        <div className="ui  ">
+            <div style={{ position: 'sticky', top: 0, zIndex: 4 }}>
+
+                <TopMenuBar
+                    searchQueryLifted={searchQueryLifted}
+                    setSearchQuery={setSearchQuery}
+                    visibleLifted={visibleLifted}
+                    setVisible={setVisible}
+                    setData={setData}
+                    dataLifted={dataLifted}
+                    sheetNameLifted={sheetNameLifted}
+                    setSheetName={setSheetName}
+                    liftedData={dataLifted}
+                    notMenuSearch={true}
+                />
+            </div>
             <div className="ui grid contentPane">
                 {/* Left Sidebar Menu */}
                 <LeftMenuBar
@@ -332,7 +374,6 @@ function DepartmentMenu() {
                     selectedDepartment={selectedDepartment}
                     loginModalOpen={loginModalOpen}
                 />
-
                 {/* Content Area with manually created tabs */}
                 <div className="ui sixteen wide column" style={{ marginLeft: '15.5%', paddingRight: '5%' }}>
                     <ErrorMessage error={newError} />
@@ -343,6 +384,7 @@ function DepartmentMenu() {
             </div>
         </div>
     );
+
 }
 ReactDOM.render(<DepartmentMenu />, document.getElementById('root'));
 
