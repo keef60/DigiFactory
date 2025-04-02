@@ -24,53 +24,53 @@ function DepartmentMenu() {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [woNdev, setWOnDev] = useState();
     const [userName, setUserName] = useState(undefined);
-    const [newError, setError] = useState(undefined);
+    const [newError, setError] = useState();
     const [issesListData, setIssesListData] = useState([]);
-    const [sage, setSage] = useState([]);
-    const [inventory, setInventory] = useState([]);
+    const inventoryRef = useRef([]);
+    const [inventory, setInventory] = useState(undefined);
 
-useEffect(()=>{
+    useEffect(() => {
+        $('.ui.login.dimmer').dimmer('hide');
+        getMe();
+    }, [userInfo, isLoggedIn, newError]);
 
-    
-      const stock = async()=>{   
-        try {
-            const sage = await spMethod.fetchSharePointData("Inventory", "sage", false).then(e=>e);
-    const inventory = await spMethod.fetchSharePointData("Inventory", "inventory", false).then(e=>e) ;
-    console.log(sage)
-    setInventory(inventory);
-    setSage(sage);
-        } catch (error) {
-            console.log("}}}}}}}}}}}}}}}}}}}}}}}>>>>>>>>>>>>>>>",error)
-            
-        }
-        
-        stock()
-   
-}
-},[sage,inventory])
+    useEffect(() => {
 
+        const stock = async () => {
+
+            await main.fetchSharePointData("Inventory", "inventory", false)
+                .then(e => {
+                    inventoryRef.current = e;
+                    setInventory(e)
+                    console.log('Inventory LOADED', inventoryRef);
+                })
+                .catch(err => {
+                    setError(err);
+                    console.log('================> STOCK ERROR', err);
+                });
+        };
+
+        stock();
+
+    }, []);
 
     useEffect(() => {
         const r = async () => {
-            try {
-                await main.fetchSharePointData('IssueList', 'issues')
-                    .then((e) => {
-                        const fields = e.value[0].fields;
-                        console.log("===================>>", fields);
-                        // Save the data into the refs
-                        setIssesListData(fields);
-                        // Set other lists to the refs if needed
-                        // reportDowntimeDurationsListRef.current = fields['downtimeDurations'];
-                        // reportImpactListRef.current = fields['impact'];
-                        // reportMachineListRef.current = fields['machine'];
-                    });
-            } catch (error) {
-                console.log("<==========================", error)
-                return error;
-            }
-        };
+
+            await main.fetchSharePointData('IssueList', 'issues')
+                .then((e) => {
+                    const fields = e.value[0].fields;
+                    console.log("===================>>", fields);
+                    // Save the data into the refs
+                    setIssesListData(fields);
+
+                }).catch(err => {
+                    setError(err);
+                    console.log('================> STOCK ERROR', err);
+                });
+        }
         if (issesListData.length === 0) {
-            r().then((e) => e).catch(er => console.log(er))
+            r().then((e) => e).catch(er => setError(error))
 
         };
     }, [issesListData]);
@@ -80,11 +80,11 @@ useEffect(()=>{
 
             main.fetchSharePointData('FRAMETABLE', 'all', true, setTableData, '')
                 .then(e => e)
-                .catch(err => console.log(err.error.message))
+                .catch(err => setError(err))
 
             main.fetchSharePointData('PACKOUTTABLE', 'all', true, '', setPackoutTableData)
                 .then(e => e)
-                .catch(err => console.log(err.error.message));
+                .catch(err => setError(err));
 
 
         } else if (dataLifted.length === 0 && Array.isArray(tableData) && selectedDepartment !== 'Packout') {
@@ -118,50 +118,30 @@ useEffect(()=>{
     }, [tableData, packoutTableData, selectedDepartment]);
 
     useEffect(() => {
-        $('.ui.login.dimmer').dimmer('hide');
-        getMe();
-    }, [userInfo, isLoggedIn, newError]);
-
-    useEffect(() => {
         if (userInfo) {
             setUserName(userInfo.displayName);
         }
     }, [userInfo]);
-    
-    useEffect(() => {
-        $('.ui.sticky')
-            .sticky()
-
-    });
-
 
     const getMe = async () => {
         const accessToken = sessionStorage.getItem('access_token');
-        try {
-            if (!userInfo && accessToken) {
-                fetch("https://graph.microsoft.com/v1.0/me", {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${accessToken}`
-                    }
-                })
-                    .then(response => response.json())
-                    .then(data => { setUserInfo(data); setIsLoggedIn(true); })
-                    .catch(error => {
 
-                        setIsLoggedIn(false);
-                        setError(error);
-                        console.log('======================>', error)
-                    });
-            }
-        } catch (error) {
-
-            setIsLoggedIn(false);
-            setError(error);
-            console.log('<========================>', error)
+        if (!userInfo && accessToken) {
+            fetch("https://graph.microsoft.com/v1.0/me", {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`
+                }
+            })
+                .then(response => response.json())
+                .then(data => { setUserInfo(data); setIsLoggedIn(true); })
+                .catch(error => {
+                    setIsLoggedIn(false);
+                    setError(error);
+                    console.log(' getME()======================>', error)
+                });
         }
-
-    }
+    };
 
 
     const handleDepartmentClick = (department) => {
@@ -187,6 +167,7 @@ useEffect(()=>{
                     woNdev={woNdev}
                     issesListData={issesListData}
                     setSearchQuery={setSearchQuery}
+                    setError={setError}
                 /> :
                 <Editor
                     spMethod={main}
@@ -205,11 +186,11 @@ useEffect(()=>{
                     setSearchQuery={setSearchQuery}
                 />
         )
-    }
-
+    };
 
     const renderContent = () => {
         switch (selectedDepartment) {
+ 
             case 'Paint':
                 return (
                     contentMasterSeletor("FRAMES KIT", 'frames')
@@ -231,6 +212,8 @@ useEffect(()=>{
                     contentMasterSeletor("LINES KIT", 'line')
                 )
             case 'Inventory':
+                const setting = { report: false }
+
                 return (
 
                     <InventoryLookup
@@ -238,11 +221,26 @@ useEffect(()=>{
                         selectedDepartment="Inventory"
                         departmentName={['inventory', 'sage']}
                         searchQueryLifted={searchQueryLifted}
+                        inventoryRef={inventory}
+                        setError={setError}
                         clearLoading={clearLoading}
+                        settings={setting}
                     />
 
                 );
+            case 'Warehouse':
+
+                return (
+
+                    <LocationForm
+                        inventoryRef={inventory}
+                        searchQueryLifted={searchQueryLifted}
+                    />
+
+                );
+
             case 'Inventory Levels':
+                const settings = { report: true }
                 return (
 
                     <InventoryLookup
@@ -250,31 +248,42 @@ useEffect(()=>{
                         selectedDepartment="Inventory"
                         departmentName={['inventory', 'sage']}
                         searchQueryLifted={searchQueryLifted}
+                        inventoryRef={inventory}
+                        setError={setError}
                         clearLoading={clearLoading}
+                        settings={settings}
                     />
 
                 );
+
             case 'Daily Production Overview': return (
                 <DailyProductionOverview />
             );
+
             case 'Inventory Levels': return (
                 <InventoryLevels />
             );
+
             case 'Maintenance Status': return (
                 <MaintenanceStatus />
             );
+
             case 'Maintenance Request': return (
                 <MaintenanceRequest />
             );
+
             case 'Throughput Report': return (
                 <ThroughputReport />
             );
+
             case 'Yield Analysis': return (
                 <YieldAnalysis />
             );
+
             case 'Production Downtime Report': return (
                 <ProductionDowntimeReport spMethod={main} />
             );
+
             case 'Real-Time Production Report':
                 return (
                     <div className="ui">
