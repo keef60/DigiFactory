@@ -29,6 +29,12 @@ function DepartmentMenu() {
     const inventoryRef = useRef([]);
     const [inventory, setInventory] = useState(undefined);
 
+    const [toggleFilter, setToggleFilter] = useState(true);
+    const [filterBtnName, setFilterBtnName] = useState('Hide Weekly Orders');
+    const [quickVeiw, setQuickVeiw] = useState(true);
+    const [quickVeiwTitle, setQuickVeiwTitle] = useState('Expand Details');
+    const departmentRefName = selectedDepartment
+
     useEffect(() => {
         $('.ui.login.dimmer').dimmer('hide');
         getMe();
@@ -190,7 +196,7 @@ function DepartmentMenu() {
 
     const renderContent = () => {
         switch (selectedDepartment) {
- 
+
             case 'Paint':
                 return (
                     contentMasterSeletor("FRAMES KIT", 'frames')
@@ -225,6 +231,7 @@ function DepartmentMenu() {
                         setError={setError}
                         clearLoading={clearLoading}
                         settings={setting}
+                        setSearchQuery={setSearchQuery}
                     />
 
                 );
@@ -350,21 +357,7 @@ function DepartmentMenu() {
 
     return (
         <div className="ui  ">
-            <div style={{ position: 'sticky', top: 0, zIndex: 4 }}>
 
-                <TopMenuBar
-                    searchQueryLifted={searchQueryLifted}
-                    setSearchQuery={setSearchQuery}
-                    visibleLifted={visibleLifted}
-                    setVisible={setVisible}
-                    setData={setData}
-                    dataLifted={dataLifted}
-                    sheetNameLifted={sheetNameLifted}
-                    setSheetName={setSheetName}
-                    liftedData={dataLifted}
-                    notMenuSearch={true}
-                />
-            </div>
             <div className="ui grid contentPane">
                 {/* Left Sidebar Menu */}
                 <LeftMenuBar
@@ -387,6 +380,7 @@ function DepartmentMenu() {
                 <div className="ui sixteen wide column" style={{ marginLeft: '15.5%', paddingRight: '5%' }}>
                     <ErrorMessage error={newError} />
                     {header()}
+                    <div class='ui divider'></div>
                     {renderContent()}
                     {loginModal()}
                 </div>
