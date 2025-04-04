@@ -34,6 +34,7 @@ function DepartmentMenu() {
     const [quickVeiw, setQuickVeiw] = useState(true);
     const [quickVeiwTitle, setQuickVeiwTitle] = useState('Expand Details');
     const departmentRefName = selectedDepartment
+    const [filterTask, setFilterTask] = useState(false);
 
     useEffect(() => {
         $('.ui.login.dimmer').dimmer('hide');
@@ -129,6 +130,16 @@ function DepartmentMenu() {
         }
     }, [userInfo]);
 
+    useEffect(() => {
+        if (filterTask) {
+            $('.ui.sidebar')
+                .sidebar('setting', 'transition', 'overlay',)
+                .sidebar('show');
+        }
+    }, [filterTask]);
+
+
+
     const getMe = async () => {
         const accessToken = sessionStorage.getItem('access_token');
 
@@ -174,6 +185,8 @@ function DepartmentMenu() {
                     issesListData={issesListData}
                     setSearchQuery={setSearchQuery}
                     setError={setError}
+                    setFilterTask={setFilterTask}
+                    filterTask={filterTask}
                 /> :
                 <Editor
                     spMethod={main}
@@ -190,6 +203,8 @@ function DepartmentMenu() {
                     woNdev={woNdev}
                     issesListData={issesListData}
                     setSearchQuery={setSearchQuery}
+                    setFilterTask={setFilterTask}
+                    filterTask={filterTask}
                 />
         )
     };
@@ -377,7 +392,8 @@ function DepartmentMenu() {
                     loginModalOpen={loginModalOpen}
                 />
                 {/* Content Area with manually created tabs */}
-                <div className="ui sixteen wide column" style={{ marginLeft: '15.5%', paddingRight: '5%' }}>
+                <div className="ui sixteen wide column"
+                    style={{ marginLeft: '15.5%', paddingRight: '5%' }}>
                     <ErrorMessage error={newError} />
                     {header()}
                     <div class='ui divider'></div>
