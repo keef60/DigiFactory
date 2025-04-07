@@ -1,7 +1,6 @@
-const { useState, useEffect } = React;
+const { useEffect, useRef, useState } = React
 
-const DisplayPane = ({
-    pickListApp,
+const DisplayPaneNew = ({
     selectedDepartment,
     filteredData,
     imagePaths,
@@ -21,69 +20,111 @@ const DisplayPane = ({
     calculateCompletion,
     calculateRemaining,
     workingThisRow,
-    lookupComponent,
-    goalProgressInput,
     departmentName,
-    lookuptable,
     spMethod,
-    issue,
-    lineSelection,
     selectedNumber,
     setSelectedNumber,
-    chart,clearLoading
+    clearLoading,
+    setWOnDev,
+    woNdev,
+    issesListData,
+    setSearchQuery,
+    setFilterTask,filterTask
+
 }) => {
     const [activeTab, setActiveTab] = useState('lookup'); // default to "Look Up" tab
-console.log('display Pane',departmentName);
+    console.log('display Pane', departmentName);
+
     const tabContent = {
-        lookup: React.createElement(lookupComponent, {
-            filteredData,
-            headers,
-            imagePaths,
-            getPdfPath,
-            openPdfModal,
-            openNoteModal,
-            setPdfPath,
-            setPdfPath2,
-            setPdfPath3,
-            setNotePath,
-            setWorkingThisRow,
-            setGoal,
-            setProgress,
-            goal,
-            progress,
-            workingThisRow,
-            calculateCompletion,
-            calculateRemaining,
-            goalProgressInput,
-            departmentName,
-            lookuptable,
-            spMethod,
-            issue,
-            lineSelection,
-            selectedNumber,
-            setSelectedNumber,
-            chart,
-            clearLoading
+        lookup: (
+            <LookupComponent
+                filteredData={filteredData}
+                headers={headers}
+                imagePaths={imagePaths}
+                getPdfPath={getPdfPath}
+                openPdfModal={openPdfModal}
+                openNoteModal={openNoteModal}
+                setPdfPath={setPdfPath}
+                setPdfPath2={setPdfPath2}
+                setPdfPath3={setPdfPath3}
+                setNotePath={setNotePath}
+                setWorkingThisRow={setWorkingThisRow}
+                setGoal={setGoal}
+                setProgress={setProgress}
+                goal={goal}
+                progress={progress}
+                workingThisRow={workingThisRow}
+                calculateCompletion={calculateCompletion}
+                calculateRemaining={calculateRemaining}
+                departmentName={departmentName}
+                spMethod={spMethod}
+                selectedNumber={selectedNumber}
+                setSelectedNumber={setSelectedNumber}
+                clearLoading={clearLoading}
+                setWOnDev={setWOnDev}
+                woNdev={woNdev}
+                issesListData={issesListData}
+                setFilterTask={setFilterTask}
+                filterTask={filterTask}
+            />
+        ),
+        pickList: (
+            <PickListAppNew
+                selectedDepartment={selectedDepartment}
+                departmentName={departmentName}
+                selectedNumber={selectedNumber}
+                setWOnDev={setWOnDev}
+            />
+        ),
+        item:(
+            <ItemTest 
+            selectedDepartment={selectedDepartment}
+            departmentName={departmentName}
+            selectedNumber={selectedNumber}
+            setWOnDev={setWOnDev}
             
-        }),
-        pickList: React.createElement(pickListApp, { selectedDepartment, departmentName,selectedNumber}),
+            />
+        )
     };
 
-    return React.createElement('div', null,
-        React.createElement('div', { className: 'ui top attached tabular menu ',style:{ marginTop: "2.5%"} },
-            React.createElement('a', {
-                className: `item ${activeTab === 'lookup' ? 'active' : ''}`,
-                onClick: () => setActiveTab('lookup')
-            }, 'Look Up'),
-            React.createElement('a', {
-                className: `item ${activeTab === 'pickList' ? 'active' : ''}`,
-                onClick: () => setActiveTab('pickList')
-            }, 'My Pick List')
-        ),
-        React.createElement('div', { className: `ui bottom attached segment basic ${clearLoading? 'loading':''}`  },
-            tabContent[activeTab]  // Render content based on the active tab
-        )
+    return (
+        <div style={{ position: 'center', marginLeft: '5%', width: '95%' }}>
+            <div className="ui menu">
+                <a
+                    className={`item ${activeTab === 'lookup' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('lookup')}
+                >
+                    All Builds
+                </a>
+                <a
+                    className={`item ${activeTab === 'pickList' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('pickList')}
+                >
+                    My Pick List
+                </a>
+
+                <a
+                    className={`item ${activeTab === 'pickList' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('item')}
+                >
+                   Test
+                </a>
+
+                <MiniSearch
+                    searchThisClass={`displayPaneNewBar-${departmentName}`}
+                    showMiniSearchOnlyBool={true}
+                    inventoryRef={[]}
+                    setSearchQuery={setSearchQuery} />
+
+                          {/* Filter toggles */}
+
+
+            </div>
+            <div className={`ui bottom segment basic ${clearLoading ? 'ui active centered inline loader' : ''}`}>
+                {tabContent[activeTab]} {/* Render content based on the active tab */}
+            </div>
+        </div>
     );
 };
 
-export default DisplayPane;
+

@@ -1,4 +1,5 @@
-const { useEffect, useRef, useState } = React;
+const { useEffect, useRef, useState } = React
+
 
 const ChartComponent = ({
     departmentName,
@@ -59,14 +60,15 @@ const ChartComponent = ({
             },
         });
 
-
     }, [progress, departmentName, selectedNumber, modelId]);
 
-    return React.createElement('canvas', {
-        ref: canvasRef,
-        width: 800,
-        height: 600,
-    });
+    return (
+        <canvas
+            ref={canvasRef}
+            width={800}
+            height={600}
+        />
+    );
 };
 
 const ChartContainer = ({
@@ -78,20 +80,20 @@ const ChartContainer = ({
     modelId,
     progress
 }) => {
-    return React.createElement(
-        'div',
-        { className: `ui segement ${columnSize} wide column` },
-        React.createElement('div', {
-            className: ' ui header huge four wide column'
-        }, `${headers[0]} ${row[0] || 'Unnamed'}`),
+    return (
+        <div className={`ui segment ${columnSize} wide column`}>
+            <div className="ui header huge four wide column">
+                {`${headers[0]} ${row[0] || 'Unnamed'}`}
+            </div>
 
-        React.createElement(ChartComponent, {
-            departmentName,
-            selectedNumber,
-            modelId,
-            progress
-        })
+            <ChartComponent
+                departmentName={departmentName}
+                selectedNumber={selectedNumber}
+                modelId={modelId}
+                progress={progress}
+            />
+        </div>
     );
 };
 
-export default ChartContainer;
+

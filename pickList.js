@@ -1,22 +1,23 @@
-const { useState, useEffect } = React;
+const { useEffect, useRef, useState } = React
 
-const PickListApp = (props) => {
-    const { selectedDepartment,
-        departmentName,
-        selectedNumber,
-        clearLoading,
-        setWOnDev } = props
+const PickListAppNew = ({
+    selectedDepartment,
+    departmentName,
+    selectedNumber,
+    clearLoading,
+    setWOnDev
+}) => {
+
     const [accessToken, setAccessToken] = useState(null);
     const [error, setError] = useState(null);
     const [sharePointData, setSharePointData] = useState([]);
     const [tokenInput, setTokenInput] = useState('');
-    const [imagePaths, setImagePaths] = useState({}); // To store image paths for each item
+    const [imagePaths, setImagePaths] = useState({});
     const [postName, setPostName] = useState('');
     const [siteID, setSiteID] = useState('');
     const [confirmPickList, setConfirmedPickList] = useState(false);
     const [rowData, setRowDataIn] = useState({});
 
-    // Function to check if the image exists
     const checkImageExists = async (url) => {
         const img = new Image();
         img.src = url;
@@ -27,7 +28,6 @@ const PickListApp = (props) => {
         });
     };
 
-    // Function to get the correct image path for each SharePoint item
     const getImagePath = async (imageName) => {
         const extensions = ['jpg', 'jpeg', 'png', 'gif', 'avif', 'webp'];
         for (let ext of extensions) {
@@ -36,10 +36,9 @@ const PickListApp = (props) => {
                 return path;
             }
         }
-        return 'img/placeholder.jpg'; // Return the placeholder image if no valid image is found
+        return 'img/placeholder.jpg'; 
     };
 
-    // Function to fetch SharePoint data
     const fetchSharePointData = async (token) => {
         if (!token) {
             setError('No valid access token provided. Please input a valid token.');
@@ -83,9 +82,9 @@ const PickListApp = (props) => {
 
             const listsData = await listsResponse.json();
             const list = listsData.value.find(l => l.name === selectedDepartment);
-            const pId = listsData.value.filter(e => e.displayName == 'PICKLIST')[0].id
-            setPostName(pId)
-            setSiteID(siteId)
+            const pId = listsData.value.filter(e => e.displayName === 'PICKLIST')[0].id;
+            setPostName(pId);
+            setSiteID(siteId);
 
             if (!list) {
                 throw new Error(`Unable to find the ${selectedDepartment} list`);
@@ -108,10 +107,9 @@ const PickListApp = (props) => {
             const itemsData = await itemsResponse.json();
             setSharePointData(itemsData.value);
 
-            setWOnDev(itemsData.value)
-            setError(null);  // Clear any previous errors
+            setWOnDev(itemsData.value);
+            setError(null);
 
-            // Fetch images after fetching data
             const fetchImages = async () => {
                 const imageMap = {};
                 await Promise.all(
@@ -130,58 +128,26 @@ const PickListApp = (props) => {
         }
     };
 
-    const extractAccessToken = (url) => {
-        const urlParams = new URLSearchParams(url.split('#')[1] || '');
-        return urlParams.get('access_token');
-    };
-
-    const handleTokenSubmit = () => {
-        const tokenFromUrl = extractAccessToken(tokenInput);
-        if (tokenFromUrl) {
-            setAccessToken(tokenFromUrl);
-            sessionStorage.setItem('access_token', tokenFromUrl);
-            fetchSharePointData(tokenFromUrl);
-        } else {
-            setError('Please enter a valid URL containing the access token');
-        }
-    };
-
-    const startOAuthLogin = () => {
-        const tenant = "a8585420-4088-4906-a78d-06b2693cc3aa"; // Replace with your tenant ID
-        const clientId = "8db3d71f-62b7-457d-b653-9f874424f89e"; // Replace with your client ID
-        const redirectUri = 'http://localhost'; // Replace with your redirect URI
-
-        const scopes = 'Sites.Read.All';
-        const responseType = 'token';
-        const authUrl = `https://login.microsoftonline.com/${tenant}/oauth2/v2.0/authorize?client_id=${clientId}&response_type=${responseType}&redirect_uri=${redirectUri}&scope=${scopes}`;
-
-        window.open(authUrl, '_blank', 'width=600,height=400,scrollbars=yes');
-    };
-
     useEffect(() => {
         const storedToken = sessionStorage.getItem('access_token');
         if (storedToken) {
             setAccessToken(storedToken);
             fetchSharePointData(storedToken);
         }
-    }, []);
+    }, [selectedDepartment]);
 
     const handleSubmit = async (modelNumber) => {
-
         const delFieldData = JSON.stringify(rowData);
 
-        // Construct the URL to get the list items with a filter by Title (modelNumber)
         const itemsUrl = `https://graph.microsoft.com/v1.0/sites/${siteID}/lists/${postName}/items?$filter=fields/Title eq '${modelNumber}'&$expand=fields`;
-        //        const itemsUrl2 = `https://graph.microsoft.com/v1.0/sites/${siteID}/lists/${postName}/items?$expand=fields`;
-        const sharePointColumnName = selectedNumber ? departmentName + selectedNumber : departmentName
+        const sharePointColumnName = selectedNumber ? departmentName + selectedNumber : departmentName;
         const headers = {
             "Authorization": `Bearer ${accessToken}`,
             "Content-Type": "application/json",
-            "Prefer": "HonorNonIndexedQueriesWarningMayFailRandomly" // Allow non-indexed queries
+            "Prefer": "HonorNonIndexedQueriesWarningMayFailRandomly",
         };
 
         try {
-            // Step 1: Fetch the item based on the modelNumber (Title)
             const itemsResponse = await fetch(itemsUrl, {
                 method: 'GET',
                 headers: headers,
@@ -194,22 +160,19 @@ const PickListApp = (props) => {
 
             const itemsData = await itemsResponse.json();
 
-            // Step 2: Check if the item exists
             if (itemsData.value.length > 0) {
-                // If item exists, update it using PATCH
                 const itemId = itemsData.value[0].id;
                 const updateUrl = `https://graph.microsoft.com/v1.0/sites/${siteID}/lists/${postName}/items/${itemId}`;
 
                 const updateBody = {
                     fields: {
                         Title: modelNumber,
-                        [sharePointColumnName]: delFieldData
+                        [sharePointColumnName]: delFieldData,
                     },
                 };
 
-                // Step 3: Send the update request
                 const updateResponse = await fetch(updateUrl, {
-                    method: 'PATCH',  // Use PATCH to update an existing item
+                    method: 'PATCH',
                     headers: headers,
                     body: JSON.stringify(updateBody),
                 });
@@ -222,19 +185,16 @@ const PickListApp = (props) => {
                 const result = await updateResponse.json();
                 console.log("Updated item:", result);
                 setConfirmedPickList(updateResponse.ok);
-
             } else {
-                // If the item doesn't exist, create a new one using POST
                 const url = `https://graph.microsoft.com/v1.0/sites/${siteID}/lists/${postName}/items`;
 
                 const body = {
                     fields: {
                         Title: modelNumber,
-                        [sharePointColumnName]: delFieldData
+                        [sharePointColumnName]: delFieldData,
                     },
                 };
 
-                // Step 4: Create the new item
                 const createResponse = await fetch(url, {
                     method: "POST",
                     headers: headers,
@@ -250,166 +210,144 @@ const PickListApp = (props) => {
                 console.log("Created new item:", result);
                 setConfirmedPickList(createResponse.ok);
             }
-
         } catch (err) {
             console.error("Error:", err);
         }
     };
 
     const createTable = (matchingDescription, matchingUom, matchingQtyToPick, pn) => {
-        return React.createElement(
-            'tbody',
-            null,
-            React.createElement(
-                'tr',
-                null,
-                React.createElement('td', null, pn.pid),
-                React.createElement(
-                    'td',
-                    null,
-                    matchingDescription ? matchingDescription.pid : 'No description available'
-                ),
-                React.createElement(
-                    'td',
-                    null,
-                    matchingUom ? matchingUom.pid : 'No UOM available'
-                ),
-                React.createElement(
-                    'td',
-                    null,
-                    matchingQtyToPick ? matchingQtyToPick.pid : 'No quantity to pick available',
-
-                ),
-                React.createElement(
-                    'td',
-                    null,
-                    React.createElement(
-                        'div',
-                        { className: 'ui input fluid' },
-                        React.createElement(
-                            'input',
-                            {
-                                type: 'number',
-                                className: 'qty-picked ',
-                                name: `qtyPicked_${pn.ref}`,
-                                placeholder: 'Qty Picked',
-                                onChange: (e) => setRowDataIn(prevData => ({
+        return (
+            <tbody key={pn.ref}>
+                <tr>
+                    <td>{pn.pid}</td>
+                    <td>{matchingDescription ? matchingDescription.pid : 'No description available'}</td>
+                    <td>{matchingUom ? matchingUom.pid : 'No UOM available'}</td>
+                    <td>{matchingQtyToPick ? matchingQtyToPick.pid : 'No quantity to pick available'}</td>
+                    <td>
+                        <div className='ui input fluid'>
+                            <input
+                                type='number'
+                                className='qty-picked'
+                                name={`qtyPicked_${pn.ref}`}
+                                placeholder='Qty Picked'
+                                onChange={(e) => setRowDataIn(prevData => ({
                                     ...prevData,
                                     [pn.ref]: {
                                         ...prevData[pn.ref],
                                         partNumber: pn.pid,
                                         qtyPicked: e.target.value,
                                         qtyToPick: matchingQtyToPick.pid,
-
                                     }
-                                }))
-                            }
-                        )
-                    )
-                ),
-                React.createElement(
-                    'td',
-                    null,
-                    React.createElement(
-                        'div',
-                        { className: 'ui input fluid' },
-                        React.createElement(
-                            'input',
-                            {
-                                type: 'text',
-                                className: 'lot-serial',
-                                name: `lotSerial_${pn.ref}`,
-                                placeholder: 'Lot/Serial',
-                                onChange: (e) => setRowDataIn(prevData => ({
+                                }))}
+                            />
+                        </div>
+                    </td>
+                    <td>
+                        <div className='ui input fluid'>
+                            <input
+                                type='text'
+                                className='lot-serial'
+                                name={`lotSerial_${pn.ref}`}
+                                placeholder='Lot/Serial'
+                                onChange={(e) => setRowDataIn(prevData => ({
                                     ...prevData,
                                     [pn.ref]: {
                                         ...prevData[pn.ref],
                                         lotSerial: e.target.value,
-                                        partNumber: pn.pid
+                                        partNumber: pn.pid,
                                     }
-                                }))
-                            }
-                        )
-                    )
-                )
-            )
+                                }))}
+                            />
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
         );
     };
 
     const displaySharePointData = (data) => {
-
-        return React.createElement('div', { className: 'ui items divided' },
-            data.map(item => {
-                const fields = item.fields;
-                const partNumber = JSON.parse(fields.PartNumber);
-                const partDescription = JSON.parse(fields.PartDescription);
-                const partUom = JSON.parse(fields.UOM);
-                const partQtyToPick = JSON.parse(fields['QtyToPick']);
-
-                // Check if image exists for the current part title
-                const imageSrc = imagePaths[fields.Title] && imagePaths[fields.Title] !== 'img/placeholder.jpg'
-                    ? imagePaths[fields.Title]
-                    : 'img/placeholder.jpg';
-
-                // Generate the content for each part number
-                return React.createElement('div', { className: 'item' },
-                    // Render Image if available
-                    imageSrc !== 'img/placeholder.jpg' ?
-                        React.createElement('a', { className: 'ui small image' },
-                            React.createElement('img', { src: imageSrc, alt: fields.Title })
-                        ) :
-                        React.createElement('a', { className: 'ui small image' },
-                            React.createElement('div', { className: 'ui placeholder' },
-                                React.createElement('div', { className: 'image' })
-                            )
-                        ),
-                    // Render Part Information and Table
-                    React.createElement('div', { className: 'content aligned left' },
-                        React.createElement('a', { className: 'header huge ui' }, fields.Title),
-                        React.createElement('table', { className: 'ui celled table fixed  striped' },
-                            React.createElement('thead', null,
-                                React.createElement('tr', null,
-                                    React.createElement('th', null, 'Part Number'),
-                                    React.createElement('th', null, 'Description'),
-                                    React.createElement('th', null, 'UOM'),
-                                    React.createElement('th', null, 'QTY To Pick'),
-                                    React.createElement('th', null, 'Qty Picked'),
-                                    React.createElement('th', null, 'Lot/Serial')
-                                )
-                            ),
-                            partNumber.map(pn => {
-                                // Find matching description, UOM, and quantity to pick for the current part number
-                                const matchingDescription = partDescription.find(pd => pd.ref === pn.ref);
-                                const matchingQtyToPick = partQtyToPick.find(qtp => qtp.ref === pn.ref);
-                                const matchingUom = partUom.find(uom => uom.ref === pn.ref);
-
-                                // Return tbody element
-                                return createTable(matchingDescription, matchingUom, matchingQtyToPick, pn);
-                            }),
-                        ),
-
-                        React.createElement(
-                            'tr',
-                            {
-                                className: `ui button  ${confirmPickList ? "disabled" : "green"}`,
-                                onClick: async () => handleSubmit(fields.Title)
-                            },
-                            !confirmPickList ? "Confirm" : "Comfirmed"
-
-                        ),
-                        React.createElement(
-                            'tr',
-                            {
-                                className: `ui button `,
-                                onClick: async () => handleSubmit(fields.Title)
-                            },
-                            "Print"
-
-                        )
-
-                    )
-                )
-            })
+        const [activeTab, setActiveTab] = useState(0);
+    
+        const handleTabClick = (index) => {
+            setActiveTab(index);
+        };
+    
+        return (
+            <div className=''>
+                <div className='ui top attached tabular menu'>
+                    {data.map((item, index) => (
+                        <a
+                            key={item.fields.Title}
+                            className={`item ${activeTab === index ? 'active' : ''}`}
+                            onClick={() => handleTabClick(index)}
+                        >
+                            {item.fields.Title}
+                        </a>
+                    ))}
+                </div>
+                <div className='ui bottom attached segment'>
+                    {data.map((item, index) => {
+                        if (activeTab !== index) return null;
+    
+                        const fields = item.fields;
+                        const partNumber = JSON.parse(fields.PartNumber);
+                        const partDescription = JSON.parse(fields.PartDescription);
+                        const partUom = JSON.parse(fields.UOM);
+                        const partQtyToPick = JSON.parse(fields['QtyToPick']);
+                        const workOrder = fields['WO'];
+    
+                        const imageSrc = imagePaths[fields.Title] && imagePaths[fields.Title] !== 'img/placeholder.jpg'
+                            ? imagePaths[fields.Title]
+                            : 'img/placeholder.jpg';
+    
+                        return (
+                            <div className='item' key={fields.Title}>
+                                {imageSrc !== 'img/placeholder.jpg' ? (
+                                    <a className='ui small image'>
+                                        <img src={imageSrc} alt={fields.Title} />
+                                    </a>
+                                ) : (
+                                    <a className='ui small image'>
+                                        <div className='ui placeholder'>
+                                            <div className='image' />
+                                        </div>
+                                    </a>
+                                )}
+                                <div className='content aligned left'>
+                                    <a className='header huge ui'>{fields.Title}</a>
+                                    <div className='ui divider' />
+                                    <div className='header ui'>{workOrder}</div>
+                                    <table className='ui celled table fixed striped'>
+                                        <thead>
+                                            <tr>
+                                                <th>Part Number</th>
+                                                <th>Description</th>
+                                                <th>UOM</th>
+                                                <th>QTY To Pick</th>
+                                                <th>Qty Picked</th>
+                                                <th>Lot/Serial</th>
+                                            </tr>
+                                        </thead>
+                                        {partNumber.map(pn => {
+                                            const matchingDescription = partDescription.find(pd => pd.ref === pn.ref);
+                                            const matchingQtyToPick = partQtyToPick.find(qtp => qtp.ref === pn.ref);
+                                            const matchingUom = partUom.find(uom => uom.ref === pn.ref);
+    
+                                            return createTable(matchingDescription, matchingUom, matchingQtyToPick, pn);
+                                        })}
+                                    </table>
+                                    <tr
+                                        className={`ui button ${confirmPickList ? "disabled" : "green"}`}
+                                        onClick={() => handleSubmit(fields.Title)}
+                                    >
+                                        {!confirmPickList ? "Confirm" : "Confirmed"}
+                                    </tr>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
         );
     };
 
@@ -428,12 +366,16 @@ const PickListApp = (props) => {
         data.map(item => {
             const fields = item.fields;
             const runQuantity = fields.Quantity
-            const title = fields.Title;  // Assuming the title field is here    
+            const title = fields.Title;  // Assuming the title field is here 
+            const workOrder = fields['WO'];
+            const deviations = fields['DEV']; 
+            const key = 'goalProgress-'+`${departmentName}-${title}`  
             // Generating a timestamp for the record
             const timestamp = new Date().toISOString();
 
             // Check if the record already exists in localStorage
-            const existingGoalProgress = localStorage.getItem(`goalProgress-${departmentName}-${title}`);
+            const existingGoalProgress = localStorage.getItem(key);
+
 
             // If the record exists, check its timestamp and isActive
             if (existingGoalProgress) {
@@ -446,7 +388,7 @@ const PickListApp = (props) => {
                     if (existingTimestamp < startOfWeek || existingTimestamp > endOfWeek) {
                         existingData.isActive = false;
                         // Update localStorage with isActive set to false
-                        localStorage.setItem(`goalProgress-${departmentName}-${title}`, JSON.stringify(existingData));
+                        localStorage.setItem(key, JSON.stringify(existingData));
                     }
                     return; // Skip adding the new record if the existing record is active
                 }
@@ -457,46 +399,34 @@ const PickListApp = (props) => {
                 goal: runQuantity,
                 progress: "0",
                 "creation date": timestamp,
-                isActive: true
+                isActive: true,
+                wo:workOrder,
+                dev:deviations
             };
 
             // Store the object in localStorage
-            localStorage.setItem(`goalProgress-${departmentName}-${title}`, JSON.stringify(goalProgressData));
+            localStorage.setItem(key, JSON.stringify(goalProgressData));
         });
     };
-
     createGoalsFromPickList(sharePointData, departmentName)
-    return React.createElement('div', null,
-        accessToken ? (
-            React.createElement('div', { className: 'ui message' },
-                React.createElement('h2', null, 'You are logged in.'),
-                React.createElement('button', { className: 'ui red button', onClick: () => setAccessToken(null) }, 'Logout')
-            )
-        ) : (
-            React.createElement('div', { id: 'loginSection', className: 'ui raised very padded text container segment' },
-                React.createElement('h2', { className: 'ui header' }, 'You are not logged in.'),
-                React.createElement('button', { className: 'ui blue button', onClick: startOAuthLogin }, 'Login with OAuth'),
-                React.createElement('h3', null, 'Or manually paste your access token URL below:'),
-                React.createElement('div', { className: 'ui action input' },
-                    React.createElement('input', {
-                        type: 'text',
-                        value: tokenInput,
-                        onChange: (e) => setTokenInput(e.target.value),
-                        placeholder: 'Paste the URL containing your access token here'
-                    }),
-                    React.createElement('button', { className: 'ui button', onClick: handleTokenSubmit }, 'Submit Token')
-                )
-            )
-        ),
-        error && React.createElement('div', { className: 'ui red message' }, error),
-        sharePointData.length > 0 ? (
-            React.createElement('div', { id: 'sharePointData', className: `ui segment ${clearLoading ? 'loading' : ''}` },
-                displaySharePointData(sharePointData)
-            )
-        ) : (
-            React.createElement('p', null, 'No items found in the list.')
-        )
-    );
+
+
+    return (
+        <div>
+          {error && <div className="ui red message">{error}</div>}
+      
+          {sharePointData.length > 0 ? (
+            <div id="sharePointData" className={`ui segment black ${clearLoading ? 'loading' : ''}`}>
+              {!error ? displaySharePointData(sharePointData):'No data'}
+            </div>
+          ) : (
+            <p>No items found in the list.
+            {displaySharePointData([])}
+            </p>
+          )}
+        </div>
+      );
+      
 };
 
-export default PickListApp;
+

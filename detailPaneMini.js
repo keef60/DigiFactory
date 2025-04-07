@@ -1,6 +1,6 @@
-const { useState, useEffect } = React;
+const { useEffect, useRef, useState } = React
 
-const DetailPaneMini = ({
+const DetailPaneMiniNew = ({
   row,
   workingThisRow,
   goal,
@@ -96,147 +96,96 @@ const DetailPaneMini = ({
 
   // Steps at the Bottom - UI Ordered Steps
   const steps = () => {
-    return React.createElement('div', { className: "ui five wide column" },
-      React.createElement(
-        'div',
-        { className: 'ui ordered steps mini ' },
+    return (
+      <div className="ui five wide column">
+        <div className="ui ordered steps mini ">
 
-        React.createElement(
-          'div',
-          { className: `step ${getStepStatus(progress, storedGoalData?.goal) === 'no order' ? 'completed' : 'disabled'}` },
-          React.createElement(
-            'div',
-            { className: 'content' },
-            React.createElement('div', { className: 'title' }, 'No Order'),
-            React.createElement('div', { className: 'description' }, 'No progress made yet')
-          )
-        ),
+          <div className={`step ${storedGoalData?.isActive ? 'active' : 'disabled'}`}>
+            <div className="content">
+              <div className="title">Ordered</div>
+              <div className="description">Order initiated</div>
+            </div>
+          </div>
 
-        React.createElement(
-          'div',
-          { className: `step ${storedGoalData?.isActive ? 'active' : 'disabled'}` },
-          React.createElement(
-            'div',
-            { className: 'content' },
-            React.createElement('div', { className: 'title' }, 'Ordered'),
-            React.createElement('div', { className: 'description' }, 'Order initiated')
-          )
-        ),
+          <div className={`step ${getStepStatus(storedGoalData?.progress > 0 ? storedGoalData?.progress : progress, storedGoalData?.goal) === 'wip' ? 'active' : 'disabled'}`}>
+            <div className="content">
+              <div className="title">WIP</div>
+              <div className="description">Work in progress</div>
+            </div>
+          </div>
 
-        React.createElement(
-          'div',
-          { className: `step ${getStepStatus(storedGoalData?.progress > 0 ? storedGoalData?.progress : progress, storedGoalData?.goal) === 'wip' ? 'active' : 'disabled'}` },
-          React.createElement(
-            'div',
-            { className: 'content' },
-            React.createElement('div', { className: 'title' }, 'WIP'),
-            React.createElement('div', { className: 'description' }, 'Work in progress')
-          )
-        ),
-
-        React.createElement(
-          'div',
-          { className: `step ${getStepStatus(storedGoalData?.progress, storedGoalData?.goal) === 'completed' ? 'completed' : 'disabled'}` },
-          React.createElement(
-            'div',
-            { className: 'content' },
-            React.createElement('div', { className: 'title' }, 'Completed'),
-            React.createElement('div', { className: 'description' }, 'Order is complete')
-          )
-        )
-      )
+          <div className={`step ${getStepStatus(storedGoalData?.progress, storedGoalData?.goal) === 'completed' ? 'completed' : 'disabled'}`}>
+            <div className="content">
+              <div className="title">Completed</div>
+              <div className="description">Order is complete</div>
+            </div>
+          </div>
+        </div>
+      </div>
     );
   };
 
   const stats = () => {
-    return React.createElement(
-      'div',
-      { className: 'ui grid internally celled' },
-      React.createElement(
-        'div',
-        { className: 'five wide column' },
-        React.createElement(
-          'div',
-          { className: 'ui statistic tiny' },
-          React.createElement('div', { className: 'value' }, goal || storedGoalData?.goal || 0),
-          React.createElement('div', { className: 'label' }, 'Goal')
-        )
-      ),
-      React.createElement(
-        'div',
-        { className: 'five wide column' },
-        React.createElement(
-          'div',
-          { className: 'ui statistic tiny' },
-          React.createElement('div', { className: 'value' },
-            Math.round(
-              calculateRemaining(
-                storedGoalData?.goal, workingThisRow === modelId ? progress : storedGoalData?.progress
-              )
-            )
-          ),
-          React.createElement('div', { className: 'label' }, 'Remaining')
-        )
-      ),
-      React.createElement(
-        'div',
-        { className: 'five wide column' },
-        React.createElement(
-          'div',
-          { className: 'ui statistic tiny' },
-          React.createElement('div', { className: 'value' }, progress || storedGoalData?.progress || 0),
-          React.createElement('div', { className: 'label' }, 'Progress')
-        ),
-        React.createElement(
-          'div',
-          { className: 'ui grid' },
-          React.createElement(
-            'div',
-            { className: 'sixteen wide column' },
-            React.createElement(
-              'div',
-              { className: 'ui input' },
-              React.createElement('input', {
-                type: 'number',
-                placeholder: 'Current Progress',
-                onChange: handleProgressChange,
-                min: '0',
-              })
-            )
-          )
-        ),
-        React.createElement('div', { className: 'ui divider hidden' }),
-        React.createElement(
-          'div',
-          { className: 'ui buttons' },
-          React.createElement(
-            'button',
-            { className: 'ui green button', onClick: handleSave },
-            'Save'
-          ),
-          React.createElement(
-            'button',
-            { className: 'ui small button', onClick: handleReset },
-            'Reset'
-          )
-        )
-      ),
+    return (
+      <div className="ui grid internally celled">
+        <div className="five wide column">
+          <div className="ui statistic tiny">
+            <div className="value">{goal || storedGoalData?.goal || 0}</div>
+            <div className="label">Goal</div>
+          </div>
+        </div>
+        <div className="five wide column">
+          <div className="ui statistic tiny">
+            <div className="value">
+              {Math.round(
+                calculateRemaining(
+                  storedGoalData?.goal, workingThisRow === modelId ? progress : storedGoalData?.progress
+                )
+              )}
+            </div>
+            <div className="label">Remaining</div>
+          </div>
+        </div>
+        <div className="five wide column">
+          <div className="ui statistic tiny">
+            <div className="value">{progress || storedGoalData?.progress || 0}</div>
+            <div className="label">Progress</div>
+          </div>
+          <div className="ui grid">
+            <div className="sixteen wide column">
+              <div className="ui input">
+                <input
+                  type="number"
+                  placeholder="Current Progress"
+                  onChange={handleProgressChange}
+                  min="0"
+                />
+              </div>
+            </div>
+          </div>
+          <div className="ui divider hidden" />
+          <div className="ui buttons">
+            <button className="ui green button" onClick={handleSave}>
+              Save
+            </button>
+            <button className="ui small button" onClick={handleReset}>
+              Reset
+            </button>
+          </div>
+        </div>
+      </div>
     );
   };
 
-  return React.createElement(
-    'div',
-    { className: 'ui sixteen wide column' },
-    React.createElement(
-      'div',
-      null,       
-      // Title and Stats
-      steps(),
-      /* isLine ? stats() : notLine ? stats():'No Statistic' , */
-      // Steps - move to the bottom
-// Moving steps here
-    )
+  return (
+    <div className="ui sixteen wide column">
+      <div>
+        {steps()}
+        {/* isLine ? stats() : notLine ? stats() : 'No Statistic' */}
+        {/* Steps - move to the bottom */}
+      </div>
+    </div>
   );
 };
 
-export default DetailPaneMini;
+

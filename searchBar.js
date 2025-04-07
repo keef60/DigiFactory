@@ -1,16 +1,58 @@
-const { useState, useEffect } = React;
+const { useEffect, useRef, useState } = React
 
-const TopMenuBar = ({ 
-  searchQuery, 
+const SearchBar = ({
+  searchQuery,
   setSearchQuery,
-   visible, 
-   setVisible,
-   setData,
-   setSheetName,
-   selectedDepartment,
-   saveFile,
-   
-  }) => {
+  visible,
+  setVisible,
+  setData,
+  setSheetName,
+  selectedDepartment,
+  saveFile,
+  notMenuSearch,
+  liftedData
+}) => {
+  const [searchThisData, setSearchThisData] = useState([]);
+
+
+  const getSearchData = () => {
+  
+    const keys = Object.keys(localStorage);
+    let holdThisAnd = [];
+    keys.forEach(key => {
+      if (key.includes('goalProgress')) {
+        const i = JSON.parse(localStorage.getItem(key));
+        i.model = key.split('-')[2];
+        i.department = key.split('-')[1];
+        holdThisAnd.push({
+          title: i.model,
+          category: i.department.toUpperCase(),
+          data:i
+        });
+      }
+    });
+    setSearchThisData(holdThisAnd);
+
+  }
+  useEffect(() => {
+
+    if (searchThisData.length === 0) { 
+      getSearchData(); 
+    }
+    $('.ui.search')
+      .search({
+        type: 'category',
+        source: searchThisData,
+        onSelect:(r =>{
+          setSearchQuery(r.title);
+        })
+      });
+
+    
+
+  }, [searchThisData]);
+
+
 
   // Handlers for file upload and saving
   const handleFileUpload = (event) => {
@@ -19,19 +61,19 @@ const TopMenuBar = ({
 
     let reader = new FileReader();
     reader.onload = (e) => {
-        try {
-            let workbook = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
-            let firstSheet = workbook.SheetNames[0];
-            setSheetName(firstSheet);
-            let worksheet = workbook.Sheets[firstSheet];
-            let jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+      try {
+        let workbook = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+        let firstSheet = workbook.SheetNames[0];
+        setSheetName(firstSheet);
+        let worksheet = workbook.Sheets[firstSheet];
+        let jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
-            console.log(jsonData)
-            setData(jsonData);
-        } catch (error) {
-            console.error('Error reading file:', error);
-            alert('Failed to load Excel file. Please check the file format.');
-        }
+        console.log(jsonData);
+        setData(jsonData);
+      } catch (error) {
+        console.error('Error reading file:', error);
+        alert('Failed to load Excel file. Please check the file format.');
+      }
     };
     reader.readAsArrayBuffer(file);
   };
@@ -48,101 +90,50 @@ const TopMenuBar = ({
     setSearchQuery(event.target.value);
   };
 
-  return React.createElement(
-    'div',
-    {
-      className: 'ui top attached      ',
-      style: { background: 'white' },
-    },
-    // **Left Dropdown Menu**
-   /*  React.createElement(
-      'div',
-      { className: 'ui dropdown icon item' },
-      React.createElement('i', { className: 'bars icon' }),
-      React.createElement(
-        'div',
-        { className: 'menu' },
 
-        // File upload button
-        React.createElement(
-          'div',
-          { className: 'item ui button' },
-          'Open...',
-          React.createElement('input', {
-            type: 'file',
-            accept: '.xlsx, .xls',
-            onChange: handleFileUpload,
-          })
-        ),
-        React.createElement('div', { className: 'item', onClick: saveFile }, 'Save...'),
-        React.createElement('div', { className: 'divider' }),
-        React.createElement('div', { className: 'header' }, 'Export'),
-        React.createElement('div', { className: 'item disabled' }, 'Share...'),  // **New Record Tab**
-        selectedDepartment =='Paint' && React.createElement(
-           'div',
-           { className: 'ui item', onClick: openModal, style: { cursor: 'pointer' } },
-           React.createElement('i', { className: 'plus icon grey' }),
-           'Add Record'
-         )
-      ),
-    ),
- */
-  
+  return (
+    <div className="ui top attached" style={{ background: 'white' }}>
 
-    // **Save Warning Message**
-    visible
-      ? React.createElement(
-          'div',
-          { className: 'ui icon message yellow compact small' },
-          React.createElement('i', { className: 'close icon', onClick: handleClose }),
-          React.createElement('i', { className: 'warning circle icon' }),
-          React.createElement(
-            'div',
-            { className: 'content' },
-            React.createElement('div', { className: 'header' }, 'Remember to save your data!'),
-            React.createElement(
-              'p',
-              null,
-              'Your changes will be lost if you refresh the page without saving.'
-            ),
-            React.createElement(
-              'button',
-              {
-                className: 'ui button yellow',
-                onClick: () => {
-                  saveFile();
-                  handleClose();
-                },
-              },
-              'Save'
-            )
-          )
-        )
-      : null,
+      {/* Save Warning Message */}
+      {visible && (
+        <div className="ui icon message yellow compact small">
+          <i className="close icon" onClick={handleClose} />
+          <i className="warning circle icon" />
+          <div className="content">
+            <div className="header">Remember to save your data!</div>
+            <p>Your changes will be lost if you refresh the page without saving.</p>
+            <button
+              className="ui button yellow"
+              onClick={() => {
+                saveFile();
+                handleClose();
+              }}
+            >
+              Save
+            </button>
+          </div>
+        </div>
+      )}
 
-    // **Right Search Menu**
-    React.createElement(
-      'div',
-      { className: '  menu right ' ,},
-      React.createElement(
-        'div',
-        { className: 'ui   category search item' },
-        React.createElement(
-          'div',
-          { className: 'ui  icon input ' },
-          React.createElement('input', {
-            type: 'text',
-            placeholder: 'Search...',
-            value: searchQuery,
-            onChange: handleSearchChange,
-            className: 'prompt',
-          }),
-          React.createElement('i', { className: 'search link icon' })
-        ),
-        React.createElement('div', { className: 'results' })
-      )
-    )
+      {/* Right Search Menu */}
+      
+
+        <div className={`ui category  search ${notMenuSearch ? '  ' : 'item'} `} style={notMenuSearch ? { marginLeft: '50%',padding:".5%",width:'400px'} : {}}>
+          <div className="ui icon input">
+            <input
+              type="text"
+              placeholder="Search..."
+              value={searchQuery}
+              onChange={handleSearchChange}
+              className="prompt"
+            />
+            <i className="search link icon" />
+          </div>
+          <div className="results" />
+        </div>
+      </div>
+ 
   );
 };
 
-export default TopMenuBar;
+
