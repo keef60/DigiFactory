@@ -25,11 +25,11 @@ function convertToDateFormat(dateString) {
 
     switch (true) {
         case (hours >= 96):
-            return { status: true, message: `Older`,color:'red' };
+            return { status: true, message: `Older`,color:'primary' };
         case (hours <= 48 && 25 <= hours):
-            return { status: true, message: `Yesterday`,color:'green' };
+            return { status: true, message: `Yesterday`,color:'blue' };
         case (hours <= 24 && 0 <= hours):
-            return { status: true, message: `Today`,color:'yellow' };
+            return { status: true, message: `New`,color:'purple' };
         default:
             return { status: false, message: '',color:'' };
     }

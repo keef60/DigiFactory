@@ -16,7 +16,10 @@ const Editor = ({
   setError,
   setSearchQuery,
   setFilterTask,
-  filterTask
+  filterTask,
+  inventoryDepartmentName,
+  inventoryRef,
+  
 
 }) => {
 
@@ -227,6 +230,9 @@ const Editor = ({
         setSearchQuery={setSearchQuery}
         setFilterTask={setFilterTask}
         filterTask={filterTask}
+        inventoryDepartmentName={inventoryDepartmentName}
+        inventoryRef={inventoryRef}
+      
       />
 
       {/* Modal for viewing pdf */}

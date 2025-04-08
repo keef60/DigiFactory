@@ -36,7 +36,7 @@ const PickListAppNew = ({
                 return path;
             }
         }
-        return 'img/placeholder.jpg'; 
+        return 'img/placeholder.jpg';
     };
 
     const fetchSharePointData = async (token) => {
@@ -267,11 +267,11 @@ const PickListAppNew = ({
 
     const displaySharePointData = (data) => {
         const [activeTab, setActiveTab] = useState(0);
-    
+
         const handleTabClick = (index) => {
             setActiveTab(index);
         };
-    
+
         return (
             <div className=''>
                 <div className='ui top attached tabular menu'>
@@ -285,67 +285,76 @@ const PickListAppNew = ({
                         </a>
                     ))}
                 </div>
-                <div className='ui bottom attached segment'>
-                    {data.map((item, index) => {
-                        if (activeTab !== index) return null;
-    
-                        const fields = item.fields;
-                        const partNumber = JSON.parse(fields.PartNumber);
-                        const partDescription = JSON.parse(fields.PartDescription);
-                        const partUom = JSON.parse(fields.UOM);
-                        const partQtyToPick = JSON.parse(fields['QtyToPick']);
-                        const workOrder = fields['WO'];
-    
-                        const imageSrc = imagePaths[fields.Title] && imagePaths[fields.Title] !== 'img/placeholder.jpg'
-                            ? imagePaths[fields.Title]
-                            : 'img/placeholder.jpg';
-    
-                        return (
-                            <div className='item' key={fields.Title}>
-                                {imageSrc !== 'img/placeholder.jpg' ? (
-                                    <a className='ui small image'>
-                                        <img src={imageSrc} alt={fields.Title} />
-                                    </a>
-                                ) : (
-                                    <a className='ui small image'>
-                                        <div className='ui placeholder'>
-                                            <div className='image' />
-                                        </div>
-                                    </a>
-                                )}
-                                <div className='content aligned left'>
-                                    <a className='header huge ui'>{fields.Title}</a>
-                                    <div className='ui divider' />
-                                    <div className='header ui'>{workOrder}</div>
-                                    <table className='ui celled table fixed striped'>
-                                        <thead>
-                                            <tr>
-                                                <th>Part Number</th>
-                                                <th>Description</th>
-                                                <th>UOM</th>
-                                                <th>QTY To Pick</th>
-                                                <th>Qty Picked</th>
-                                                <th>Lot/Serial</th>
-                                            </tr>
-                                        </thead>
-                                        {partNumber.map(pn => {
-                                            const matchingDescription = partDescription.find(pd => pd.ref === pn.ref);
-                                            const matchingQtyToPick = partQtyToPick.find(qtp => qtp.ref === pn.ref);
-                                            const matchingUom = partUom.find(uom => uom.ref === pn.ref);
-    
-                                            return createTable(matchingDescription, matchingUom, matchingQtyToPick, pn);
-                                        })}
-                                    </table>
-                                    <tr
-                                        className={`ui button ${confirmPickList ? "disabled" : "green"}`}
-                                        onClick={() => handleSubmit(fields.Title)}
-                                    >
-                                        {!confirmPickList ? "Confirm" : "Confirmed"}
-                                    </tr>
+                <div className='ui '>
+                    {
+                        data.map((item, index) => {
+                            if (activeTab !== index) return null;
+
+                            const fields = item.fields;
+                            const partNumber = JSON.parse(fields.PartNumber);
+                            const partDescription = JSON.parse(fields.PartDescription);
+                            const partUom = JSON.parse(fields.UOM);
+                            const partQtyToPick = JSON.parse(fields['QtyToPick']);
+                            const workOrder = fields['WO'];
+                            const label = is24HoursOld(item.fields['Created']);
+                            const imageSrc = imagePaths[fields.Title] && imagePaths[fields.Title] !== 'img/placeholder.jpg'
+                                ? imagePaths[fields.Title]
+                                : 'img/placeholder.jpg';
+
+                            return (
+                                <div className='ui segments horizontal' key={fields.Title}>
+
+                                    <div class="ui  segment ">
+                                    {label.status && <div class={`ui label  ${label.color}`}>{label.message}</div>}
+
+                                        <h4 class="ui header ">WO Reference: {fields['WO'].replace('WO - ', '')}</h4>
+                                        <p class='column'><strong>Quantity:</strong> {fields['Quantity']} Unit(s) </p>
+                                        <p class='column'><strong>Scheduled Date:</strong> {convertToDateFormat(fields['Created'])}</p>
+                                        <p class='column'><strong>Responsible:</strong> Mitchell Admin</p>
+                                        <p class='column'><strong>Deviations:</strong>
+                                            <div
+                                                className={`ui label  ${fields['DEV'].includes('NONE') ? 'grey basic' : 'red'
+                                                    }`}
+                                            >
+                                                <p className="ui text">
+                                                    {fields['DEV']} {/* Displays any work order deviations, if present */}
+                                                </p>
+                                            </div>
+                                        </p>
+                                    </div>
+
+
+
+                                    <div class=" ui segment inverted black">
+                                        <table className='ui celled table center aligned  small striped'>
+                                            <thead>
+                                                <tr>
+                                                    <th>Part Number</th>
+                                                    <th>Description</th>
+                                                    <th>UOM</th>
+                                                    <th>QTY To Pick</th>
+                                                    <th>Qty Picked</th>
+                                                    <th>Lot/Serial</th>
+                                                </tr>
+                                            </thead>
+                                            {partNumber.map(pn => {
+                                                const matchingDescription = partDescription.find(pd => pd.ref === pn.ref);
+                                                const matchingQtyToPick = partQtyToPick.find(qtp => qtp.ref === pn.ref);
+                                                const matchingUom = partUom.find(uom => uom.ref === pn.ref);
+
+                                                return createTable(matchingDescription, matchingUom, matchingQtyToPick, pn);
+                                            })}
+                                        </table>
+                                        <tr
+                                            className={`ui button ${confirmPickList ? "disabled" : "green"}`}
+                                            onClick={() => handleSubmit(fields.Title)}
+                                        >
+                                            {!confirmPickList ? "Confirm" : "Confirmed"}
+                                        </tr>
+                                    </div>
                                 </div>
-                            </div>
-                        );
-                    })}
+                            );
+                        })}
                 </div>
             </div>
         );
@@ -368,8 +377,8 @@ const PickListAppNew = ({
             const runQuantity = fields.Quantity
             const title = fields.Title;  // Assuming the title field is here 
             const workOrder = fields['WO'];
-            const deviations = fields['DEV']; 
-            const key = 'goalProgress-'+`${departmentName}-${title}`  
+            const deviations = fields['DEV'];
+            const key = 'goalProgress-' + `${departmentName}-${title}`
             // Generating a timestamp for the record
             const timestamp = new Date().toISOString();
 
@@ -400,8 +409,8 @@ const PickListAppNew = ({
                 progress: "0",
                 "creation date": timestamp,
                 isActive: true,
-                wo:workOrder,
-                dev:deviations
+                wo: workOrder,
+                dev: deviations
             };
 
             // Store the object in localStorage
@@ -413,20 +422,20 @@ const PickListAppNew = ({
 
     return (
         <div>
-          {error && <div className="ui red message">{error}</div>}
-      
-          {sharePointData.length > 0 ? (
-            <div id="sharePointData" className={`ui segment black ${clearLoading ? 'loading' : ''}`}>
-              {!error ? displaySharePointData(sharePointData):'No data'}
-            </div>
-          ) : (
-            <p>No items found in the list.
-            {displaySharePointData([])}
-            </p>
-          )}
+            {error && <div className="ui red message">{error}</div>}
+
+            {sharePointData.length > 0 ? (
+                <div id="sharePointData" className={`ui segment black ${clearLoading ? 'loading' : ''}`}>
+                    {!error ? displaySharePointData(sharePointData) : 'No data'}
+                </div>
+            ) : (
+                <p>No items found in the list.
+                    {displaySharePointData([])}
+                </p>
+            )}
         </div>
-      );
-      
+    );
+
 };
 
 

@@ -8,7 +8,7 @@ const ErrorMessage = ({ error }) => {
         .transition('fade');
         setClear(false)
     });
-  }, [clear]);
+  }, [clear,error]);
   console.log(' ErrorMessage Component =========================>', error);
   const line = () => {
     return (error ? <p>{error.toString()}</p> :'')

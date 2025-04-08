@@ -138,8 +138,6 @@ function DepartmentMenu() {
         }
     }, [filterTask]);
 
-
-
     const getMe = async () => {
         const accessToken = sessionStorage.getItem('access_token');
 
@@ -159,7 +157,6 @@ function DepartmentMenu() {
                 });
         }
     };
-
 
     const handleDepartmentClick = (department) => {
         setData([]);
@@ -187,6 +184,9 @@ function DepartmentMenu() {
                     setError={setError}
                     setFilterTask={setFilterTask}
                     filterTask={filterTask}
+                    inventoryDepartmentName={['inventory', 'sage']}
+                    inventoryRef={inventory}
+                 
                 /> :
                 <Editor
                     spMethod={main}
@@ -205,6 +205,9 @@ function DepartmentMenu() {
                     setSearchQuery={setSearchQuery}
                     setFilterTask={setFilterTask}
                     filterTask={filterTask}
+                    inventoryDepartmentName={['inventory', 'sage']}
+                    inventoryRef={inventory}
+                 
                 />
         )
     };
@@ -329,14 +332,15 @@ function DepartmentMenu() {
     const header = () => {
         return (
             <div>
-                <h1 className="ui header huge" style={{ marginTop: '2%', marginLeft: '3%' }}>
+                <h1 className="ui header medium" style={{ marginTop: '2%', marginLeft: '3%' }}>
                     <div className="ui image avatar">
                         <img
                             src="img/logo.jpg" // replace with your image source
                             alt="Department Image"
                         />
                     </div>
-                    {selectedDepartment}
+                    Manufacturing Orders
+                    <div class="sub header">{selectedDepartment}</div>
                 </h1>
             </div>
         );

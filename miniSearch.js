@@ -38,7 +38,7 @@ const MiniSearch = ({
 
     const miniSearch = () => {
         return (
-            <div className="right menu">
+            <div className="item">
                 <div class={`ui right aligned search item  ${searchThisClass} ${!inventoryRef ? `loading disabled ` : ''}`} >
                     <div className="ui transparent icon input">
                         <input className="prompt" type="text" placeholder="Search..." />

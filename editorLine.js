@@ -19,7 +19,9 @@ const LinesEditorNew = ( {
   issesListData,
   setSearchQuery,
   setFilterTask,
-  filterTask
+  filterTask,
+  inventoryDepartmentName,
+  inventoryRef,
 
 }) => {
 
@@ -293,6 +295,9 @@ const LinesEditorNew = ( {
         woNdev={woNdev}
         issesListData={issesListData}
         setFilterTask={setFilterTask}
+        inventoryDepartmentName={inventoryDepartmentName}
+        inventoryRef={inventoryRef}
+      
 
       />
 
