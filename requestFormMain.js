@@ -61,6 +61,7 @@ const MaintenanceRequest = () => {
   };
 
   return (
+    <div class='ui segment black'>
     <div className="ui grid segment " style={{ padding:'2%', marginTop: '2%', marginLeft: '5%', width: '90%' }}>
 
       <form className="ui form fluid" onSubmit={handleSubmit}>
@@ -166,6 +167,7 @@ const MaintenanceRequest = () => {
           Submit
         </button>
       </form>
+    </div>
     </div>
   );
 };

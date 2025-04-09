@@ -76,18 +76,14 @@ const ProductionDowntimeReport = ({ spMethod }) => {
   }, [departmentClick]);
 
   return (
-    <div className="ui grid" style={{ marginLeft: '5%', width: '90%' }}>
-      <div className="ui row">
-        {/* Sidebar/Selection Menu */}
-        <div className="three wide mobile five wide tablet five wide computer column">
-          <SelectionMenuTab_DashComponent
+    <div className="ui" style={{ marginLeft: '5%', width: '90%' }}>
+                <SelectionMenuTab_DashComponent
             setDepartmentTitle={setDepartmentTitle}
             setDepartmentClick={setDepartmentClick}
           />
-        </div>
 
         {/* Table Section */}
-        <div className="segment ui thirteen wide mobile eleven wide tablet eleven wide computer column">
+        <div className=" ui segment black ui thirteen wide mobile eleven wide tablet eleven wide computer column">
           <h3>{departmentTitle}</h3>
           <table className="ui celled striped table black very basic compact">
             <thead>
@@ -136,7 +132,7 @@ const ProductionDowntimeReport = ({ spMethod }) => {
             </tbody>
           </table>
         </div>
-      </div>
+ 
     </div>
   );
 };

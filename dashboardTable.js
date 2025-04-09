@@ -2,8 +2,8 @@
 const Table_DashboardComponent = ({ data }) => {
 
     return (
-        <div className="content">
-        <table className="ui celled striped table">
+    
+        <table className="ui celled striped table black selectable ">
             <thead>
                 <tr>
                     <th>Hour</th>
@@ -27,7 +27,7 @@ const Table_DashboardComponent = ({ data }) => {
                 ))}
             </tbody>
         </table>
-    </div>
+
     );
 };
 

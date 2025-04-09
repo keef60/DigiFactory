@@ -1,12 +1,15 @@
 
 
-const OrdreShopFloorTimer = () => {
+const OrdreShopFloorTimer = ({user,department}) => {
     const [time, setTime] = useState(0); // Global time in seconds
+    const [modalOpen, setModalOpen] = useState(false);
+    const [employeeName, setEmployeeName] = useState('');
+    const [actionType, setActionType] = useState('start'); // 'start', 'pause' or 'stop'
     const [tasks, setTasks] = useState([
         {
             id: 1,
-            name: 'Main Assembly',
-            assigned: 'Mitchell Admin',
+            name: `${department.toUpperCase()} Assembly`||'Main Assembly',
+            assigned: user,
             workCenter: '026',
             expectedDuration: 60,
             realDuration: 0,
@@ -15,10 +18,7 @@ const OrdreShopFloorTimer = () => {
         },
     ]);
 
-    const [modalOpen, setModalOpen] = useState(false);
-    const [employeeName, setEmployeeName] = useState('');
-    const [actionType, setActionType] = useState('start'); // 'start', 'pause' or 'stop'
-
+    useEffect(()=>{},[employeeName])
     useEffect(() => {
         return () => {
             tasks.forEach(task => {
@@ -37,6 +37,8 @@ const OrdreShopFloorTimer = () => {
     };
 
     const startTaskTimer = (taskId) => {
+        setEmployeeName(user);
+        setModalOpen(true);
         const updatedTasks = [...tasks];
         const taskIndex = updatedTasks.findIndex((task) => task.id === taskId);
         const task = updatedTasks[taskIndex];
@@ -73,6 +75,7 @@ const OrdreShopFloorTimer = () => {
     };
 
     const stopTaskTimer = (taskId) => {
+        setModalOpen(true);
         const updatedTasks = [...tasks];
         const taskIndex = updatedTasks.findIndex((task) => task.id === taskId);
         const task = updatedTasks[taskIndex];

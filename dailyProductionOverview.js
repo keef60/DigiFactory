@@ -102,25 +102,16 @@ const DailyProductionOverview = ({}) => {
   }, [departmentClick]);
 
   return (
-    <div
-      className="ui grid stackable"
-      style={{
-        marginLeft: '5%',
-        width: '90%',
-      }}
-    >
-      <div className="ui row">
-        {/* Sidebar/Selection Menu */}
-        <div className='three wide mobile five wide tablet five wide computer column'>
-          <SelectionMenuTab_DashComponent
+
+    <div className="ui" style={{ marginLeft: '5%', width: '90%' }}>
+                <SelectionMenuTab_DashComponent
             setDepartmentTitle={setDepartmentTitle}
             setDepartmentClick={setDepartmentClick}
           />
-        </div>
 
         {/* Table Section */}
-        <div className='ui segment thirteen wide mobile eleven wide tablet eleven wide computer column'>
-          <h3>{departmentTitle}</h3>
+        <div className=" ui segment black ui thirteen wide mobile eleven wide tablet eleven wide computer column">
+
           <table className='ui celled striped table black compact very basic  selectable '>
             <thead>
               <tr>
@@ -173,7 +164,7 @@ const DailyProductionOverview = ({}) => {
           </table>
         </div>
       </div>
-    </div>
+    
   );
 };
 

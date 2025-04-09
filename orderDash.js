@@ -3,7 +3,8 @@ const ItemWorkOrderDash = ({
     departmentName,
     selectedNumber,
     clearLoading,
-    setWOnDev
+    user,
+    issesListData
 }) => {
 
     const [accessToken, setAccessToken] = useState(null);
@@ -47,7 +48,9 @@ const ItemWorkOrderDash = ({
     };
 
     const fetchSharePointData = async (token) => {
+        console.log('================)01',selectedDepartment)
         if (!token) {
+            console.log('================)02',selectedDepartment)
             setError('No valid access token provided. Please input a valid token.');
             return;
         }
@@ -62,16 +65,18 @@ const ItemWorkOrderDash = ({
                     Authorization: `Bearer ${token}`,
                 },
             });
-
+            console.log('================)03',selectedDepartment)
             if (!siteResponse.ok) {
+                console.log('================)04',selectedDepartment)
                 const errorData = await siteResponse.json();
                 throw new Error(`Failed to fetch site data: ${errorData.error.message}`);
             }
 
             const siteData = await siteResponse.json();
             const siteId = siteData.id;
-
+            console.log('================)05',selectedDepartment)
             if (!siteId) {
+                console.log('================)06',selectedDepartment)
                 throw new Error('Unable to get site ID');
             }
 
@@ -81,8 +86,9 @@ const ItemWorkOrderDash = ({
                     Authorization: `Bearer ${token}`,
                 },
             });
-
+            console.log('================)07',selectedDepartment)
             if (!listsResponse.ok) {
+                console.log('================)08',selectedDepartment)
                 const errorData = await listsResponse.json();
                 throw new Error(`Failed to fetch lists: ${errorData.error.message}`);
             }
@@ -92,8 +98,9 @@ const ItemWorkOrderDash = ({
             const pId = listsData.value.filter(e => e.displayName === 'PICKLIST')[0].id;
             setPostName(pId);
             setSiteID(siteId);
-
+            console.log('================)09',selectedDepartment)
             if (!list) {
+                console.log('================)010',selectedDepartment)
                 throw new Error(`Unable to find the ${selectedDepartment} list`);
             }
 
@@ -105,22 +112,26 @@ const ItemWorkOrderDash = ({
                     Authorization: `Bearer ${token}`,
                 },
             });
-
+            console.log('================)011',selectedDepartment)
             if (!itemsResponse.ok) {
+                console.log('================)012',selectedDepartment)
                 const errorData = await itemsResponse.json();
                 throw new Error(`Failed to fetch list items: ${errorData.error.message}`);
             }
 
             const itemsData = await itemsResponse.json();
+            console.log('================)013',selectedDepartment)
+            if(itemsData){
+                console.log('================)014',selectedDepartment)
+                console.log('================)))))))',itemsData)
             setSharePointData(itemsData.value);
-
-            setWOnDev(itemsData.value);
             setError(null);
+        }
 
             const fetchImages = async () => {
                 const imageMap = {};
                 await Promise.all(
-                    itemsData.value.map(async (item) => {
+                   await itemsData.value.map(async (item) => {
                         const imagePath = await getImagePath(item.fields.Title);
                         imageMap[item.fields.Title] = imagePath;
                     })
@@ -133,15 +144,6 @@ const ItemWorkOrderDash = ({
             setError('Error fetching SharePoint data: ' + err.message);
             console.error(err);
         }
-    };
-
-    const statusTab = (item) => {
-        console.log(item)
-        const dC = is24HoursOld(item.createdDateTime);
-        return (
-            dC.status && <div class={`ui  label  ${dC.status ? dC.color : 'black'}`}>{dC.message}
-            </div>
-        );
     };
 
     const [activeTab, setActiveTab] = useState(0);
@@ -181,7 +183,6 @@ const ItemWorkOrderDash = ({
             </div>
         );
     };
-
     const displayLowerMenuData = (data) => {
         return (
             <div className='ui   segment'>
@@ -192,13 +193,16 @@ const ItemWorkOrderDash = ({
                             <OrderLowerMenu
                                 itemData={item}
                                 selectedNumber={selectedNumber}
-                                departmentName={departmentName} />
+                                departmentName={departmentName}
+                                user={user}
+                                issesListData={issesListData} />
                         </>
                     );
                 })}
             </div>
         );
     };
+    
     return (
 
         <div>

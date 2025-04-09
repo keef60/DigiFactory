@@ -1,6 +1,6 @@
 const { useEffect, useRef, useState } = React
 
-const DisplayPaneNew = ({
+const OrderDisplayPane = ({
     selectedDepartment,
     departmentName,
     spMethod,
@@ -38,6 +38,7 @@ const DisplayPaneNew = ({
                 setWOnDev={setWOnDev}
                 setSelectedNumber={setSelectedNumber}
                 user={user}
+                issesListData={issesListData}
             />
         ),
         inventory: (
@@ -50,7 +51,10 @@ const DisplayPaneNew = ({
             />
         ),
         maintenanceRequest: (
-            <MaintenanceRequest />
+            <OrderMaintenanceRequest
+            issuesListData={issesListData}
+                department={departmentName}
+                user={user} />
         )
     };
 

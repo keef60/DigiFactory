@@ -3,7 +3,7 @@
 const { useState, useEffect, useRef } = React
 function DepartmentMenu() {
 
-    const [selectedDepartment, setSelectedDepartment] = useState('Paint');
+    const [selectedDepartment, setSelectedDepartment] = useState('Handles');
     // State for handling search query
     const [searchQueryLifted, setSearchQuery] = useState('');
     // State for controlling the visibility of the save warning message
@@ -186,6 +186,7 @@ function DepartmentMenu() {
                     filterTask={filterTask}
                     inventoryDepartmentName={['inventory', 'sage']}
                     inventoryRef={inventory}
+                    user={userName}
                  
                 /> :
                 <Editor
@@ -207,6 +208,7 @@ function DepartmentMenu() {
                     filterTask={filterTask}
                     inventoryDepartmentName={['inventory', 'sage']}
                     inventoryRef={inventory}
+                    user={userName}
                  
                 />
         )
@@ -312,7 +314,7 @@ function DepartmentMenu() {
             case 'Real-Time Production Report':
                 return (
                     <div className="ui">
-                        <Dashboard spMethod={main} />
+                        <ReportsRealTimeDashboard />
                     </div>
                 );
 
@@ -340,7 +342,7 @@ function DepartmentMenu() {
                         />
                     </div>
                     Manufacturing Orders
-                    <div class="sub header">{selectedDepartment}</div>
+                   
                 </h1>
             </div>
         );

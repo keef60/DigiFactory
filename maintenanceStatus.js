@@ -1,11 +1,19 @@
-const MaintenanceStatus = () => {
+const MaintenanceStatus = ({setDepartmentTitle,setDepartmentClick}) => {
   const data = [
     { equipment: 'Machine A', maintenanceType: 'Preventive', lastMaintenance: '2025-03-25', nextMaintenance: '2025-04-05', status: 'Good' },
     { equipment: 'Machine B', maintenanceType: 'Corrective', lastMaintenance: '2025-03-20', nextMaintenance: '2025-04-10', status: 'Requires Repair' },
   ];
 
   return (
-    <div>
+    <div className="ui" style={{ marginLeft: '5%', width: '90%' }}>
+    <SelectionMenuTab_DashComponent
+setDepartmentTitle={setDepartmentTitle}
+setDepartmentClick={setDepartmentClick}
+/>
+
+{/* Table Section */}
+<div className=" ui segment black ui thirteen wide mobile eleven wide tablet eleven wide computer column">
+
       <h2>Maintenance Status</h2>
       <table>
         <thead>
@@ -29,6 +37,7 @@ const MaintenanceStatus = () => {
           ))}
         </tbody>
       </table>
+    </div>
     </div>
   );
 };

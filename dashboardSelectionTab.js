@@ -5,7 +5,7 @@ const SelectionMenuTab_DashComponent = ({setDepartmentClick,setDepartmentTitle }
         $('.ui.dropdown.line').dropdown()
     }, []);
     return (
-        <div className="ui vertical menu">
+        <div className="ui mini inverted black menu">
             <div className="ui item header grey">Department</div>
             {['Paint', 'Handles', 'Pumps', 'Packout', 'Hose', 'Frames', 'Line'].map(department => {
                 if (department === 'Line') {

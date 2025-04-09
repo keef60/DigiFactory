@@ -19,6 +19,7 @@ const Editor = ({
   filterTask,
   inventoryDepartmentName,
   inventoryRef,
+  user,
   
 
 }) => {
@@ -137,9 +138,9 @@ const Editor = ({
           saveNotes[noteId][rowIndex].push(newNote);
           localStorage.setItem('saved-notes-paint', JSON.stringify(saveNotes));
 
-          /* spMethod.handleSubmit(noteId, JSON.stringify(savedNotes), 'paint', 'NOTES')
+           spMethod.handleSubmit(noteId, JSON.stringify(savedNotes), 'paint', 'NOTES')
               .then(e => console.log(e))
-              .catch(err => console.log(err)); */
+              .catch(err => console.log(err)); 
           setSavedNotes(saveNotes);
         }
       } else {
@@ -201,7 +202,7 @@ const Editor = ({
      
       
       {/* Display each row in its own segment with name on top */}
-      <DisplayPaneNew
+      <OrderDisplayPane
         selectedDepartment={selectedDepartment}
         filteredData={filteredData}
         imagePaths={imagePaths}
@@ -232,6 +233,7 @@ const Editor = ({
         filterTask={filterTask}
         inventoryDepartmentName={inventoryDepartmentName}
         inventoryRef={inventoryRef}
+        user={user}
       
       />
 
@@ -254,7 +256,6 @@ const Editor = ({
             <embed id="pdf-embed" src={pdfPath2} type="application/pdf" width="100%" height="600px" />
           </div>
           <div className="ui bottom attached tab segment" data-tab={headers[9]}>
-            <iframe src="https://fnagroup-my.sharepoint.com/personal/kec1_fna-group_com/_layouts/15/embed.aspx?UniqueId=73a55f36-939d-4152-86f0-56da3a87eb01&nav=%7B%22playbackOptions%22%3A%7B%22startTimeInSeconds%22%3A0%7D%7D&embed=%7B%22ust%22%3Atrue%2C%22hv%22%3A%22CopyEmbedCode%22%7D&referrer=StreamWebApp&referrerScenario=EmbedDialog.Create" width="640" height="360" frameborder="0" scrolling="no" allowfullscreen title="IMG_2984.MOV"></iframe>
           </div>
         </div>
       </div>

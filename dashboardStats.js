@@ -1,6 +1,4 @@
 
-const { useState, useEffect } = React
-
 const Statistics_DashboardComponent = ({ stats }) => {
 
     // Helper function to count up from 0 to the final total value
@@ -31,19 +29,20 @@ const Statistics_DashboardComponent = ({ stats }) => {
         const animatedTotal = countUp(i.total);
 
         return (
-            <div className="four wide column"  key={i.title} style={{ left:'25%'}}>
-                <div className="ui statistic">
-                    <div className="label">Total {i.title}</div>
+            <div className=""  key={i.title} >
+                <div className="ui statistic ">
+                    
                     <div className="value">{animatedTotal}</div>
+                    <div className="label">{i.title}</div>
                 </div>
             </div>
         );
     });
 
     return (
-        <>
+        <div class="ui statistics horizontal tiny " style={{marginTop:'40%'}}>
             {statisticCreator}
-        </>
+        </div>
     );
 };
 
