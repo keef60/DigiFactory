@@ -13,6 +13,13 @@ const OrderComments = ({ noteId, department,user,workOrderRef }) => {
         return savedData ? savedData : {};
       })
     }
+
+const test = async()=>{
+  await main.fetchSharePointData('NOTES', 'handles', false,'','',true)
+  .then(e => console.log('---------------------]',e))
+  .catch(err => console.log('==================((((((((((((('));
+}
+test()
   }, [newNote,department]);
 
   const handleChange = (e) => {
@@ -79,7 +86,7 @@ const OrderComments = ({ noteId, department,user,workOrderRef }) => {
     <div className="ui minimal comments " >
       <div className="ui segments horizontal ">
       {/* Add a comment form */}
-      <div className='ui segment '
+      <div className='ui segment  '
     
       >
         <form onSubmit={handleSubmit} className="ui reply form">
@@ -91,14 +98,15 @@ const OrderComments = ({ noteId, department,user,workOrderRef }) => {
               rows="3"
             />
           </div>
-          <button type="submit" className="ui blue labeled submit icon button">
+          <button type="submit" className="ui black labeled submit icon button">
             <i className="icon edit"></i> Save Comment
           </button>
         </form>
       </div>
 
       {/* List of comments */}
-      <div className="comments-list ui segment "
+      <div class='ui segment red'>
+      <div className="comments-list  "
       style={{ maxHeight: '300px', overflowY: 'auto' }}
       >
         {savedNotes[noteId] && savedNotes[noteId]['comments'] && savedNotes[noteId]['comments'].map((comment) => (
@@ -138,6 +146,7 @@ const OrderComments = ({ noteId, department,user,workOrderRef }) => {
             )}
           </div>
         ))}
+      </div>
       </div>
       </div>
     </div>

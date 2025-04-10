@@ -187,7 +187,7 @@ function DepartmentMenu() {
                     inventoryDepartmentName={['inventory', 'sage']}
                     inventoryRef={inventory}
                     user={userName}
-                 
+
                 /> :
                 <Editor
                     spMethod={main}
@@ -209,7 +209,7 @@ function DepartmentMenu() {
                     inventoryDepartmentName={['inventory', 'sage']}
                     inventoryRef={inventory}
                     user={userName}
-                 
+
                 />
         )
     };
@@ -258,11 +258,12 @@ function DepartmentMenu() {
             case 'Warehouse':
 
                 return (
-
-                    <LocationForm
+                    <WarehouseDashboard
                         inventoryRef={inventory}
                         searchQueryLifted={searchQueryLifted}
+                        user={userName}
                     />
+
 
                 );
 
@@ -342,7 +343,7 @@ function DepartmentMenu() {
                         />
                     </div>
                     Manufacturing Orders
-                   
+
                 </h1>
             </div>
         );

@@ -90,6 +90,8 @@
       const postName = sessionStorage.getItem(`postName-${departmentName}-${list}`);
       const accessToken = sessionStorage.getItem('access_token');
       const delFieldData = JSON.stringify(rowData); // Assuming rowData is passed correctly
+      const titleString =  typeof modelNumber !== 'string'?modelNumber.toString() : modelNumber;
+
       let itemsData = null;
       let result = null;
       let updateResponse = null;
@@ -99,7 +101,7 @@
   
   
       // Construct the URL to get the list items with a filter by Title (modelNumber)
-      const itemsUrl = `https://graph.microsoft.com/v1.0/sites/${siteID}/lists/${postName}/items?$filter=fields/Title eq '${modelNumber}'&$expand=fields`;
+      const itemsUrl = `https://graph.microsoft.com/v1.0/sites/${siteID}/lists/${postName}/items?$filter=fields/Title eq '${titleString}'&$expand=fields`;
   
       const headers = {
         "Authorization": `Bearer ${accessToken}`,
@@ -131,7 +133,7 @@
   
           const updateBody = {
             fields: {
-              Title: modelNumber.toString(),  // Adjust this field as per the requirement
+              Title: titleString,  // Adjust this field as per the requirement
               [departmentName]: delFieldData // Include any other fields you want to update
             },
           };
@@ -155,11 +157,11 @@
         } else if (!itemsResponse || !updateResponse) {
           // If the item doesn't exist, create a new one using POST
           const url = `https://graph.microsoft.com/v1.0/sites/${siteID}/lists/${postName}/items`;
-  
-  
+
+
           const body = {
             fields: {
-              Title: modelNumber.toString(),  // Adjust this field as per your SharePoint list
+              Title: titleString,  // Adjust this field as per your SharePoint list
               [departmentName]: delFieldData // Add other fields as needed
             },
           };

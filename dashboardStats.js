@@ -40,7 +40,7 @@ const Statistics_DashboardComponent = ({ stats }) => {
     });
 
     return (
-        <div class="ui statistics horizontal tiny " style={{marginTop:'40%'}}>
+        <div class="ui statistics horizontal tiny " /* style={{marginTop:'40%'}} */>
             {statisticCreator}
         </div>
     );

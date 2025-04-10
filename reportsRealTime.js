@@ -103,15 +103,15 @@ const ReportsRealTimeDashboard = ({ }) => {
             {
                 label: "Machine Production",
                 data: data.map((row) => row.machinePrd),
-                backgroundColor: "rgba(75, 192, 192, 0.6)",
-                borderColor: "rgba(75, 192, 192, 1)",
+                backgroundColor: "hsla(350, 91%, 43%, 0.60)",
+                borderColor: "rgba(209, 10, 43, 1)",
                 borderWidth: 1,
             },
             {
                 label: "Run Rate",
                 data: data.map((row) => row.runRate),
-                backgroundColor: "rgba(153, 102, 255, 0.6)",
-                borderColor: "rgba(153, 102, 255, 1)",
+                backgroundColor: "rgba(0, 0, 0, 0.6)",
+                borderColor: "rgb(34, 34, 34)",
                 borderWidth: 1,
             },
         ],
@@ -138,61 +138,71 @@ const ReportsRealTimeDashboard = ({ }) => {
 
     return (
         <div className="ui" style={{ position: 'center', marginLeft: '5%', width: '90%' }}>
-             <SelectionMenuTab_DashComponent
-                            setDepartmentTitle={setDepartmentTitle}
-                            setDepartmentClick={setDepartmentClick}
-                        />
+            <SelectionMenuTab_DashComponent
+                setDepartmentTitle={setDepartmentTitle}
+                setDepartmentClick={setDepartmentClick}
+            />
             <div className="ui segment very padded black " style={{ marginTop: "2px" }}>
 
                 <div className="ui grid centered">
-                <div class='row'>
-                 <div class=' ui segment ten wide column'>
-                        <ResponsiveChart_DashboardComponent
-                            departmentTitle={departmentTitle}
-                            setTableView={setTableView} />
-                    </div>
-                    <div class=' ui segment four wide column'>
-                  <Statistics_DashboardComponent stats={[
-                        {
-                            total: totalProduction,
-                            title: 'Production'
-                        }
-                        , {
-                            total: totalRunRate,
-                            title: 'Run Rate'
-                        }
-                        , {
-                            total: totalVariance,
-                            title: 'Variance'
-                        }
-                    ]} />
-                    </div>
-                    </div>
-                </div>
-
-                <div className="ui grid centered">
-                    <div className="row">
-                        <div className=" ui segment fourteen wide column">
-                            
-                                <h3 className="ui  header">
-                                    {departmentTitle ? `Assembly ${departmentTitle} Hour by Hour` : 'Please select a department'}
-                                </h3>
-                           
-                            {departmentTitle && (
-                                <Table_DashboardComponent data={data} />
-                            )}
+                    <div class='row'>
+                        <div class=' ten wide column'>
+                            <div class='ui segment black '>
+                                <ResponsiveChart_DashboardComponent
+                                    departmentTitle={departmentTitle}
+                                    setTableView={setTableView} />
+                            </div>
+                        </div>
+                        <div class=' four wide column '>
+                            <div class='ui segment  black '>
+                                <Statistics_DashboardComponent stats={[
+                                    {
+                                        total: totalProduction,
+                                        title: 'Production'
+                                    }
+                                    , {
+                                        total: totalRunRate,
+                                        title: 'Run Rate'
+                                    }
+                                    , {
+                                        total: totalVariance,
+                                        title: 'Variance'
+                                    }
+                                ]} />
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 <div className="ui grid centered">
                     <div className="row">
-                        <div className=" ui segment  fourteen wide column">
+                        <div className=" fourteen wide column">
+                            <div className=" ui segment ">
                                 <h3 className="ui  header">
-                                    {departmentTitle ? `Assembly ${departmentTitle} Notes` : 'No data'}
+                                    {departmentTitle ?
+                                        `Assembly ${departmentTitle} Hour by Hour` :
+                                        'Please select a department'}
                                 </h3>
-                           
-                            {departmentTitle && (
+
+                                {departmentTitle && (
+                                    <Table_DashboardComponent data={data} />
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="ui grid centered">
+                    <div className="row">
+                        <div className="  fourteen wide column">
+                            <div className=" ui segment ">
+                                <h3 className="ui  header">
+                                    {departmentTitle ?
+                                        `Assembly ${departmentTitle} Notes` :
+                                        'No data'}
+                                </h3>
+
+                                {departmentTitle && (
                                     <table className="ui celled striped table black selectable ">
                                         <thead>
                                             <tr>
@@ -211,8 +221,9 @@ const ReportsRealTimeDashboard = ({ }) => {
                                             ))}
                                         </tbody>
                                     </table>
-                              
-                            )}
+
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>

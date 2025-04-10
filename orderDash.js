@@ -153,7 +153,7 @@ const ItemWorkOrderDash = ({
         };
         return (
             <div className=''>
-                <div className='ui top attached tabular menu'>
+                <div className='ui top attached tabular menu stackable'>
                     {data.map((item, index) => (
                         <a
                             key={item.fields.Title}

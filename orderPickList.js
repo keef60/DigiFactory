@@ -1,5 +1,3 @@
-const { useEffect, useRef, useState } = React
-
 const OrderPickList = ({
     selectedDepartment,
     departmentName,
@@ -15,7 +13,7 @@ const OrderPickList = ({
     const [imagePaths, setImagePaths] = useState({});
     const [postName, setPostName] = useState('');
     const [siteID, setSiteID] = useState('');
-    const [confirmPickList, setConfirmedPickList] = useState(false);
+    const [confirmPickList, setConfirmedPickList] = useState(true);
     const [rowData, setRowDataIn] = useState({});
 
     const checkImageExists = async (url) => {
@@ -137,6 +135,8 @@ const OrderPickList = ({
     }, [selectedDepartment]);
 
     const handleSubmit = async (modelNumber) => {
+
+        setConfirmedPickList(false);
         const delFieldData = JSON.stringify(rowData);
 
         const itemsUrl = `https://graph.microsoft.com/v1.0/sites/${siteID}/lists/${postName}/items?$filter=fields/Title eq '${modelNumber}'&$expand=fields`;
@@ -184,7 +184,9 @@ const OrderPickList = ({
 
                 const result = await updateResponse.json();
                 console.log("Updated item:", result);
+                alert("Pick list submission complete. All entries have been saved.")
                 setConfirmedPickList(updateResponse.ok);
+                setRowDataIn('');
             } else {
                 const url = `https://graph.microsoft.com/v1.0/sites/${siteID}/lists/${postName}/items`;
 
@@ -208,7 +210,10 @@ const OrderPickList = ({
 
                 const result = await createResponse.json();
                 console.log("Created new item:", result);
+                alert("Pick list submission complete. All entries have been saved.")
+
                 setConfirmedPickList(createResponse.ok);
+                setRowDataIn('');
             }
         } catch (err) {
             console.error("Error:", err);
@@ -222,7 +227,17 @@ const OrderPickList = ({
                     <td>{pn.pid}</td>
                     <td>{matchingDescription ? matchingDescription.pid : 'No description available'}</td>
                     <td>{matchingUom ? matchingUom.pid : 'No UOM available'}</td>
-                    <td>{matchingQtyToPick ? matchingQtyToPick.pid : 'No quantity to pick available'}</td>
+                    <td>{matchingQtyToPick ?<><button class='ui button ' onClick={()=>{
+                        setRowDataIn(prevData => ({
+                            ...prevData,
+                            [pn.ref]: {
+                                ...prevData[pn.ref],
+                                partNumber: pn.pid,
+                                qtyPicked: matchingQtyToPick.pid,
+                                qtyToPick: matchingQtyToPick.pid,
+                            }
+                        }))
+                    }}>{matchingQtyToPick.pid}</button></>  : 'No quantity to pick available'}</td>
                     <td>
                         <div className='ui input fluid'>
                             <input
@@ -230,6 +245,7 @@ const OrderPickList = ({
                                 className='qty-picked'
                                 name={`qtyPicked_${pn.ref}`}
                                 placeholder='Qty Picked'
+                                value={rowData[pn.ref]?.qtyPicked || ''}
                                 onChange={(e) => setRowDataIn(prevData => ({
                                     ...prevData,
                                     [pn.ref]: {
@@ -301,17 +317,14 @@ const OrderPickList = ({
                                 ? imagePaths[fields.Title]
                                 : 'img/placeholder.jpg';
 
-                            return (
-                                <div className='ui segments horizontal' key={fields.Title}>
+                            return (/* segments horizontal */
+                                <div className='ui segments ' key={fields.Title}>
 
-                                    <div class="ui  segment inverted black">
-                                    {label.status && <div class={`ui label  ${label.color}`}>{label.message}</div>}
-
-                                        <h4 class="ui header ">WO: {fields['WO'].replace('WO - ', '')}</h4>
-                                        <p class='column'><strong>Quantity:</strong> {fields['Quantity']} Unit(s) </p>
-                                        <p class='column'><strong>Scheduled Date:</strong> {convertToDateFormat(fields['Created'])}</p>
-                                        <p class='column'><strong>Responsible:</strong> Mitchell Admin</p>
-                                        <p class='column'><strong>Deviations:</strong>
+                                    <div class="ui  padded segment red" >
+                                        {label.status && <div class={`ui label basic  ${label.color}`}>{label.message ==='New'?label.message:`Ordered ${label.message}`}</div>}
+                                        <p class="ui header  ">Work Order Summary</p>
+                                        <p class="column ui grey ">Work Order: {fields['WO'].replace('WO - ', '')}</p>
+                                        <p class='column ui grey'>Deviations:
                                             <div
                                                 className={`ui label  ${fields['DEV'].includes('NONE') ? 'grey basic' : 'red'
                                                     }`}
@@ -325,8 +338,8 @@ const OrderPickList = ({
 
 
 
-                                    <div class=" ui segment">
-                                        <table className='ui celled table center aligned  small striped'>
+                                    <div class=" ui segment basic">
+                                        <table className='ui  center aligned very basic table small striped'>
                                             <thead>
                                                 <tr>
                                                     <th>Part Number</th>
@@ -346,10 +359,10 @@ const OrderPickList = ({
                                             })}
                                         </table>
                                         <tr
-                                            className={`ui button ${confirmPickList ? "disabled" : "green"}`}
+                                            className={`ui button ${confirmPickList ?  "red" : "disabled loading"}`}
                                             onClick={() => handleSubmit(fields.Title)}
                                         >
-                                            {!confirmPickList ? "Confirm" : "Confirmed"}
+                                            {confirmPickList ? "Confirm" : "Confirmed"}
                                         </tr>
                                     </div>
                                 </div>

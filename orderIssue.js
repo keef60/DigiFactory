@@ -35,8 +35,8 @@ const OrderIssues = ({ department, user, modelId }) => {
   const [selectedImpact, setSelectedImpact] = useState('');
   const [downtimeDuration, setDowntimeDuration] = useState('');
   const [selectedMachine, setSelectedMachine] = useState('');
-  const [loading,setLoading]= useState(false);
-  
+  const [loading, setLoading] = useState(false);
+
   useEffect(() => {
     const intervalId = setInterval(() => {
       const now = new Date();
@@ -48,20 +48,19 @@ const OrderIssues = ({ department, user, modelId }) => {
     return () => clearInterval(intervalId); // Cleanup the interval on unmount
   }, []);
 
-  // Simulate fetching data for dropdowns (could be API calls)
   useEffect(() => {
 
-const data = async () => {
-  await main.fetchSharePointData('IssueList', 'issues')
-  .then((e) => {
-    const fields = e.value[0].fields;
-    setIssuesListData( fields)
-  }).catch(err => {
-    console.log('================> STOCK ERROR', err);
-  });
-}
+    const data = async () => {
+      await main.fetchSharePointData('IssueList', 'issues')
+        .then((e) => {
+          const fields = e.value[0].fields;
+          setIssuesListData(fields)
+        }).catch(err => {
+          console.log('================> STOCK ERROR', err);
+        });
+    }
 
-   if(issuesListData){
+    if (issuesListData) {
       const fetchedData = {
         issues: JSON.parse(issuesListData.issues),
         impacts: JSON.parse(issuesListData.impact),
@@ -72,7 +71,7 @@ const data = async () => {
       setReportImpactList(fetchedData.impacts);
       setReportDowntimeDurationsList(fetchedData.downtimeDurations);
       setReportMachineList(fetchedData.machines);
-    }else{
+    } else {
       data()
     }
   }, [issuesListData]);
@@ -80,7 +79,7 @@ const data = async () => {
   // Handle submit and get selected options
   const handleSubmit = (event) => {
     event.preventDefault(); // Prevent default form submission behavior
-setLoading(true);
+    setLoading(true);
     // Get selected options from the form
     /*   const selectedCause = Array.from(event.target.issue.selectedOptions).map(option => option.value);
       const selectedDowntime = Array.from(event.target.downtime.selectedOptions).map(option => option.value);
@@ -94,10 +93,10 @@ setLoading(true);
       impact: [selectedImpact],
       machine: [selectedMachine],
       creationDate: Date.now(),
-      uuid:generateUID()
+      uuid: generateUID()
     }
 
-  
+
     // Submit the selected options
     main.handleSubmit(
       modelId,
@@ -166,7 +165,7 @@ setLoading(true);
 
   return (
     <div className="ui segment basic very padded">
-      <form className={`ui form fluid ${loading?'loading':''}`} onSubmit={handleSubmit}>
+      <form className={`ui form fluid ${loading ? 'loading' : ''}`} onSubmit={handleSubmit}>
 
         {/* First set of 3 fields */}
         <div className="three fields">

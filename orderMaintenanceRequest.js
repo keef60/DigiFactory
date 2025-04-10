@@ -31,6 +31,10 @@ const OrderMaintenanceRequest = ({ issuesListData, department, user,modelId ,lis
   const [reportDowntimeDurationsList, setReportDowntimeDurationsList] = useState([]);
   const [reportMachineList, setReportMachineList] = useState([]);
   const [correctiveAction, setCorrectiveAction] = useState('');
+  const [selectedImpact, setSelectedImpact] = useState('');
+  const [downtimeDuration, setDowntimeDuration] = useState('');
+  const [selectedMachine, setSelectedMachine] = useState('');
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const intervalId = setInterval(() => {
@@ -46,64 +50,60 @@ const OrderMaintenanceRequest = ({ issuesListData, department, user,modelId ,lis
   // Simulate fetching data for dropdowns (could be API calls)
   useEffect(() => {
     // Example data fetching simulation (replace with actual fetching logic)
-if(issuesListData){
-    const fetchedData = {
-      issues: JSON.parse(issuesListData.issues),
-      impacts: JSON.parse(issuesListData.impact),
-      downtimeDurations: JSON.parse(issuesListData.downtimeDurations),
-      machines: JSON.parse(issuesListData.machine)
-    };
-
-
-    setReportIssueList(fetchedData.issues);
-    setReportImpactList(fetchedData.impacts);
-    setReportDowntimeDurationsList(fetchedData.downtimeDurations);
-    setReportMachineList(fetchedData.machines);}
+    if (issuesListData) {
+      const fetchedData = {
+        issues: JSON.parse(issuesListData.issues),
+        impacts: JSON.parse(issuesListData.impact),
+        downtimeDurations: JSON.parse(issuesListData.downtimeDurations),
+        machines: JSON.parse(issuesListData.machine)
+      };
+      setReportIssueList(fetchedData.issues);
+      setReportImpactList(fetchedData.impacts);
+      setReportDowntimeDurationsList(fetchedData.downtimeDurations);
+      setReportMachineList(fetchedData.machines);
+    }
   }, []);
 
   // Handle submit and get selected options
   const handleSubmit = (event) => {
     event.preventDefault(); // Prevent default form submission behavior
-
+    setLoading(true);
     // Get selected options from the form
-  /*   const selectedCause = Array.from(event.target.issue.selectedOptions).map(option => option.value);
-    const selectedDowntime = Array.from(event.target.downtime.selectedOptions).map(option => option.value);
-    const selectedImpact = Array.from(event.target.impact.selectedOptions).map(option => option.value);
-    const selectedMachine = Array.from(event.target.machine.selectedOptions).map(option => option.value);
-    const actionText = event.target.action.value; */
+    /*   const selectedCause = Array.from(event.target.issue.selectedOptions).map(option => option.value);
+      const selectedDowntime = Array.from(event.target.downtime.selectedOptions).map(option => option.value);
+      const selectedImpact = Array.from(event.target.impact.selectedOptions).map(option => option.value);
+      const selectedMachine = Array.from(event.target.machine.selectedOptions).map(option => option.value);
+      const actionText = event.target.action.value; */
 
-    const selectedCause = event.target.issue.value
-    const selectedDowntime = event.target.downtime.value
-    const selectedImpact = event.target.impact.value
-    const selectedMachine = event.target.machine.value
-    const actionText = event.target.action.value;
+      const orderUID = generateShortUID();
+    const selectedOptions = {
+      cause: [selectedIssue],
+      downtime: [downtimeDuration],
+      impact: [selectedImpact],
+      machine: [selectedMachine],
+      creationDate: Date.now(),
+      uuid: orderUID,
+      status:'Pending',
+      maintenanceType:'',
 
-    const selectedOptions ={
-      cause:selectedCause,
-      downtime:selectedDowntime,
-      impact:selectedImpact,
-      machine:selectedMachine,
-      creationDate: Date.now()
     }
-
-    //const currentDepartmentName = department === 'line' ? `line${selectedNumber}` : department;
-
     // Submit the selected options
     main.handleSubmit(
-      modelId,
-      { 
-        selectedOptions: selectedOptions, 
-        actionText: actionText 
+      orderUID,
+      {
+        selectedOptions: selectedOptions,
+        actionText: correctiveAction
       },
       department,
-      listName
+      "Maintenance"
     )
       .then(e => {
         console.log(e);
-
         // Reset the selected options after the submit is successful
         $('.ui.dropdown').dropdown("clear");
-
+        setCorrectiveAction('');
+        setLoading(false);
+        alert('All set! The issue has been submitted successfully.')
       })
       .catch(err => console.log(err));
   };
@@ -155,7 +155,7 @@ if(issuesListData){
 
   return (
     <div className="ui segment black very padded">
-      <form className="ui form fluid" onSubmit={handleSubmit}>
+      <form className={`ui form fluid ${loading ? 'loading' : ''}`} onSubmit={handleSubmit}>
 
         {/* First set of 3 fields */}
         <div className="three fields">
@@ -212,7 +212,7 @@ if(issuesListData){
           <div className="field">
             {/* Corrective Action Field */}
             <div className="field">
-              <label>Corrective Action</label>
+              <label>Additional Info</label>
               <textarea
                 name="action"
                 rows="2"
@@ -232,7 +232,7 @@ if(issuesListData){
                   type="hidden"
                   name="impact"
                   value={selectedIssue}
-                  onChange={(e) => setSelectedIssue(e.target.value)}
+                  onChange={(e) => setSelectedImpact(e.target.value)}
                 />
                 <i className="dropdown icon"></i>
                 <div className="default text">Select Impact</div>
@@ -242,7 +242,7 @@ if(issuesListData){
                       key={index}
                       className="item"
                       data-value={impact}
-                      onClick={() => setSelectedIssue(impact)}
+                      onClick={() => setSelectedImpact(impact)}
                     >
                       {impact}
                     </div>
@@ -264,7 +264,7 @@ if(issuesListData){
                   type="hidden"
                   name="downtime"
                   value={selectedIssue}
-                  onChange={(e) => setSelectedIssue(e.target.value)}
+                  onChange={(e) => setDowntimeDuration(e.target.value)}
                 />
                 <i className="dropdown icon"></i>
                 <div className="default text">Select Downtime</div>
@@ -274,7 +274,7 @@ if(issuesListData){
                       key={index}
                       className="item"
                       data-value={downtime}
-                      onClick={() => setSelectedIssue(downtime)}
+                      onClick={() => setDowntimeDuration(downtime)}
                     >
                      {downtime < 60 ? `${downtime} min` : `${minutesToHours(downtime)} Hr(s)`}
 
@@ -294,7 +294,7 @@ if(issuesListData){
                   type="hidden"
                   name="machine"
                   value={selectedIssue}
-                  onChange={(e) => setSelectedIssue(e.target.value)}
+                  onChange={(e) => setSelectedMachine(e.target.value)}
                 />
                 <i className="dropdown icon"></i>
                 <div className="default text">Select Machine</div>
@@ -304,7 +304,7 @@ if(issuesListData){
                       key={index}
                       className="item"
                       data-value={machine}
-                      onClick={() => setSelectedIssue(machine)}
+                      onClick={() => setSelectedMachine(machine)}
                     >
                       {machine}
                     </div>
@@ -331,7 +331,7 @@ if(issuesListData){
 
 
         {/* Submit Button */}
-        <button className="ui primary button" type="submit">
+        <button className="ui black button" type="submit">
           Submit
         </button>
       </form>

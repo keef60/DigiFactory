@@ -107,19 +107,6 @@ const LeftMenuBar = ({
                     ))}
                 </div>
             </div>
-
-            {/* Maintenance Rquest Form */}
-            <a
-                className={`item ${selectedDepartment === 'maintenance' ? 'active' : ''}`}
-                onClick={() => {
-                    handleDepartmentClick('Maintenance Request');
-                    setClearLoading(true);
-                }}
-            >
-                Maintenance Request
-
-            </a>
-
             {/* Login button to toggle the login modal */}
             <a className="item">
                 <button

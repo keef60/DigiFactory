@@ -33,7 +33,7 @@ const OrderLowerMenu = ({ itemData, selectedNumber, departmentName,user,issesLis
                         />
                     </div>
                     <div class='ui segment'>
-                        <Statistic
+                        <OrderStatistic
                             selectedNumber={selectedNumber}
                             departmentName={departmentName}
                             title={itemData.fields.Title}
