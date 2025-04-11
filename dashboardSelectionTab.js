@@ -1,5 +1,3 @@
-const { useEffect, useRef, useState } = React
-
 const SelectionMenuTab_DashComponent = ({setDepartmentClick,setDepartmentTitle }) => {
     useEffect(() => {
         $('.ui.dropdown.line').dropdown()

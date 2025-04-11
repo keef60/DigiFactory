@@ -24,7 +24,7 @@ const OrderIssues = ({ department, user, modelId }) => {
   const [requesterName, setRequesterName] = useState(user);
   const [selectedDepartment, setSelectedDepartment] = useState(department);
   const [selectedLine, setSelectedLine] = useState(null);
-  const [selectedIssue, setSelectedIssue] = useState('');
+  const [selectedIssue, setSelectedIssue] = useState();
   const [currentDateTime, setCurrentDateTime] = useState('');
   const [reportIssueList, setReportIssueList] = useState([]);
   const [reportImpactList, setReportImpactList] = useState([]);
@@ -32,10 +32,12 @@ const OrderIssues = ({ department, user, modelId }) => {
   const [reportMachineList, setReportMachineList] = useState([]);
   const [correctiveAction, setCorrectiveAction] = useState('');
   const [issuesListData, setIssuesListData] = useState(undefined);
-  const [selectedImpact, setSelectedImpact] = useState('');
-  const [downtimeDuration, setDowntimeDuration] = useState('');
-  const [selectedMachine, setSelectedMachine] = useState('');
+  const [selectedImpact, setSelectedImpact] = useState();
+  const [downtimeDuration, setDowntimeDuration] = useState();
+  const [selectedMachine, setSelectedMachine] = useState();
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState({ states: { status: false, messeage: '' } });
+
 
   useEffect(() => {
     const intervalId = setInterval(() => {
@@ -80,6 +82,12 @@ const OrderIssues = ({ department, user, modelId }) => {
   const handleSubmit = (event) => {
     event.preventDefault(); // Prevent default form submission behavior
     setLoading(true);
+    setError(prev => ({
+      ...prev, states: {
+        status: false,
+        messeage: ''
+      }
+    }));
     // Get selected options from the form
     /*   const selectedCause = Array.from(event.target.issue.selectedOptions).map(option => option.value);
       const selectedDowntime = Array.from(event.target.downtime.selectedOptions).map(option => option.value);
@@ -96,26 +104,38 @@ const OrderIssues = ({ department, user, modelId }) => {
       uuid: generateUID()
     }
 
+    if (selectedIssue && selectedMachine && correctiveAction && selectedImpact) {
+      // Submit the selected options
+      main.handleSubmit(
+        modelId,
+        {
+          selectedOptions: selectedOptions,
+          actionText: correctiveAction
+        },
+        department,
+        "ISSUES"
+      )
+        .then(e => {
+          console.log(e);
+          // Reset the selected options after the submit is successful
+          $('.ui.dropdown').dropdown("clear");
+          setCorrectiveAction('');
+          setSelectedDepartment(department);
+          setLoading(false);
+          alert('All set! The issue has been submitted successfully.')
+        })
+        .catch(err => console.log(err));
 
-    // Submit the selected options
-    main.handleSubmit(
-      modelId,
-      {
-        selectedOptions: selectedOptions,
-        actionText: correctiveAction
-      },
-      department,
-      "ISSUES"
-    )
-      .then(e => {
-        console.log(e);
-        // Reset the selected options after the submit is successful
-        $('.ui.dropdown').dropdown("clear");
-        setCorrectiveAction('');
-        setLoading(false);
-        alert('All set! The issue has been submitted successfully.')
-      })
-      .catch(err => console.log(err));
+    } else {
+      setLoading(false);
+      setError(prev => ({
+        ...prev, states: {
+          status: true,
+          messeage: 'Required fields must be filled in.'
+        }
+      }));
+    }
+
   };
 
   // Create dropdown list
@@ -144,7 +164,7 @@ const OrderIssues = ({ department, user, modelId }) => {
             <div
               key={option.key}
               className="item"
-              data-value={option.value}
+              data-value={option.key === selectedDepartment ? selectedDepartment : option.key}
               onClick={() => {
                 if (name === 'department') {
                   setSelectedDepartment(option.value);
@@ -165,6 +185,8 @@ const OrderIssues = ({ department, user, modelId }) => {
 
   return (
     <div className="ui segment basic very padded">
+      {error.states.status && <div class='ui message negative'>{error.states.messeage}</div>}
+
       <form className={`ui form fluid ${loading ? 'loading' : ''}`} onSubmit={handleSubmit}>
 
         {/* First set of 3 fields */}
@@ -192,7 +214,7 @@ const OrderIssues = ({ department, user, modelId }) => {
 
         {/* Second set of 3 fields */}
         <div className="three fields">
-          <div className="field">
+          <div className="field required">
             {/* Issue Dropdown */}
             <label>Issues</label>
             <div className="ui fluid selection dropdown" multiple>
@@ -221,7 +243,7 @@ const OrderIssues = ({ department, user, modelId }) => {
 
           <div className="field">
             {/* Corrective Action Field */}
-            <div className="field">
+            <div className="field required">
               <label>Corrective Action</label>
               <textarea
                 name="action"
@@ -235,7 +257,7 @@ const OrderIssues = ({ department, user, modelId }) => {
 
           <div className="field">
             {/* Impact Dropdown */}
-            <div className="field">
+            <div className="field required">
               <label>Impact</label>
               <div className="ui fluid selection dropdown">
                 <input
@@ -267,7 +289,7 @@ const OrderIssues = ({ department, user, modelId }) => {
         <div className="three fields">
           <div className="field">
             {/* Downtime Duration Dropdown */}
-            <div className="field">
+            <div className="field required">
               <label>Downtime Duration</label>
               <div className="ui fluid selection dropdown">
                 <input
@@ -297,7 +319,7 @@ const OrderIssues = ({ department, user, modelId }) => {
 
           <div className="field">
             {/* Machine Dropdown */}
-            <div className="field">
+            <div className="field required">
               <label>Machine</label>
               <div className="ui fluid selection dropdown">
                 <input
@@ -341,7 +363,7 @@ const OrderIssues = ({ department, user, modelId }) => {
 
 
         {/* Submit Button */}
-        <button className="ui primary button" type="submit">
+        <button className="ui black button" type="submit">
           Submit
         </button>
       </form>

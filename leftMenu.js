@@ -45,7 +45,8 @@ const LeftMenuBar = ({
         'Frames', 
         'Lines', 
         'Inventory',
-        'Warehouse'
+        'Warehouse',
+        'Maintenance'
     ];
 
     return (

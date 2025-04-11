@@ -52,7 +52,7 @@ const OrderDisplayPane = ({
         ),
         maintenanceRequest: (
             <OrderMaintenanceRequest
-            issuesListData={issesListData}
+                issuesListData={issesListData}
                 department={departmentName}
                 user={user} />
         )
@@ -61,15 +61,15 @@ const OrderDisplayPane = ({
     return (
         <div style={{ position: 'center', marginLeft: '5%', width: '100%' }}>
 
-            <OrderNavMenu
-                setActiveTab={setActiveTab}
-                activeTab={activeTab}
-                departmentName={departmentName}
-                setSearchQuery={setSearchQuery}
-                user={user}
-            />
-
             <div className={`ui bottom segment basic ${clearLoading ? 'ui active centered  loader' : ''}`}>
+
+                <OrderNavMenu
+                    setActiveTab={setActiveTab}
+                    activeTab={activeTab}
+                    departmentName={departmentName}
+                    setSearchQuery={setSearchQuery}
+                    user={user}
+                />
                 {tabContent[activeTab]} {/* Render content based on the active tab */}
             </div>
         </div>

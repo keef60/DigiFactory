@@ -17,7 +17,7 @@ const ItemWorkOrderDash = ({
 
     useEffect(() => {
         $('.menu .item').tab();
-    })
+    });
     useEffect(() => {
         const storedToken = sessionStorage.getItem('access_token');
         if (storedToken) {

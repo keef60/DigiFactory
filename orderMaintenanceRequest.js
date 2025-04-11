@@ -20,21 +20,23 @@ const lineOptions = [
   { key: 7, text: '7', value: 7 },
 ];
 
-const OrderMaintenanceRequest = ({ issuesListData, department, user,modelId ,listName}) => {
+const OrderMaintenanceRequest = ({ issuesListData, department, user, modelId, listName }) => {
+
   const [requesterName, setRequesterName] = useState(user);
   const [selectedDepartment, setSelectedDepartment] = useState(department);
   const [selectedLine, setSelectedLine] = useState(null);
-  const [selectedIssue, setSelectedIssue] = useState('');
+  const [selectedIssue, setSelectedIssue] = useState();
   const [currentDateTime, setCurrentDateTime] = useState('');
   const [reportIssueList, setReportIssueList] = useState([]);
   const [reportImpactList, setReportImpactList] = useState([]);
   const [reportDowntimeDurationsList, setReportDowntimeDurationsList] = useState([]);
   const [reportMachineList, setReportMachineList] = useState([]);
-  const [correctiveAction, setCorrectiveAction] = useState('');
-  const [selectedImpact, setSelectedImpact] = useState('');
+  const [correctiveAction, setCorrectiveAction] = useState();
+  const [selectedImpact, setSelectedImpact] = useState();
   const [downtimeDuration, setDowntimeDuration] = useState('');
-  const [selectedMachine, setSelectedMachine] = useState('');
+  const [selectedMachine, setSelectedMachine] = useState();
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState({ states: { status: false, messeage: '' } });
 
   useEffect(() => {
     const intervalId = setInterval(() => {
@@ -68,6 +70,12 @@ const OrderMaintenanceRequest = ({ issuesListData, department, user,modelId ,lis
   const handleSubmit = (event) => {
     event.preventDefault(); // Prevent default form submission behavior
     setLoading(true);
+    setError(prev => ({
+      ...prev, states: {
+        status: false,
+        messeage: ''
+      }
+    }));
     // Get selected options from the form
     /*   const selectedCause = Array.from(event.target.issue.selectedOptions).map(option => option.value);
       const selectedDowntime = Array.from(event.target.downtime.selectedOptions).map(option => option.value);
@@ -75,37 +83,53 @@ const OrderMaintenanceRequest = ({ issuesListData, department, user,modelId ,lis
       const selectedMachine = Array.from(event.target.machine.selectedOptions).map(option => option.value);
       const actionText = event.target.action.value; */
 
-      const orderUID = generateShortUID();
+    const orderUID = generateShortUID();
+
     const selectedOptions = {
+      actionText: correctiveAction,
+      selectedDepartment,
+      requesterName,
       cause: [selectedIssue],
       downtime: [downtimeDuration],
       impact: [selectedImpact],
       machine: [selectedMachine],
       creationDate: Date.now(),
       uuid: orderUID,
-      status:'Pending',
-      maintenanceType:'',
+      status: 'Pending',
+      maintenanceType: '',
+      notes:[]
+    }
+    if (selectedIssue && selectedMachine && correctiveAction && selectedImpact) {
+      // Submit the selected options
+      main.handleSubmit(
+        orderUID,
+        {
+          selectedOptions: selectedOptions,
+        },
+        department,
+        "Maintenance"
+      )
+        .then(e => {
+          console.log(e);
+          // Reset the selected options after the submit is successful
+          $('.ui.dropdown').dropdown("clear");
+          setCorrectiveAction('');
+          setSelectedDepartment(department);
+          setLoading(false);
+          alert('All set! The issue has been submitted successfully.')
+        })
+        .catch(err => console.log(err));
+    } else {
+
+      setLoading(false);
+      setError(prev => ({
+        ...prev, states: {
+          status: true,
+          messeage: 'Required fields must be filled in.'
+        }
+      }));
 
     }
-    // Submit the selected options
-    main.handleSubmit(
-      orderUID,
-      {
-        selectedOptions: selectedOptions,
-        actionText: correctiveAction
-      },
-      department,
-      "Maintenance"
-    )
-      .then(e => {
-        console.log(e);
-        // Reset the selected options after the submit is successful
-        $('.ui.dropdown').dropdown("clear");
-        setCorrectiveAction('');
-        setLoading(false);
-        alert('All set! The issue has been submitted successfully.')
-      })
-      .catch(err => console.log(err));
   };
 
   // Create dropdown list
@@ -134,7 +158,7 @@ const OrderMaintenanceRequest = ({ issuesListData, department, user,modelId ,lis
             <div
               key={option.key}
               className="item"
-              data-value={option.value}
+              data-value={option.key === selectedDepartment ?selectedDepartment: option.key }
               onClick={() => {
                 if (name === 'department') {
                   setSelectedDepartment(option.value);
@@ -155,6 +179,7 @@ const OrderMaintenanceRequest = ({ issuesListData, department, user,modelId ,lis
 
   return (
     <div className="ui segment black very padded">
+      {error.states.status && <div class='ui message negative'>{error.states.messeage}</div>}
       <form className={`ui form fluid ${loading ? 'loading' : ''}`} onSubmit={handleSubmit}>
 
         {/* First set of 3 fields */}
@@ -182,7 +207,7 @@ const OrderMaintenanceRequest = ({ issuesListData, department, user,modelId ,lis
 
         {/* Second set of 3 fields */}
         <div className="three fields">
-          <div className="field">
+          <div className="field required">
             {/* Issue Dropdown */}
             <label>Issues</label>
             <div className="ui fluid selection dropdown" multiple>
@@ -209,133 +234,123 @@ const OrderMaintenanceRequest = ({ issuesListData, department, user,modelId ,lis
             </div>
           </div>
 
-          <div className="field">
-            {/* Corrective Action Field */}
-            <div className="field">
-              <label>Additional Info</label>
-              <textarea
-                name="action"
-                rows="2"
-                placeholder="Enter corrective action"
-                value={correctiveAction}
-                onChange={(e) => setCorrectiveAction(e.target.value)}
-              />
-            </div>
+          {/* Corrective Action Field */}
+          <div className="field required">
+            <label>Additional Info</label>
+            <textarea
+              name="action"
+              rows="2"
+              placeholder="Enter corrective action"
+              value={correctiveAction}
+              onChange={(e) => setCorrectiveAction(e.target.value)}
+            />
           </div>
 
-          <div className="field">
-            {/* Impact Dropdown */}
-            <div className="field">
-              <label>Impact</label>
-              <div className="ui fluid selection dropdown">
-                <input
-                  type="hidden"
-                  name="impact"
-                  value={selectedIssue}
-                  onChange={(e) => setSelectedImpact(e.target.value)}
-                />
-                <i className="dropdown icon"></i>
-                <div className="default text">Select Impact</div>
-                <div className="menu">
-                  {reportImpactList.map((impact, index) => (
-                    <div
-                      key={index}
-                      className="item"
-                      data-value={impact}
-                      onClick={() => setSelectedImpact(impact)}
-                    >
-                      {impact}
-                    </div>
-                  ))}
-                </div>
+          {/* Impact Dropdown */}
+          <div className="field required">
+            <label>Impact</label>
+            <div className="ui fluid selection dropdown">
+              <input
+                type="hidden"
+                name="impact"
+                value={selectedIssue}
+                onChange={(e) => setSelectedImpact(e.target.value)}
+              />
+              <i className="dropdown icon"></i>
+              <div className="default text">Select Impact</div>
+              <div className="menu">
+                {reportImpactList.map((impact, index) => (
+                  <div
+                    key={index}
+                    className="item"
+                    data-value={impact}
+                    onClick={() => setSelectedImpact(impact)}
+                  >
+                    {impact}
+                  </div>
+                ))}
               </div>
             </div>
+
           </div>
         </div>
 
         {/* Third set of 3 fields */}
         <div className="three fields">
-          <div className="field">
-            {/* Downtime Duration Dropdown */}
-            <div className="field">
-              <label>Downtime Duration</label>
-              <div className="ui fluid selection dropdown">
-                <input
-                  type="hidden"
-                  name="downtime"
-                  value={selectedIssue}
-                  onChange={(e) => setDowntimeDuration(e.target.value)}
-                />
-                <i className="dropdown icon"></i>
-                <div className="default text">Select Downtime</div>
-                <div className="menu">
-                  {reportDowntimeDurationsList.map((downtime, index) => (
-                    <div
-                      key={index}
-                      className="item"
-                      data-value={downtime}
-                      onClick={() => setDowntimeDuration(downtime)}
-                    >
-                     {downtime < 60 ? `${downtime} min` : `${minutesToHours(downtime)} Hr(s)`}
 
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-
+          {/* Downtime Duration Dropdown */}
           <div className="field">
-            {/* Machine Dropdown */}
-            <div className="field">
-              <label>Machine</label>
-              <div className="ui fluid selection dropdown">
-                <input
-                  type="hidden"
-                  name="machine"
-                  value={selectedIssue}
-                  onChange={(e) => setSelectedMachine(e.target.value)}
-                />
-                <i className="dropdown icon"></i>
-                <div className="default text">Select Machine</div>
-                <div className="menu">
-                  {reportMachineList.map((machine, index) => (
-                    <div
-                      key={index}
-                      className="item"
-                      data-value={machine}
-                      onClick={() => setSelectedMachine(machine)}
-                    >
-                      {machine}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="field">
-            {/* Current Date and Time Field */}
-            <div className="field">
-              <label>Current Date and Time</label>
+            <label>Downtime Duration</label>
+            <div className="ui fluid selection dropdown">
               <input
-                type="text"
-                value={currentDateTime}
-                readOnly
-                style={{ backgroundColor: '#f1f1f1' }}
+                type="hidden"
+                name="downtime"
+                value={selectedIssue}
+                onChange={(e) => setDowntimeDuration(e.target.value)}
               />
+              <i className="dropdown icon"></i>
+              <div className="default text">Select Downtime</div>
+              <div className="menu">
+                {reportDowntimeDurationsList.map((downtime, index) => (
+                  <div
+                    key={index}
+                    className="item"
+                    data-value={downtime}
+                    onClick={() => setDowntimeDuration(downtime)}
+                  >
+                    {downtime < 60 ? `${downtime} min` : `${minutesToHours(downtime)} Hr(s)`}
+
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
+
+          {/* Machine Dropdown */}
+          <div className="field required">
+            <label>Machine</label>
+            <div className="ui fluid selection dropdown">
+              <input
+                type="hidden"
+                name="machine"
+                value={selectedIssue}
+                onChange={(e) => setSelectedMachine(e.target.value)}
+              />
+              <i className="dropdown icon"></i>
+              <div className="default text">Select Machine</div>
+              <div className="menu">
+                {reportMachineList.map((machine, index) => (
+                  <div
+                    key={index}
+                    className="item"
+                    data-value={machine}
+                    onClick={() => setSelectedMachine(machine)}
+                  >
+                    {machine}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Current Date and Time Field */}
+          <div className="field">
+            <label>Current Date and Time</label>
+            <input
+              type="text"
+              value={currentDateTime}
+              readOnly
+              style={{ backgroundColor: '#f1f1f1' }}
+            />
+          </div>
+
         </div>
-
-
 
         {/* Submit Button */}
         <button className="ui black button" type="submit">
           Submit
         </button>
       </form>
-
     </div>
 
   );

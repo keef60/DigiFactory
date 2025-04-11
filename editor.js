@@ -50,6 +50,8 @@ const Editor = ({
       spMethod.fetchSharePointData('REPORTS', departmentName);
       spMethod.fetchSharePointData('ISSUES', departmentName);
       spMethod.fetchSharePointData('Maintenance', departmentName);
+      spMethod.fetchSharePointData('MAINRQ', departmentName);
+
 
     } catch (error) {
       setError(error)

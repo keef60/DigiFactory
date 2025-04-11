@@ -50,7 +50,7 @@ const WarehouseCycleCountForm = ({ inventoryRef, searchQueryLifted,user }) => {
                         return Object.values(row).some(value => value.toString().toLowerCase().includes(queryLower));
                     });
 
-                    setContent(filteredRows.map(i => { return { title: i['Description'] } }));
+                    setContent(filteredRows.map(i => { return { title: i['Item'] } }));
 
 
                 })

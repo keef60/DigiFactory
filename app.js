@@ -237,6 +237,10 @@ function DepartmentMenu() {
                 return (
                     contentMasterSeletor("LINES KIT", 'line')
                 )
+
+                case 'Maintenance': return (
+                    <MaintenanceDashboard user={userName} />
+                );
             case 'Inventory':
                 const setting = { report: false }
 

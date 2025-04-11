@@ -186,4 +186,50 @@
         console.error("Error:", err);
       }
     },
+    handleAssign: async (email,modelNumber,departmentName,list) => {
+  
+      const siteID = sessionStorage.getItem(`siteId-${departmentName}-${list}`);
+      const postName = sessionStorage.getItem(`postName-${departmentName}-${list}`);
+      const accessToken = sessionStorage.getItem('access_token');
+     // const delFieldData = JSON.stringify(rowData); // Assuming rowData is passed correctly
+      const titleString =  typeof modelNumber !== 'string'?modelNumber.toString() : modelNumber;
+
+      let itemsData = null;
+      let result = null;
+      let updateResponse = null;
+      let createResponse = null;
+      let itemsResponse = null;
+  
+  
+  
+      // Construct the URL to get the list items with a filter by Title (modelNumber)
+      const itemsUrl = `https://graph.microsoft.com/v1.0/sites/${siteID}/lists/${postName}/items?$filter=fields/Title eq '${titleString}'&$expand=fields`;
+  
+      const headers = {
+        "Authorization": `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+        "Prefer": "HonorNonIndexedQueriesWarningMayFailRandomly" // Add this header to allow non-indexed queries
+      };
+  
+      try {
+        await fetch(`https://graph.microsoft.com/v1.0/sites/${siteID}/lists/${postName}/items`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({
+            fields: {
+              Title: titleString,
+              names: {
+                email: email  // 👈 Make sure it's the correct internal column name
+              }
+            }
+          })
+        })
+        .then(response => response.json())
+        .then(data => console.log("Item created:", data))
+        .catch(error => console.error("Create Error:", error));
+        
+      } catch (err) {
+        console.error("Error:", err);
+      }
+    },
   };
