@@ -260,7 +260,7 @@ const LinesEditorNew = ( {
 
   return (
     <div className="ui grid" style={{ marginTop: '20px' }}>
-      <DisplayPaneNew
+      <OrderDisplayPane
         selectedDepartment={selectedDepartment}
         filteredData={filteredData}
         imagePaths={imagePaths}
@@ -283,22 +283,16 @@ const LinesEditorNew = ( {
         setSearchQuery={setSearchQuery}
         goalProgressInput={goalProgressInput}
         departmentName={departmentName}
-
         spMethod={spMethod}
-
         selectedNumber={selectedNumber}
         setSelectedNumber={setSelectedNumber}
-
         clearLoading={clearLoading}
-
         setWOnDev={setWOnDev}
         woNdev={woNdev}
         issesListData={issesListData}
         setFilterTask={setFilterTask}
         inventoryDepartmentName={inventoryDepartmentName}
         inventoryRef={inventoryRef}
-      
-
       />
 
       <div className="ui fullscreen modal pdf-viewer line">

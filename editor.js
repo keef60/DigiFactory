@@ -20,6 +20,10 @@ const Editor = ({
   inventoryDepartmentName,
   inventoryRef,
   user,
+  setLoginModalOpen,
+  setClearLoading,
+  loginModalOpen,
+  handleDepartmentClick
   
 
 }) => {
@@ -237,7 +241,10 @@ const Editor = ({
         inventoryDepartmentName={inventoryDepartmentName}
         inventoryRef={inventoryRef}
         user={user}
-      
+        setClearLoading={setClearLoading}
+        setLoginModalOpen={setLoginModalOpen}
+        handleDepartmentClick={handleDepartmentClick}
+        loginModalOpen={loginModalOpen}
       />
 
       {/* Modal for viewing pdf */}

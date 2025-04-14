@@ -7,7 +7,7 @@ const departmentOptions = [
   { key: 'packout', text: 'Packout', value: 'Packout' },
   { key: 'hose', text: 'Hose', value: 'Hose' },
   { key: 'frames', text: 'Frames', value: 'Frames' },
-  { key: 'lines', text: 'Lines', value: 'Lines' },
+  { key: 'line', text: 'Lines', value: 'Line' },
   { key: 'inventory', text: 'Inventory', value: 'Inventory' },
 ];
 

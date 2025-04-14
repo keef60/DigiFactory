@@ -48,9 +48,11 @@ const LeftMenuBar = ({
         'Warehouse',
         'Maintenance'
     ];
-
+useEffect(()=>{
+    $('.ui.menu.navigation').sticky()
+})
     return (
-        <div className="ui left fixed vertical menu">
+        <div className="ui fluid menu sticky top navigation fixed" style={{'z-index':10}}>
             <div className="item">
                 <div className="ui header">{userName ? userName : 'Not Logged In'}</div>
             </div>
@@ -68,10 +70,29 @@ const LeftMenuBar = ({
                 notMenuSearch={false}
                 selectedDepartment={selectedDepartment}
             />
+   {/* Departments Dropdown */}
+            <div className="ui dropdown item">
 
+                Departments
+                <div className="menu">
+                    {departments.map(department => (
+                        <a
+                            key={department}
+                            className={`item ${selectedDepartment === department ? 'active' : ''}`}
+                            onClick={() => {
+                                handleDepartmentClick(department);
+                                setClearLoading(true);
+                            }}
+                        >
+                            {department}
+                        </a>
+                    ))}
+                </div>
+            </div>
+            
             {/* Reports Dropdown for Manufacturing Managers */}
             <div className="ui dropdown item">
-                <i className="dropdown icon"></i>
+
                 Manufacturing Reports
                 <div className="menu">
                     {reports.map((report, index) => (
@@ -89,27 +110,9 @@ const LeftMenuBar = ({
                 </div>
             </div>
 
-            {/* Departments Dropdown */}
-            <div className="ui dropdown item">
-                <i className="dropdown icon"></i>
-                Departments
-                <div className="menu">
-                    {departments.map(department => (
-                        <a
-                            key={department}
-                            className={`item ${selectedDepartment === department ? 'active' : ''}`}
-                            onClick={() => {
-                                handleDepartmentClick(department);
-                                setClearLoading(true);
-                            }}
-                        >
-                            {department}
-                        </a>
-                    ))}
-                </div>
-            </div>
+         
             {/* Login button to toggle the login modal */}
-            <a className="item">
+            <a className="item menu right">
                 <button
                     className={`ui ${userName !== undefined ? 'red' : 'primary'} button fluid`}
                     onClick={() => setLoginModalOpen(!loginModalOpen)}

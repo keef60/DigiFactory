@@ -8,6 +8,7 @@ const OrderPickList = ({
 
     const [accessToken, setAccessToken] = useState(null);
     const [error, setError] = useState(null);
+    const [assginedLineNumber, setAssginedLineNumber] = useState();
     const [sharePointData, setSharePointData] = useState([]);
     const [tokenInput, setTokenInput] = useState('');
     const [imagePaths, setImagePaths] = useState({});
@@ -227,7 +228,7 @@ const OrderPickList = ({
                     <td>{pn.pid}</td>
                     <td>{matchingDescription ? matchingDescription.pid : 'No description available'}</td>
                     <td>{matchingUom ? matchingUom.pid : 'No UOM available'}</td>
-                    <td>{matchingQtyToPick ?<><button class='ui button ' onClick={()=>{
+                    <td>{matchingQtyToPick ? <><button class='ui button ' onClick={() => {
                         setRowDataIn(prevData => ({
                             ...prevData,
                             [pn.ref]: {
@@ -237,7 +238,7 @@ const OrderPickList = ({
                                 qtyToPick: matchingQtyToPick.pid,
                             }
                         }))
-                    }}>{matchingQtyToPick.pid}</button></>  : 'No quantity to pick available'}</td>
+                    }}>{matchingQtyToPick.pid}</button></> : 'No quantity to pick available'}</td>
                     <td>
                         <div className='ui input fluid'>
                             <input
@@ -306,6 +307,13 @@ const OrderPickList = ({
                         data.map((item, index) => {
                             if (activeTab !== index) return null;
 
+                            const key = (item) => {
+                                const logKey = 'goalProgress-' + `${departmentName + selectedNumber}-${item.fields.Title}`
+                                const markLine = localStorage.getItem(logKey);
+                                if (markLine) {
+                                    return 'to '+departmentName.toUpperCase() + selectedNumber;
+                                }
+                            }
                             const fields = item.fields;
                             const partNumber = JSON.parse(fields.PartNumber);
                             const partDescription = JSON.parse(fields.PartDescription);
@@ -320,8 +328,8 @@ const OrderPickList = ({
                             return (/* segments horizontal */
                                 <div className='ui segments ' key={fields.Title}>
 
-                                    <div class="ui  padded segment red" >
-                                        {label.status && <div class={`ui label basic  ${label.color}`}>{label.message ==='New'?label.message:`Ordered ${label.message}`}</div>}
+                                    <div class="ui  very padded segment red" >
+                                        {label.status && <div class={`ui label basic  ${label.color}`}>{label.message === 'New' ? label.message : `Ordered ${label.message}`}</div>}
                                         <p class="ui header  ">Work Order Summary</p>
                                         <p class="column ui grey ">Work Order: {fields['WO'].replace('WO - ', '')}</p>
                                         <p class='column ui grey'>Deviations:
@@ -334,9 +342,48 @@ const OrderPickList = ({
                                                 </p>
                                             </div>
                                         </p>
+
+
+
+                                        {
+                                            departmentName === 'line' && <>
+
+                                                <p class='column ui grey'>{`${selectedNumber === null ? 'Please Assign to a Line:' : 'Assign to Line:' + selectedNumber}`}
+                                                </p>
+                                                <button
+                                                    className={`ui button basic black`}
+                                                    onClick={() => {
+                                                        if (selectedNumber === null) {
+                                                            alert(` Please select line number`);
+                                                        } else {
+                                                            setAssginedLineNumber({ assginedLine: selectedNumber, model: fields.Title });
+                                                        }
+                                                    }}
+                                                > {assginedLineNumber?.assginedLine || key(item) ? `Assigned ${key(item)}` : 'Assign'}
+                                                </button>
+
+                                                {assginedLineNumber?.assginedLine && <button
+                                                    className={`ui button black`}
+                                                    onClick={() => {
+
+                                                        const t = confirm(`Are you sure you want to unassign this item? This action cannot be undone. `);
+                                                        const removeThisItemKey = 'goalProgress-' + `${departmentName}-${fields.Title}`
+                                                        if (t) {
+                                                            localStorage.removeItem(removeThisItemKey);
+                                                            if (!localStorage.getItem(removeThisItemKey)) {
+                                                                alert("Unassigned Completed!")
+                                                            }
+                                                        }
+
+                                                    }}
+                                                > Unassign
+                                                </button>}
+
+                                            </>
+                                        }
+
                                     </div>
-
-
+                                    <div class='ui divider'></div>
 
                                     <div class=" ui segment basic">
                                         <table className='ui  center aligned very basic table small striped'>
@@ -359,7 +406,7 @@ const OrderPickList = ({
                                             })}
                                         </table>
                                         <tr
-                                            className={`ui button ${confirmPickList ?  "red" : "disabled loading"}`}
+                                            className={`ui button ${confirmPickList ? "red" : "disabled loading"}`}
                                             onClick={() => handleSubmit(fields.Title)}
                                         >
                                             {confirmPickList ? "Confirm" : "Confirmed"}
@@ -373,65 +420,32 @@ const OrderPickList = ({
         );
     };
 
-    const createGoalsFromPickList = (data, departmentName) => {
-        // Get the start and end of the current week
-        const currentDate = new Date();
-        const currentDay = currentDate.getDay();
-        const daysToStartOfWeek = currentDay === 0 ? 6 : currentDay - 1; // Get days to Monday
-        const startOfWeek = new Date(currentDate.setDate(currentDate.getDate() - daysToStartOfWeek));
-        startOfWeek.setHours(0, 0, 0, 0); // Start of week at midnight
-
-        const endOfWeek = new Date(startOfWeek);
-        endOfWeek.setDate(startOfWeek.getDate() + 6); // End of the week (Sunday)
-        endOfWeek.setHours(23, 59, 59, 999); // End of week just before midnight
+    const createGoalsFromPickList = (data, departmentName, selectedNumber) => {
 
         data.map(item => {
-            const fields = item.fields;
-            const runQuantity = fields.Quantity
-            const title = fields.Title;  // Assuming the title field is here 
-            const workOrder = fields['WO'];
-            const deviations = fields['DEV'];
-            const key = 'goalProgress-' + `${departmentName}-${title}`
-            // Generating a timestamp for the record
-            const timestamp = new Date().toISOString();
-
-            // Check if the record already exists in localStorage
-            const existingGoalProgress = localStorage.getItem(key);
-
-
-            // If the record exists, check its timestamp and isActive
-            if (existingGoalProgress) {
-                const existingData = JSON.parse(existingGoalProgress);
-                const existingTimestamp = new Date(existingData["creation date"]);
-
-                // If it's active, check if the timestamp is within the current week
-                if (existingData.isActive === true) {
-                    // If the timestamp is outside the current week, set isActive to false
-                    if (existingTimestamp < startOfWeek || existingTimestamp > endOfWeek) {
-                        existingData.isActive = false;
-                        // Update localStorage with isActive set to false
-                        localStorage.setItem(key, JSON.stringify(existingData));
-                    }
-                    return; // Skip adding the new record if the existing record is active
-                }
+            if (departmentName !== 'line') {
+                goalProgressJSONCreation(item, departmentName);
+            } else if (departmentName === 'line' &&
+                item.fields.Title === assginedLineNumber.model) {
+                goalProgressJSONCreation(item, departmentName + selectedNumber);
             }
-
-            // Create the object to store in localStorage if not exists or if it's inactive
-            const goalProgressData = {
-                goal: runQuantity,
-                progress: "0",
-                "creation date": timestamp,
-                isActive: true,
-                wo: workOrder,
-                dev: deviations
-            };
-
-            // Store the object in localStorage
-            localStorage.setItem(key, JSON.stringify(goalProgressData));
         });
     };
-    createGoalsFromPickList(sharePointData, departmentName)
 
+    useEffect(() => {
+        if (departmentName !== 'line') {
+            createGoalsFromPickList(sharePointData, departmentName);
+        };
+    });
+
+    useEffect(() => {
+
+        if (selectedNumber === null && departmentName === 'line') {
+            alert(` Please select line number`);
+        } else if (selectedNumber !== null && departmentName === 'line') {
+            createGoalsFromPickList(sharePointData, departmentName, selectedNumber);
+        };
+    }, [assginedLineNumber]);
 
     return (
         <div>
@@ -439,7 +453,7 @@ const OrderPickList = ({
 
             {sharePointData.length > 0 ? (
                 <div id="sharePointData" className={`ui segment black ${clearLoading ? 'loading' : ''}`}>
-                    {!error ? displaySharePointData(sharePointData) : 'No data'}
+                    {!error ? displaySharePointData(sharePointData) : ''}
                 </div>
             ) : (
                 <p>No items found in the list.

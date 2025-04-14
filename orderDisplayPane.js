@@ -1,21 +1,21 @@
-const { useEffect, useRef, useState } = React
-
 const OrderDisplayPane = ({
     selectedDepartment,
     departmentName,
-    spMethod,
     selectedNumber,
     setSelectedNumber,
     clearLoading,
     setWOnDev,
-    woNdev,
     issesListData,
     setSearchQuery,
     setFilterTask,
     filterTask,
     inventoryDepartmentName,
     inventoryRef,
-    user
+    user,
+    setLoginModalOpen,
+    setClearLoading,
+    loginModalOpen,
+    handleDepartmentClick
 
 }) => {
     const [activeTab, setActiveTab] = useState('item'); // default to "Look Up" tab
@@ -54,12 +54,13 @@ const OrderDisplayPane = ({
             <OrderMaintenanceRequest
                 issuesListData={issesListData}
                 department={departmentName}
-                user={user} />
+                user={user}
+            />
         )
     };
 
     return (
-        <div style={{ position: 'center', marginLeft: '5%', width: '100%' }}>
+        <div style={{/*  position: 'center', marginLeft: '5%', width: '100%'  */}}>
 
             <div className={`ui bottom segment basic ${clearLoading ? 'ui active centered  loader' : ''}`}>
 
@@ -69,6 +70,12 @@ const OrderDisplayPane = ({
                     departmentName={departmentName}
                     setSearchQuery={setSearchQuery}
                     user={user}
+                    selectedNumber={selectedNumber}
+                    setSelectedNumber={setSelectedNumber}
+                    setLoginModalOpen={setLoginModalOpen}
+                    setClearLoading={setClearLoading}
+                    loginModalOpen={loginModalOpen}
+                    handleDepartmentClick={handleDepartmentClick}
                 />
                 {tabContent[activeTab]} {/* Render content based on the active tab */}
             </div>

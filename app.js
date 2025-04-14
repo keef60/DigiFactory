@@ -138,6 +138,12 @@ function DepartmentMenu() {
         }
     }, [filterTask]);
 
+    useEffect(() => {
+        $('.ui.dropdown.item.subNav')
+            .dropdown()
+            ;
+    })
+
     const getMe = async () => {
         const accessToken = sessionStorage.getItem('access_token');
 
@@ -209,6 +215,10 @@ function DepartmentMenu() {
                     inventoryDepartmentName={['inventory', 'sage']}
                     inventoryRef={inventory}
                     user={userName}
+                    setClearLoading={setClearLoading}
+                    setLoginModalOpen={setLoginModalOpen}
+                    handleDepartmentClick={handleDepartmentClick}
+                    loginModalOpen={loginModalOpen}
 
                 />
         )
@@ -238,9 +248,9 @@ function DepartmentMenu() {
                     contentMasterSeletor("LINES KIT", 'line')
                 )
 
-                case 'Maintenance': return (
-                    <MaintenanceDashboard user={userName} />
-                );
+            case 'Maintenance': return (
+                <MaintenanceDashboard user={userName} />
+            );
             case 'Inventory':
                 const setting = { report: false }
 
@@ -325,12 +335,22 @@ function DepartmentMenu() {
 
             default:
                 return (
-                    <div className="ui sixteen wide column segment" style={{ position: 'absolute', top: '60%', left: '50%', transform: 'translate(-50%, 60%)' }}>
-                        <h2>No Access Yet</h2>
-                        <p>
-                            Please contact admin for access to this department.
 
-                        </p>
+                    <div className="ui segment very padded black " style={{ marginTop: "2px" }}>
+
+                        <div className="ui sixteen wide column segment"
+                            style={{
+                                position: 'absolute',
+                                top: '60%',
+                                left: '50%',
+                                transform: 'translate(-50%, 60%)'
+                            }}>
+                            <h2>No Access Yet</h2>
+                            <p>
+                                Please contact admin for access to this department.
+
+                            </p>
+                        </div>
                     </div>
                 );
         }
@@ -383,28 +403,29 @@ function DepartmentMenu() {
 
     return (
         <div className="ui  ">
-
+            <LeftMenuBar
+                handleDepartmentClick={handleDepartmentClick}
+                setClearLoading={setClearLoading}
+                setLoginModalOpen={setLoginModalOpen}
+                searchQueryLifted={searchQueryLifted}
+                setSearchQuery={setSearchQuery}
+                visibleLifted={visibleLifted}
+                setVisible={setVisible}
+                setData={setData}
+                dataLifted={dataLifted}
+                sheetNameLifted={sheetNameLifted}
+                setSheetName={setSheetName}
+                userName={userName}
+                selectedDepartment={selectedDepartment}
+                loginModalOpen={loginModalOpen}
+            />
             <div className="ui grid contentPane">
                 {/* Left Sidebar Menu */}
-                <LeftMenuBar
-                    handleDepartmentClick={handleDepartmentClick}
-                    setClearLoading={setClearLoading}
-                    setLoginModalOpen={setLoginModalOpen}
-                    searchQueryLifted={searchQueryLifted}
-                    setSearchQuery={setSearchQuery}
-                    visibleLifted={visibleLifted}
-                    setVisible={setVisible}
-                    setData={setData}
-                    dataLifted={dataLifted}
-                    sheetNameLifted={sheetNameLifted}
-                    setSheetName={setSheetName}
-                    userName={userName}
-                    selectedDepartment={selectedDepartment}
-                    loginModalOpen={loginModalOpen}
-                />
+
+
                 {/* Content Area with manually created tabs */}
-                <div className="ui sixteen wide column"
-                    style={{ marginLeft: '15.5%', paddingRight: '5%' }}>
+                <div className="ui fourteen wide column centered"
+                    style={{ /* marginLeft: '15.5%', paddingRight: '5%' */ }}>
                     <ErrorMessage error={newError} />
                     {header()}
                     <div class='ui divider'></div>

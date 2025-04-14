@@ -10,15 +10,18 @@ const MaintenanceCards = ({
       {maintenanceData.map((row, index) => (
         <div key={index} className="ui card">
           <div className="content">
-            <div className="header">{row.machine?.[0] || 'N/A'}</div>
-            <div className="meta">Work Order ID: {row.uuid || 'N/A'}</div>
+            <div className="header">Work Order ID:</div>
+            <div className="meta">{row.uuid || 'N/A'}</div>
           </div>
 
           <div className="content">
             <div className="description">
+
+              <p><strong>Affected Machine:</strong> {row.machine?.[0] || 'N/A'}</p>
               <p><strong>Root Cause:</strong> {row.cause?.[0] || 'N/A'}</p>
               <p><strong>Downtime Duration:</strong> {row.downtime?.[0] || 'N/A'}</p>
               <p><strong>Operational Impact:</strong> {row.impact?.[0] || 'N/A'}</p>
+              <p><strong>Technician Description:</strong> {row.actionText || 'N/A'}</p>
 
               {/* Maintenance Category Dropdown */}
               <div className="field" style={{ marginTop: '1em' }}>

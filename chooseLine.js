@@ -1,9 +1,12 @@
-const { useEffect, useRef, useState } = React
-
 const LineSelectionNew = ({ selectedNumber, setSelectedNumber }) => {
+
+
+    useEffect(()=>{
+        $('.ui.simple.dropdown.item').dropdown()
+    })
     // Options for the dropdown
     const options = [];
-    const lineName = selectedNumber === null ? "Choose Line #" : `Line ${selectedNumber}`;
+    const lineName = selectedNumber === null ? "Assign a Line #" : `Line ${selectedNumber}`;
     
     // Create number of lines options
     for (let i = 1; i <= 7; i++) {
@@ -16,8 +19,8 @@ const LineSelectionNew = ({ selectedNumber, setSelectedNumber }) => {
     };
 
     return (
-        <div className="ui compact menu">
-            <div className="ui simple dropdown item right">
+        <div className="ui  item">
+            <div className="ui simple dropdown item ">
                 {lineName} {/* Dropdown label */}
                 <i className="dropdown icon" /> {/* Dropdown icon */}
                 <div className="menu">
