@@ -27,9 +27,11 @@ function convertToDateFormat(dateString) {
         case (hours >= 96):
             return { status: true, message: `Older`,color:'primary' };
         case (hours <= 48 && 25 <= hours):
-            return { status: true, message: `Yesterday`,color:'blue' };
-        case (hours <= 24 && 0 <= hours):
-            return { status: true, message: `New`,color:'purple' };
+            return { status: true, message: `Order Added Over 24 Hours Ago`,color:'red' };
+            case (hours <= 24 && 1 <= hours):
+                return { status: true, message: `Recently Added Order`,color:'blue' };
+        case (hours < 1 && 0 <= hours):
+            return { status: true, message: `Order Just Added`,color:'purple' };
         default:
             return { status: false, message: '',color:'' };
     }

@@ -1,8 +1,16 @@
-const OrderLowerMenu = ({ itemData, selectedNumber, departmentName,user,issesListData }) => {
+const OrderLowerMenu = ({
+    itemData,
+    selectedNumber,
+    departmentName,
+    user,
+    issesListData,
+    gpDataInput,
+    inventoryRef
+}) => {
     const [prgs, setPassProgress] = useState(false);
     return (
         <>
-            <div class="ui tabular menu">
+            <div class="ui tabular menu stackable">
                 <a class="item active" data-tab="first">Components</a>
                 <a class="item" data-tab="second">Work Orders</a>
                 <a class="item" data-tab="third">Performance Monitoring </a>
@@ -11,7 +19,9 @@ const OrderLowerMenu = ({ itemData, selectedNumber, departmentName,user,issesLis
             </div>
 
             <div class="ui tab active" data-tab="first">
-                <OrderPartsList itemData={itemData} />
+                <OrderPartsList
+                    itemData={itemData}
+                    inventoryRef={inventoryRef} />
             </div>
 
             <div class="ui tab " data-tab="second">
@@ -23,40 +33,47 @@ const OrderLowerMenu = ({ itemData, selectedNumber, departmentName,user,issesLis
             </div>
 
             <div class="ui tab " data-tab="third">
-                <div class='ui horizontal  segments'>
-                    <div class='ui segment'>
-                        <OrderChartComponent
-                            selectedNumber={selectedNumber}
-                            departmentName={departmentName}
-                            modelId={itemData.fields.Title}
-                            progress={prgs}
-                        />
+                <div class='ui equal width grid internally celled'>
+
+                    <div class='column'>
+                        <div class='ui segment '>
+                            <OrderChartComponent
+                                selectedNumber={selectedNumber}
+                                departmentName={departmentName}
+                                modelId={itemData.fields.Title}
+                                progress={prgs}
+                            />
+                        </div>
                     </div>
-                    <div class='ui segment'>
-                        <OrderStatistic
-                            selectedNumber={selectedNumber}
-                            departmentName={departmentName}
-                            title={itemData.fields.Title}
-                            setPassProgress={setPassProgress}
-                        />
+                    <div class='four wide column'>
+                        <div class='ui segment basic '>
+                            <OrderStatistic
+                                selectedNumber={selectedNumber}
+                                departmentName={departmentName}
+                                title={itemData.fields.Title}
+                                setPassProgress={setPassProgress}
+                                gpDataInput={gpDataInput}
+                            />
+                        </div>
                     </div>
+
                 </div>
             </div>
 
             <div class="ui tab " data-tab="fourth">
-                <OrderComments 
-                department={departmentName} 
-                noteId={itemData.fields.Title}
-                user={user}
-                workOrderRef={itemData.fields['WO']}
-                 />
+                <OrderComments
+                    department={departmentName}
+                    noteId={itemData.fields.Title}
+                    user={user}
+                    workOrderRef={itemData.fields['WO']}
+                />
             </div>
 
             <div class="ui tab " data-tab="fifth">
-            <OrderIssues 
-                department={departmentName} 
-                modelId={itemData.fields.Title}
-                user={user} />
+                <OrderIssues
+                    department={departmentName}
+                    modelId={itemData.fields.Title}
+                    user={user} />
             </div>
 
         </>

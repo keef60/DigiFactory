@@ -50,7 +50,7 @@ const MaintenanceStatus = () => {
   }));
 
   return (
-    <div className="ui" style={{ marginLeft: '5%', width: '90%' }}>
+    <div className="ui" >
       <SelectionMenuTab_DashComponent
         setDepartmentTitle={setDepartmentTitle}
         setDepartmentClick={setDepartmentClick}

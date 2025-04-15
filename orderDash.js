@@ -4,16 +4,18 @@ const ItemWorkOrderDash = ({
     selectedNumber,
     clearLoading,
     user,
-    issesListData
+    issesListData,
+    inventoryRef,
+    gpDataInput
 }) => {
 
     const [accessToken, setAccessToken] = useState(null);
     const [error, setError] = useState(null);
     const [sharePointData, setSharePointData] = useState([]);
-    const [tokenInput, setTokenInput] = useState('');
     const [imagePaths, setImagePaths] = useState({});
     const [postName, setPostName] = useState('');
     const [siteID, setSiteID] = useState('');
+
 
     useEffect(() => {
         $('.menu .item').tab();
@@ -163,19 +165,25 @@ const ItemWorkOrderDash = ({
         };
         return (
             <div className=''>
+                <h1 className="ui header medium" >
+                    Production Queue
+                </h1>
+                <div class='ui divider'></div>
                 <div className='ui top attached tabular menu stackable'>
+
                     {data.map((item, index) => (
                         <a
                             key={item.fields.Title}
                             className={`item  ${activeTab === index ? `active` : ''}`}
                             onClick={() => handleTabClick(index)}
                         >
-                            {key(item) ? <i class="lock open icon"></i>:departmentName==='line'?<i class="lock closed icon"></i>:''}
+                            {key(item) ? <i class="lock open icon"></i> : departmentName === 'line' ? <i class="lock closed icon"></i> : ''}
                             {item.fields.Title}
                         </a>
                     ))}
                 </div>
                 <div className='ui'>
+
                     {data.map((item, index) => {
 
                         if (activeTab !== index) return null;
@@ -186,7 +194,7 @@ const ItemWorkOrderDash = ({
                             : 'img/placeholder.jpg';
 
                         return (<>
-                            <OrderDeatil data={item} imageSrc={imageSrc} />
+                            <OrderDeatil data={item} imageSrc={imageSrc} user={user} />
                         </>
                         );
                     })}
@@ -207,7 +215,9 @@ const ItemWorkOrderDash = ({
                                 selectedNumber={selectedNumber}
                                 departmentName={departmentName}
                                 user={user}
-                                issesListData={issesListData} />
+                                issesListData={issesListData}
+                                gpDataInput={gpDataInput}
+                                inventoryRef={inventoryRef} />
                         </>
                     );
                 })}
@@ -217,10 +227,11 @@ const ItemWorkOrderDash = ({
 
     return (
         <div>
+
             {error && <div className="ui red message">{error}</div>}
 
             {sharePointData.length > 0 ? (
-                <div id="sharePointData" className={`ui segment black ${clearLoading ? 'loading' : ''}`}>
+                <div id="sharePointData" className={`ui segment  ${clearLoading ? 'loading' : ''}`}>
                     {!error ? <>
                         {displayUpperMenuData(sharePointData)}
                         {displayLowerMenuData(sharePointData)}

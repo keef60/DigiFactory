@@ -150,7 +150,7 @@ const InventoryLookup = ({
           </div>
           <div className="item">
             <button
-              className="ui button green"
+              className="ui button red"
               onClick={() => {
                 setValuePostionInArray(1);
                 setSelectedTableName(departmentName[1]);

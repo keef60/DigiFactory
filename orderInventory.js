@@ -1,5 +1,3 @@
-const { useEffect, useRef, useState } = React
-
 const OrderInventoryLookup = ({
   selectedDepartment,
   departmentName,
@@ -13,7 +11,7 @@ const OrderInventoryLookup = ({
   const [data, setData] = useState({});
   const [valuePostionInArray, setValuePostionInArray] = useState(0);
   const [selectedTableName, setSelectedTableName] = useState(departmentName[valuePostionInArray]);
-
+  const [searchQuery,setSearchQuerying]= useState('')
   // Convert the data to an array of rows, where each row is a position from all keys
   const rows = [];
   const maxLength = Math.max(...Object.values(data).map(arr => arr.length));
@@ -47,10 +45,10 @@ const OrderInventoryLookup = ({
     fetchData();
   }, [selectedDepartment, valuePostionInArray, inventoryRef]); // Dependencies added for re-fetching when they change
 
-  // useEffect to filter the data when searchQueryLifted changes
+  // useEffect to filter the data when searchQuery changes
   useEffect(() => {
-    if (searchQueryLifted) {
-      const queryLower = searchQueryLifted.toLowerCase();
+    if (searchQuery) {
+      const queryLower = searchQuery.toLowerCase();
       const filteredRows = rows.filter(row => {
         return Object.values(row).some(value => value.toString().toLowerCase().includes(queryLower));
       });
@@ -58,7 +56,7 @@ const OrderInventoryLookup = ({
     } else {
       setFilteredData(rows); // Reset to original rows if no search query
     }
-  }, [searchQueryLifted, rows]);
+  }, [searchQuery, rows]);
 
   useEffect(() => {
     $('.menu.item').tab();
@@ -151,7 +149,7 @@ const OrderInventoryLookup = ({
           </div>
           <div className="item">
             <button
-              className="ui button green"
+              className="ui button red"
               onClick={() => {
                 setValuePostionInArray(1);
                 setSelectedTableName(departmentName[1]);
@@ -166,7 +164,7 @@ const OrderInventoryLookup = ({
           <MiniSearch
             inventoryRef={inventoryRef}
             searchThisData={selectedTableName}
-            setSearchQuery={setSearchQuery}
+            setSearchQuery={setSearchQuerying}
             searchThisClass={'inventoryLookUp'}
             showMiniSearchOnlyBool={true} />
         </div>

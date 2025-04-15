@@ -48,28 +48,14 @@ const LeftMenuBar = ({
         'Warehouse',
         'Maintenance'
     ];
-useEffect(()=>{
-    $('.ui.menu.navigation').sticky()
-})
+
     return (
-        <div className="ui fluid menu sticky top navigation fixed" style={{'z-index':10}}>
+        <div className="ui fluid menu  tiny navigation top fixed stackable" style={{'z-index':1000}}>
             <div className="item">
                 <div className="ui header">{userName ? userName : 'Not Logged In'}</div>
             </div>
 
-            <SearchBar
-                searchQueryLifted={searchQueryLifted}
-                setSearchQuery={setSearchQuery}
-                visibleLifted={visibleLifted}
-                setVisible={setVisible}
-                setData={setData}
-                dataLifted={dataLifted}
-                sheetNameLifted={sheetNameLifted}
-                setSheetName={setSheetName}
-                liftedData={dataLifted}
-                notMenuSearch={false}
-                selectedDepartment={selectedDepartment}
-            />
+
    {/* Departments Dropdown */}
             <div className="ui dropdown item">
 
@@ -89,7 +75,7 @@ useEffect(()=>{
                     ))}
                 </div>
             </div>
-            
+
             {/* Reports Dropdown for Manufacturing Managers */}
             <div className="ui dropdown item">
 
@@ -112,14 +98,29 @@ useEffect(()=>{
 
          
             {/* Login button to toggle the login modal */}
-            <a className="item menu right">
+            <div className="item menu right">
+
+            <SearchBar
+                searchQueryLifted={searchQueryLifted}
+                setSearchQuery={setSearchQuery}
+                visibleLifted={visibleLifted}
+                setVisible={setVisible}
+                setData={setData}
+                dataLifted={dataLifted}
+                sheetNameLifted={sheetNameLifted}
+                setSheetName={setSheetName}
+                liftedData={dataLifted}
+                notMenuSearch={false}
+                selectedDepartment={selectedDepartment}
+            />
+
                 <button
                     className={`ui ${userName !== undefined ? 'red' : 'primary'} button fluid`}
                     onClick={() => setLoginModalOpen(!loginModalOpen)}
                 >
                     {userName !== undefined ? 'Logout' : 'Login'}
                 </button>
-            </a>
+            </div>
         </div>
     );
 };

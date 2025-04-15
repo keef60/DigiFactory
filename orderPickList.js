@@ -128,6 +128,7 @@ const OrderPickList = ({
     };
 
     useEffect(() => {
+
         const storedToken = sessionStorage.getItem('access_token');
         if (storedToken) {
             setAccessToken(storedToken);
@@ -135,8 +136,26 @@ const OrderPickList = ({
         }
     }, [selectedDepartment]);
 
+const getLocalJSON = (modelIn)=>{
+    let data ;
+    Object.keys(localStorage).forEach(key =>{
+        const departmentBool = key.split('-')[1] === departmentName;
+        const modelBool = String(key.split('-')[2]) === String(modelIn);
+        if(departmentBool && modelBool){
+           data = localStorage.getItem(key);
+        }
+    });
+
+    return data;
+}
+
     const handleSubmit = async (modelNumber) => {
 
+        const sendData = getLocalJSON(modelNumber); 
+           main.handleSubmit(modelNumber,sendData,departmentName,'REPORTS')
+          .then(e=>console.log('New Json Created'))
+          .catch(err=>console.warn("Function Error handleSubmit in const orderPickList.js",err))
+     
         setConfirmedPickList(false);
         const delFieldData = JSON.stringify(rowData);
 
@@ -216,6 +235,7 @@ const OrderPickList = ({
                 setConfirmedPickList(createResponse.ok);
                 setRowDataIn('');
             }
+
         } catch (err) {
             console.error("Error:", err);
         }
@@ -291,6 +311,10 @@ const OrderPickList = ({
 
         return (
             <div className=''>
+                <h1 className="ui header medium" >
+                    Material Picks
+                </h1>
+                <div class='ui divider'></div>
                 <div className='ui top attached tabular menu'>
                     {data.map((item, index) => (
                         <a
@@ -311,7 +335,7 @@ const OrderPickList = ({
                                 const logKey = 'goalProgress-' + `${departmentName + selectedNumber}-${item.fields.Title}`
                                 const markLine = localStorage.getItem(logKey);
                                 if (markLine) {
-                                    return 'to '+departmentName.toUpperCase() + selectedNumber;
+                                    return 'to ' + departmentName.toUpperCase() + selectedNumber;
                                 }
                             }
                             const fields = item.fields;
@@ -329,7 +353,7 @@ const OrderPickList = ({
                                 <div className='ui segments ' key={fields.Title}>
 
                                     <div class="ui  very padded segment red" >
-                                        {label.status && <div class={`ui label basic  ${label.color}`}>{label.message === 'New' ? label.message : `Ordered ${label.message}`}</div>}
+                                        {label.status && <div class={`ui label basic  ${label.color}`}>{label.message}</div>}
                                         <p class="ui header  ">Work Order Summary</p>
                                         <p class="column ui grey ">Work Order: {fields['WO'].replace('WO - ', '')}</p>
                                         <p class='column ui grey'>Deviations:

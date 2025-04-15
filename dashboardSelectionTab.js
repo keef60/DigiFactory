@@ -2,8 +2,8 @@ const SelectionMenuTab_DashComponent = ({setDepartmentClick,setDepartmentTitle }
     useEffect(() => {
         $('.ui.dropdown.line').dropdown()
     }, []);
-    return (
-        <div className="ui mini inverted black menu">
+    return (<div class='ui segment black'>
+        <div className="ui mini secondary  menu">
             <div className="ui item header grey">Department</div>
             {['Paint', 'Handles', 'Pumps', 'Packout', 'Hose', 'Frames', 'Line'].map(department => {
                 if (department === 'Line') {
@@ -44,7 +44,7 @@ const SelectionMenuTab_DashComponent = ({setDepartmentClick,setDepartmentTitle }
                     </a>
                 );
             })}
-        </div>
+        </div></div>
     );
 
 

@@ -2,18 +2,39 @@ const OrderStatistic = ({
   departmentName,
   selectedNumber,
   title,
-  setPassProgress
+  setPassProgress,
+  gpDataInput
 }) => {
 
   const modelId = title;
   const dpName = departmentName === 'line' ? departmentName + selectedNumber : departmentName;
+  const [gpData] = useState(gpDataInput);
+  const [canStartOrder, setCanStartOrder] = useState({});
   const isLine = localStorage.getItem(`goalProgress-${dpName}-${modelId}`);
   const notLine = localStorage.getItem(`goalProgress-${dpName}-${modelId}`);
   const storedGoalData = isLine ? JSON.parse(isLine) : JSON.parse(notLine);
   const [currentProgressUpdate, setCurrentProgressUpdate] = useState();
   const [goal, setGoal] = useState(storedGoalData?.goal);
   const [progress, setProgress] = useState(storedGoalData?.progress);
+  const boolRef = useRef('');
 
+
+  useEffect(() => {
+    try {
+      gpData.map(item => {
+
+      String(modelId) === String(item.fields.Title) &&
+        item.fields[dpName] !== undefined ?
+        setCanStartOrder({ bool: true }) : '';
+
+    });
+    } catch (error) {
+      console.warn('Waiting for data ')
+    }
+   
+
+
+  }, [gpData])
 
   const trackProgressPerHour = () => {
     const now = new Date();
@@ -75,9 +96,10 @@ const OrderStatistic = ({
     setProgress('');
   };
 
-  return (
-    <div className="ui  horizontal statistics tiny" style={{ padding: '1%' }}>
-
+  return (<>
+    <h3 class='header ui'>Hourly Production Entry </h3>
+    <div class='ui divider'></div>
+    <div className="ui  horizontal statistics tiny" >
       <div className="ui statistic">
         <div className="value">{goal || storedGoalData?.goal || 0}</div>
         <div className="label">Goal</div>
@@ -108,11 +130,11 @@ const OrderStatistic = ({
           </div>
         </div>
         <div className="ui divider hidden" />
-        <div className="ui buttons small">
+        {canStartOrder.bool && <div className="ui buttons small">
           <button className="ui black button" onClick={handleSave}>Save</button>
           <button className="ui  button" onClick={handleReset}>Reset</button>
-        </div>
-
+        </div>}
+        {!canStartOrder.bool && <div class='ui message warning'>Pick List Incomplete – Pending Item Selection</div>}
       </div>
-    </div>)
+    </div></>)
 };

@@ -46,7 +46,8 @@
         }
   
         const listsData = await listsResponse.json();
-        const list = listsData.value.find(l => l.name === selectedDepartment);
+
+        const list = listsData.value.find(l => l.displayName === selectedDepartment);
   
         if (!list) {
           throw new Error(`Unable to find the ${selectedDepartment} list`);

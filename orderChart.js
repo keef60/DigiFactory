@@ -67,7 +67,7 @@ const OrderChartComponent = ({
         <canvas
             ref={canvasRef}
             width={400}
-            height={200}
+           
         />
         </>
     );

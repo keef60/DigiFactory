@@ -25,9 +25,6 @@ const WarehouseDashboard = ({ inventoryRef, searchQueryLifted, user }) => {
     ];
 
     return (<>
-
-        <div className="ui segment  black" style={{ marginLeft: '5%', width: '90%' }}>
-
         <div className="ui  small menu inverted  black stackable">
             {tabs.map((tab) => (
                 tab.disable && <a
@@ -39,6 +36,9 @@ const WarehouseDashboard = ({ inventoryRef, searchQueryLifted, user }) => {
                 </a>
             ))}
         </div>
+        <div className="ui segment  black">
+
+
             {/* Warehouse Header Detail with dynamic section */}
             <WarehouseHeaderDetail
                 imageSrc={"img/logo.jpg"}

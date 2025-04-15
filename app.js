@@ -1,6 +1,14 @@
 
 
-const { useState, useEffect, useRef } = React
+const { useState, useEffect, useRef } = React;
+/* const { createRoot } = ReactDOM;
+const {
+    BrowserRouter,
+    Routes,
+    Route,
+    Link,
+} = ReactRouterDOM; */
+
 function DepartmentMenu() {
 
     const [selectedDepartment, setSelectedDepartment] = useState('Handles');
@@ -35,6 +43,21 @@ function DepartmentMenu() {
     const [quickVeiwTitle, setQuickVeiwTitle] = useState('Expand Details');
     const departmentRefName = selectedDepartment
     const [filterTask, setFilterTask] = useState(false);
+    const [gpDataInput, setGpDataInputt] = useState([]);
+
+
+    useEffect(() => {
+        try {
+           if(gpDataInput.length === 0) {
+            main.fetchSharePointData('PICKLIST', departmentName).then(e => {
+                setGpDataInputt(e.value) });
+            }  
+        } catch (error) {
+            
+        }
+
+    });
+
 
     useEffect(() => {
         $('.ui.login.dimmer').dimmer('hide');
@@ -219,6 +242,7 @@ function DepartmentMenu() {
                     setLoginModalOpen={setLoginModalOpen}
                     handleDepartmentClick={handleDepartmentClick}
                     loginModalOpen={loginModalOpen}
+                    gpDataInput={gpDataInput}
 
                 />
         )
@@ -251,6 +275,7 @@ function DepartmentMenu() {
             case 'Maintenance': return (
                 <MaintenanceDashboard user={userName} />
             );
+
             case 'Inventory':
                 const setting = { report: false }
 
@@ -269,6 +294,7 @@ function DepartmentMenu() {
                     />
 
                 );
+
             case 'Warehouse':
 
                 return (
@@ -427,8 +453,7 @@ function DepartmentMenu() {
                 <div className="ui fourteen wide column centered"
                     style={{ /* marginLeft: '15.5%', paddingRight: '5%' */ }}>
                     <ErrorMessage error={newError} />
-                    {header()}
-                    <div class='ui divider'></div>
+                    <div class='ui divider hidden'></div>
                     {renderContent()}
                     {loginModal()}
                 </div>

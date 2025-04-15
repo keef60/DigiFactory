@@ -15,7 +15,8 @@ const OrderDisplayPane = ({
     setLoginModalOpen,
     setClearLoading,
     loginModalOpen,
-    handleDepartmentClick
+    handleDepartmentClick,
+    gpDataInput
 
 }) => {
     const [activeTab, setActiveTab] = useState('item'); // default to "Look Up" tab
@@ -39,6 +40,8 @@ const OrderDisplayPane = ({
                 setSelectedNumber={setSelectedNumber}
                 user={user}
                 issesListData={issesListData}
+                inventoryRef={inventoryRef}
+                gpDataInput={gpDataInput}
             />
         ),
         inventory: (
@@ -62,7 +65,7 @@ const OrderDisplayPane = ({
     return (
         <div style={{/*  position: 'center', marginLeft: '5%', width: '100%'  */}}>
 
-            <div className={`ui bottom segment basic ${clearLoading ? 'ui active centered  loader' : ''}`}>
+            <div className={`ui bottom   ${clearLoading ? 'ui active centered  loader' : ''}`}>
 
                 <OrderNavMenu
                     setActiveTab={setActiveTab}
@@ -77,6 +80,7 @@ const OrderDisplayPane = ({
                     loginModalOpen={loginModalOpen}
                     handleDepartmentClick={handleDepartmentClick}
                 />
+                            
                 {tabContent[activeTab]} {/* Render content based on the active tab */}
             </div>
         </div>

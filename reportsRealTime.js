@@ -137,7 +137,7 @@ const ReportsRealTimeDashboard = ({ }) => {
 
 
     return (
-        <div className="ui" style={{ position: 'center', marginLeft: '5%', width: '90%' }}>
+        <div className="ui">
             <SelectionMenuTab_DashComponent
                 setDepartmentTitle={setDepartmentTitle}
                 setDepartmentClick={setDepartmentClick}
