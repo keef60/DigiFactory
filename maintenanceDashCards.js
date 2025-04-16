@@ -7,32 +7,51 @@ const MaintenanceCards = ({
 }) => {
   return (
     <div className="ui cards">
-      {maintenanceData.map((row, index) => (
-        <div key={index} className="ui card">
-          <div className="content">
-            <div className="header">Work Order ID:</div>
-            <div className="meta">{row.uuid || 'N/A'}</div>
-          </div>
-
-          <div className="content">
-            <div className="description">
-
-              <p><strong>Affected Machine:</strong> {row.machine?.[0] || 'N/A'}</p>
-              <p><strong>Root Cause:</strong> {row.cause?.[0] || 'N/A'}</p>
-              <p><strong>Downtime Duration:</strong> {row.downtime?.[0] || 'N/A'}</p>
-              <p><strong>Operational Impact:</strong> {row.impact?.[0] || 'N/A'}</p>
-              <p><strong>Technician Description:</strong> {row.actionText || 'N/A'}</p>
-
-              {/* Maintenance Category Dropdown */}
-              <div className="field" style={{ marginTop: '1em' }}>
-                <label><strong>Maintenance Category</strong></label>
-                <div className="ui selection dropdown" id={`type-dropdown-${index}`}>
+    {maintenanceData.map((row, index) => (
+      <div key={index} className="ui  fluid card" style={{ padding: '1em' }}>
+        <div className="content">
+          <h3 className="ui header">
+            <i className="wrench icon"></i> Work Order: {row.uuid || 'N/A'}
+          </h3>
+        </div>
+  
+        <div className="content">
+          <div className="ui form">
+            <div className="two fields">
+              <div className="field">
+                <label>Affected Machine</label>
+                <div className="ui label">{row.machine?.[0] || 'N/A'}</div>
+              </div>
+              <div className="field">
+                <label>Root Cause</label>
+                <div className="ui label">{row.cause?.[0] || 'N/A'}</div>
+              </div>
+            </div>
+  
+            <div className="two fields">
+              <div className="field">
+                <label>Downtime Duration</label>
+                <div className="ui label">{row.downtime?.[0] || 'N/A'}</div>
+              </div>
+              <div className="field">
+                <label>Operational Impact</label>
+                <div className="ui label">{row.impact?.[0] || 'N/A'}</div>
+              </div>
+            </div>
+  
+            <div className="field">
+              <label>Technician Description</label>
+              <p>{row.actionText || 'N/A'}</p>
+            </div>
+  
+            <div className="two fields">
+              <div className="field">
+                <label>Maintenance Category</label>
+                <div className={`ui selection dropdown ${row.maintenanceType ? 'active visible' : ''}`} id={`type-dropdown-${index}`}>
                   <input type="hidden" name="maintenanceType" value={row.maintenanceType} />
                   <i className="dropdown icon" />
-                  <div className="default text">
-                    {row.maintenanceType || 'Select Category'}
-                  </div>
-                  <div className="menu">
+                  <div className="default text">{row.maintenanceType || 'Select Category'}</div>
+                  <div className="menu transition visible ">
                     {maintenanceTypes.map((type, idx) => (
                       <div
                         key={idx}
@@ -46,17 +65,14 @@ const MaintenanceCards = ({
                   </div>
                 </div>
               </div>
-
-              {/* Work Status Dropdown */}
-              <div className="field" style={{ marginTop: '1em' }}>
-                <label><strong>Work Status</strong></label>
-                <div className="ui selection dropdown" id={`status-dropdown-${index}`}>
+  
+              <div className="field">
+                <label>Work Status</label>
+                <div className={`ui selection dropdown  ${row.status ? 'active visible' : ''}`} id={`status-dropdown-${index}`}>
                   <input type="hidden" name="status" value={row.status} />
                   <i className="dropdown icon" />
-                  <div className="default text">
-                    {row.status || 'Select Status'}
-                  </div>
-                  <div className="menu">
+                  <div className="default text">{row.status || 'Select Status'}</div>
+                  <div className="menu  transition visible">
                     {statusOptions.map((status, idx) => (
                       <div
                         key={idx}
@@ -70,30 +86,29 @@ const MaintenanceCards = ({
                   </div>
                 </div>
               </div>
-
-              {/* Technician Notes */}
-              <div className="field" style={{ marginTop: '1em' }}>
-                <label><strong>Technician Notes</strong></label>
-                <textarea
-                  rows="3"
-                  placeholder="Enter any additional observations or remarks..."
-                  value={row.notes || ''}
-                  onChange={(e) => handleChange(index, 'notes', e.target.value)}
-                ></textarea>
-              </div>
+            </div>
+  
+            <div className="field">
+              <label>Technician Notes</label>
+              <textarea
+                rows="3"
+                placeholder="Enter any additional observations or remarks..."
+                value={row.notes || ''}
+                onChange={(e) => handleChange(index, 'notes', e.target.value)}
+              ></textarea>
             </div>
           </div>
-
-          <div className="extra content">
-            <button className="ui mini red button" onClick={() => handleUpdate(row)}>
-              Submit
-            </button>
-          </div>
         </div>
-
-
-      ))}
-    </div>
+  
+        <div className="extra content" style={{ textAlign: 'right' }}>
+          <button className="ui primary mini button" onClick={() => handleUpdate(row)}>
+            <i className="check icon" /> Submit
+          </button>
+        </div>
+      </div>
+    ))}
+  </div>
+  
   );
 };
 

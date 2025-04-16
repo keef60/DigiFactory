@@ -7,8 +7,17 @@ const LoginTokenNew = ({ setIsLoggedIn, isLoggedIn }) => {
   const [tokenInput, setTokenInput] = useState('');
 
   const extractAccessToken = (url) => {
-    const urlParams = new URLSearchParams(url.split('#')[1] || '');
-    return urlParams.get('access_token');
+
+      // First try to extract access_token from hash (implicit flow)
+      const hashParams = new URLSearchParams(url.split('#')[1] || '');
+      const accessToken = hashParams.get('access_token');
+      if (accessToken) return accessToken;
+    
+      // If no access_token, try to extract code from query string (auth code flow)
+      const queryParams = new URLSearchParams(url.split('?')[1] || '');
+      return queryParams.get('code'); // This is the authorization code
+  
+    
   };
 
   const handleTokenSubmit = () => {
@@ -21,13 +30,25 @@ const LoginTokenNew = ({ setIsLoggedIn, isLoggedIn }) => {
       setError('Please enter a valid URL containing the access token');
     }
   };
+  const startOAuthLoginOffline = () => {
+    const tenant = "a8585420-4088-4906-a78d-06b2693cc3aa"; // Replace with your tenant ID
+    const clientId = "8db3d71f-62b7-457d-b653-9f874424f89e"; // Replace with your client ID
+    const redirectUri = 'http://localhost'; // Replace with your redirect URI
+  
+    const scopes = 'Sites.Read.All offline_access'; // Add offline_access scope
+    const responseType = 'code'; // Must use "code" to get refresh token
+    const authUrl = `https://login.microsoftonline.com/${tenant}/oauth2/v2.0/authorize?client_id=${clientId}&response_type=${responseType}&redirect_uri=${redirectUri}&scope=${encodeURIComponent(scopes)}`;
+  
+    window.open(authUrl, '_blank', 'width=600,height=400,scrollbars=yes');
+  };
+  
 
   const startOAuthLogin = () => {
     const tenant = "a8585420-4088-4906-a78d-06b2693cc3aa"; // Replace with your tenant ID
     const clientId = "8db3d71f-62b7-457d-b653-9f874424f89e"; // Replace with your client ID
     const redirectUri = 'http://localhost'; // Replace with your redirect URI
 
-    const scopes = 'Sites.Read.All';
+    const scopes = 'Sites.Manage.All';
     const responseType = 'token';
     const authUrl = `https://login.microsoftonline.com/${tenant}/oauth2/v2.0/authorize?client_id=${clientId}&response_type=${responseType}&redirect_uri=${redirectUri}&scope=${scopes}`;
 

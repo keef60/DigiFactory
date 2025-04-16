@@ -49,11 +49,12 @@ function DepartmentMenu() {
     useEffect(() => {
         try {
            if(gpDataInput.length === 0) {
-            main.fetchSharePointData('PICKLIST', departmentName).then(e => {
+            main.fetchSharePointData('PICKLIST', 'handles').then(e => {
+                console.log('=======-------',e)
                 setGpDataInputt(e.value) });
             }  
         } catch (error) {
-            
+            console.warn(error)
         }
 
     });
@@ -162,7 +163,7 @@ function DepartmentMenu() {
     }, [filterTask]);
 
     useEffect(() => {
-        $('.ui.dropdown.item.subNav')
+        $('.ui.dropdown.selection')
             .dropdown()
             ;
     })
@@ -213,7 +214,7 @@ function DepartmentMenu() {
                     setError={setError}
                     setFilterTask={setFilterTask}
                     filterTask={filterTask}
-                    inventoryDepartmentName={['inventory', 'sage']}
+                    inventoryDepartmentName={['inventory', 'inventory']}
                     inventoryRef={inventory}
                     user={userName}
 
@@ -235,7 +236,7 @@ function DepartmentMenu() {
                     setSearchQuery={setSearchQuery}
                     setFilterTask={setFilterTask}
                     filterTask={filterTask}
-                    inventoryDepartmentName={['inventory', 'sage']}
+                    inventoryDepartmentName={['inventory', 'inventory']}
                     inventoryRef={inventory}
                     user={userName}
                     setClearLoading={setClearLoading}
@@ -284,7 +285,7 @@ function DepartmentMenu() {
                     <InventoryLookup
                         spMethod={main}
                         selectedDepartment="Inventory"
-                        departmentName={['inventory', 'sage']}
+                        departmentName={['inventory', 'inventory']}
                         searchQueryLifted={searchQueryLifted}
                         inventoryRef={inventory}
                         setError={setError}
@@ -314,7 +315,7 @@ function DepartmentMenu() {
                     <InventoryLookup
                         spMethod={main}
                         selectedDepartment="Inventory"
-                        departmentName={['inventory', 'sage']}
+                        departmentName={['inventory', 'inventory']}
                         searchQueryLifted={searchQueryLifted}
                         inventoryRef={inventory}
                         setError={setError}

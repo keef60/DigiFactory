@@ -34,8 +34,9 @@ const OrderInventoryLookup = ({
 
   useEffect(() => {
     const fetchData = async () => {
-      try {
-        const d = JSON.parse(inventoryRef.value[valuePostionInArray].fields[selectedTableName])
+      try { console.log(selectedTableName)
+        const d = JSON.parse(inventoryRef.value[valuePostionInArray].fields[selectedTableName]);
+       
         setData(d);
       } catch (err) {
         console.log(err);

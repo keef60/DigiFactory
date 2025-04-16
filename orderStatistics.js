@@ -21,20 +21,21 @@ const OrderStatistic = ({
 
   useEffect(() => {
     try {
-      gpData.map(item => {
-
+      console.log('-------------------===',gpDataInput)
+      gpDataInput.map(item => {
+console.log(item)
       String(modelId) === String(item.fields.Title) &&
         item.fields[dpName] !== undefined ?
         setCanStartOrder({ bool: true }) : '';
 
     });
     } catch (error) {
-      console.warn('Waiting for data ')
+      console.warn('------------------Waiting for data ')
     }
    
 
 
-  }, [gpData])
+  }, [gpDataInput])
 
   const trackProgressPerHour = () => {
     const now = new Date();

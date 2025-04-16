@@ -1,5 +1,5 @@
 
-const MaintenanceDashboard = ({user}) => {
+const MaintenanceDashboard = ({ user }) => {
   const [maintenanceData, setMaintenanceData] = useState([]);
   const [allData, setAllData] = useState([]);
   const [departmentClick, setDepartmentClick] = useState('');
@@ -70,7 +70,7 @@ const MaintenanceDashboard = ({user}) => {
 
   // Update row field state
   const handleChange = (index, field, value) => {
-  
+
     const updated = [...filterData];
     updated[index][field] = value;
     if (!updated[index].changeLog) {
@@ -104,31 +104,31 @@ const MaintenanceDashboard = ({user}) => {
   };
 
   return (
-    <div className="ui" style={{ marginLeft: '5%', width: '90%' }}>
+    <div className="ui" >
       <SelectionMenuTab_DashComponent
         setDepartmentTitle={setDepartmentTitle}
         setDepartmentClick={setDepartmentClick}
       />
       <div class="ui segment  black">
-      <MaintenanceHeaderDetail  imageSrc={"img/logo.jpg"} />
-      <div className="ui segments horizontal">
+        <MaintenanceHeaderDetail imageSrc={"img/logo.jpg"} />
+        <div className="ui segments horizontal">
 
-        <div class='ui segment  '>
-          <MaintenanceTable
-            maintenanceData={maintenanceData}
-            handleFilter={handleFilter}
-          />
+          <div className="ui segment">
+            <MaintenanceTabs
+              maintenanceData={maintenanceData}
+              handleFilter={handleFilter}
+            />
+          </div>
+          <div class='ui segment very padded'>
+            <MaintenanceCards
+              maintenanceData={filterData}
+              maintenanceTypes={maintenanceTypes}
+              statusOptions={statusOptions}
+              handleChange={handleChange}
+              handleUpdate={handleUpdate}
+            />
+          </div>
         </div>
-        <div class='ui segment very padded'>
-          <MaintenanceCards
-            maintenanceData={filterData}
-            maintenanceTypes={maintenanceTypes}
-            statusOptions={statusOptions}
-            handleChange={handleChange}
-            handleUpdate={handleUpdate}
-          />
-        </div>
-      </div>
       </div>
 
     </div>
