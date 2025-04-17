@@ -10,9 +10,13 @@ const OrderNavMenu = ({
     setClearLoading,
     loginModalOpen,
     handleDepartmentClick,
-    selectedDepartment
+    selectedDepartment,
+    setReload
 }) => {
+useEffect(()=>{
+    setReload(prev => ({ ...prev, tab: activeTab }));
 
+},activeTab)
     return (
         <div class="ui black segment">
             <div class="ui mini stackable secondary menu">

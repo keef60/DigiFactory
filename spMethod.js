@@ -64,7 +64,7 @@
         });
   
         const itemsData = await itemsResponse.json();
-        const regex = /^(inventory|sage|runRates|frames|paint|handles|packout|maintenance|issues|.*line.*)$/;
+        const regex = /^(load|inventory|sage|runRates|frames|paint|handles|packout|maintenance|issues|.*line.*)$/;
   
         if (regex.test(departmentName)) {
             return itemsData;

@@ -22,7 +22,16 @@ const LinesEditorNew = ( {
   filterTask,
   inventoryDepartmentName,
   inventoryRef,
-
+  gpDataInput,
+  
+  user,
+  setLoginModalOpen,
+  setClearLoading,
+  loginModalOpen,
+  handleDepartmentClick,
+  setReload,
+  reload
+  
 }) => {
 
 
@@ -49,19 +58,17 @@ const LinesEditorNew = ( {
   );
   const [workingThisRow, setWorkingThisRow] = useState('');
 
-  const handleClose = () => {
-    setVisible(false);
-  };
 
-  const handleOpen = () => {
-    setVisible(true);
-  };
 
   useEffect(() => {
     if (selectedNumber !== null) {
-      spMethod.fetchSharePointData('NOTES', departmentName + selectedNumber);
-      spMethod.fetchSharePointData('REPORTS', departmentName + selectedNumber);
-      spMethod.fetchSharePointData('ISSUES', departmentName + selectedNumber);
+      spMethod.fetchSharePointData('NOTES', departmentName);
+      spMethod.fetchSharePointData('REPORTS', departmentName);
+      spMethod.fetchSharePointData('ISSUES', departmentName);
+      spMethod.fetchSharePointData('Maintenance', departmentName);
+      spMethod.fetchSharePointData('PICKLIST', departmentName);
+      spMethod.fetchSharePointData('TIME', departmentName);
+
     }
   }, [selectedNumber]);
 
@@ -111,90 +118,9 @@ const LinesEditorNew = ( {
     }
   }, [dataLifted]);
 
-  useEffect(() => {
-    $(document).on('click', `.save-new-record-line${selectedNumber}`, function () {
-      addNewRecord();
-    });
 
-    $(document).on('change', '.new-record', function (e) {
-      handleNewRecordChange(e, e.target.placeholder);
-    });
 
-    $(document).on('click', `.save-note-line`, function (e) {
-      let rowIndex = $(this).data('rowindexsave');
-      let noteId = $(this).data('noteidsave');
-      saveNoteToLocalStorage(noteId, rowIndex, notes[noteId]);
-    });
 
-    $(document).on('change', '.note-area', function (e) {
-      let rowIndex = $(this).data('rowindex');
-      let noteId = $(this).data('noteid');
-      handleNoteChange(rowIndex, e, noteId);
-    });
-  }, [newRecord]);
-
-  const formatTimestamp = (timestamp) => {
-    const date = new Date(timestamp);
-
-    return date.toLocaleString('en-US', {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true,
-    }).replace(',', '');
-  };
-
-  const handleNoteChange = (rowIndex, e, noteId) => {
-    setNotes((prevNotes) => ({
-      ...prevNotes,
-      [noteId]: {
-        [rowIndex]: e.target.value,
-        noteId: noteId,
-        date: Date.now(),
-      },
-    }));
-  };
-
-  const saveNoteToLocalStorage = (noteId, rowIndex, newNote) => {
-    let savedNotes = JSON.parse(localStorage.getItem(`saved-notes-line${selectedNumber}`)) || {};
-
-    if (!savedNotes[noteId]) {
-      savedNotes[noteId] = { noteId, date: Date.now() };
-    }
-
-    if (!savedNotes[noteId][rowIndex]) {
-      savedNotes[noteId][rowIndex] = [];
-    }
-
-    if (Array.isArray(savedNotes[noteId][rowIndex])) {
-      savedNotes[noteId][rowIndex] = savedNotes[noteId][rowIndex].filter((note) => note !== null);
-
-      if (newNote && newNote.noteId) {
-        const noteExists = savedNotes[noteId][rowIndex].some(
-          (note) => note.noteId === newNote.noteId && note.date === newNote.date
-        );
-
-        if (!noteExists) {
-          savedNotes[noteId][rowIndex].push(newNote);
-          localStorage.setItem(`saved-notes-line${selectedNumber}`, JSON.stringify(savedNotes));
-          spMethod.handleSubmit(noteId, JSON.stringify(savedNotes), `line${selectedNumber}`, 'NOTES')
-            .then((e) => console.log(e))
-            .catch((err) => console.log(err));
-          setSavedNotes(savedNotes);
-        }
-      } else {
-        console.error('Invalid newNote object', newNote);
-      }
-    } else {
-      console.error(`Expected an array for savedNotes[${noteId}][${rowIndex}], but found:`, savedNotes[noteId][rowIndex]);
-    }
-  };
-
-  const handleNewRecordChange = (e, field) => {
-    setNewRecord({ ...newRecord, [field]: e.target.value });
-  };
 
   const getPdfPath = (row) => {
     const pdfFolder = 'img/';
@@ -293,6 +219,14 @@ const LinesEditorNew = ( {
         setFilterTask={setFilterTask}
         inventoryDepartmentName={inventoryDepartmentName}
         inventoryRef={inventoryRef}
+        gpDataInput={ gpDataInput}
+        user={user}
+        setClearLoading={setClearLoading}
+        setLoginModalOpen={setLoginModalOpen}
+        handleDepartmentClick={handleDepartmentClick}
+        loginModalOpen={loginModalOpen}
+        setReload={setReload}
+        reload={reload}
       />
 
       <div className="ui fullscreen modal pdf-viewer line">
@@ -339,104 +273,6 @@ const LinesEditorNew = ( {
         </div>
       </div>
 
-      <div className="ui small modal note-viewer line">
-        <div className="header">Notes</div>
-        <div className="content">
-          <div className="ui top attached tabular menu">
-            <a className="item active" data-tab="current">
-              Current Notes
-            </a>
-            <a className="item" data-tab="saved">
-              Saved Notes
-            </a>
-          </div>
-          <div className="ui bottom attached tab segment" data-tab="current">
-            {dataLifted.map((row, rowIndex) =>
-              notePath === row[0] ? (
-                <div key={rowIndex} className="ui segment basic">
-                  <h3>{`Model ${row[0]}`}</h3>
-                  <div className="ui comments">
-                    <div className="comment">
-                      <div className="content">
-                        <a className="author">User</a>
-                        <div className="metadata">
-                          <div className="date">Just now</div>
-                        </div>
-                        <div className="text">
-                          {notes[row[0]] && notePath === notes[row[0]].noteId
-                            ? notes[row[0]][rowIndex] ?? 'No notes yet...'
-                            : 'No notes yet...'}
-                        </div>
-                        <form className="ui reply form">
-                          <div className="field">
-                            <textarea
-                              className="note-area"
-                              placeholder="Enter your note..."
-                              data-rowIndex={rowIndex}
-                              data-noteId={row[0]}
-                            />
-                          </div>
-                        </form>
-                        <div className="ui divider hidden" />
-                        <button
-                          className="ui primary labeled icon button save-note-line"
-                          data-rowIndexSave={rowIndex}
-                          data-noteIdSave={row[0]}
-                        >
-                          <i className="icon edit" />
-                          Add Note
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ) : null
-            )}
-          </div>
-          <div
-            className="ui bottom attached tab segment"
-            data-tab="saved"
-            style={{ maxHeight: '300px', overflowY: 'auto' }}
-          >
-            {Object.keys(savedNotes).map((noteId) => {
-              const note = savedNotes[noteId];
-              return noteId === notePath.toString() ? (
-                <div key={noteId} className="ui segment basic">
-                  <h3
-                    style={{
-                      top: '0',
-                      backgroundColor: 'white',
-                      zIndex: 1,
-                      padding: '3% 0',
-                    }}
-                  >
-                    {`Saved Notes for Model ${noteId}`}
-                  </h3>
-                  <div className="ui comments">
-                    {Object.keys(note)
-                      .filter((rowIndex) => rowIndex !== 'noteId' && rowIndex !== 'date')
-                      .map((rowIndex) =>
-                        Array.isArray(note[rowIndex])
-                          ? note[rowIndex].map((entry, index) => (
-                              <div key={index} className="comment">
-                                <div className="content">
-                                  <a className="author">User</a>
-                                  <div className="metadata">
-                                    <div className="date">{formatTimestamp(entry.date)}</div>
-                                  </div>
-                                  <div className="text">{entry.text}</div>
-                                </div>
-                              </div>
-                            ))
-                          : null
-                      )}
-                  </div>
-                </div>
-              ) : null;
-            })}
-          </div>
-        </div>
-      </div>
     </div>
   );
 };

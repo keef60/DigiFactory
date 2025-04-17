@@ -6,7 +6,8 @@ const ItemWorkOrderDash = ({
     user,
     issesListData,
     inventoryRef,
-    gpDataInput
+    gpDataInput,
+    reload
 }) => {
 
     const [accessToken, setAccessToken] = useState(null);
@@ -50,9 +51,9 @@ const ItemWorkOrderDash = ({
     };
 
     const fetchSharePointData = async (token) => {
-        console.log('================)01', selectedDepartment)
+  
         if (!token) {
-            console.log('================)02', selectedDepartment)
+           
             setError('No valid access token provided. Please input a valid token.');
             return;
         }
@@ -67,18 +68,18 @@ const ItemWorkOrderDash = ({
                     Authorization: `Bearer ${token}`,
                 },
             });
-            console.log('================)03', selectedDepartment)
+         
             if (!siteResponse.ok) {
-                console.log('================)04', selectedDepartment)
+          
                 const errorData = await siteResponse.json();
                 throw new Error(`Failed to fetch site data: ${errorData.error.message}`);
             }
 
             const siteData = await siteResponse.json();
             const siteId = siteData.id;
-            console.log('================)05', selectedDepartment)
+    
             if (!siteId) {
-                console.log('================)06', selectedDepartment)
+         
                 throw new Error('Unable to get site ID');
             }
 
@@ -88,9 +89,9 @@ const ItemWorkOrderDash = ({
                     Authorization: `Bearer ${token}`,
                 },
             });
-            console.log('================)07', selectedDepartment)
+        
             if (!listsResponse.ok) {
-                console.log('================)08', selectedDepartment)
+          
                 const errorData = await listsResponse.json();
                 throw new Error(`Failed to fetch lists: ${errorData.error.message}`);
             }
@@ -100,9 +101,9 @@ const ItemWorkOrderDash = ({
             const pId = listsData.value.filter(e => e.displayName === 'PICKLIST')[0].id;
             setPostName(pId);
             setSiteID(siteId);
-            console.log('================)09', selectedDepartment)
+       
             if (!list) {
-                console.log('================)010', selectedDepartment)
+            
                 throw new Error(`Unable to find the ${selectedDepartment} list`);
             }
 
@@ -114,18 +115,16 @@ const ItemWorkOrderDash = ({
                     Authorization: `Bearer ${token}`,
                 },
             });
-            console.log('================)011', selectedDepartment)
+          
             if (!itemsResponse.ok) {
-                console.log('================)012', selectedDepartment)
+              
                 const errorData = await itemsResponse.json();
                 throw new Error(`Failed to fetch list items: ${errorData.error.message}`);
             }
 
             const itemsData = await itemsResponse.json();
-            console.log('================)013', selectedDepartment)
+         
             if (itemsData) {
-                console.log('================)014', selectedDepartment)
-                console.log('================)))))))', itemsData)
                 setSharePointData(itemsData.value);
                 setError(null);
             }
@@ -217,7 +216,9 @@ const ItemWorkOrderDash = ({
                                 user={user}
                                 issesListData={issesListData}
                                 gpDataInput={gpDataInput}
-                                inventoryRef={inventoryRef} />
+                                inventoryRef={inventoryRef}
+                                reload={reload}
+                                />
                         </>
                     );
                 })}

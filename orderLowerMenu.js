@@ -5,8 +5,11 @@ const OrderLowerMenu = ({
     user,
     issesListData,
     gpDataInput,
-    inventoryRef
+    inventoryRef,
+    reload
 }) => {
+console.log(itemData.fields)
+
     const [prgs, setPassProgress] = useState(false);
     return (
         <>
@@ -29,7 +32,10 @@ const OrderLowerMenu = ({
                     selectedNumber={selectedNumber}
                     departmentName={departmentName}
                     user={user}
-                    department={departmentName} />
+                    department={departmentName}
+                    modelID={itemData.fields.Title}
+                    workOrderID={itemData.fields['WO']}
+                     />
             </div>
 
             <div class="ui tab " data-tab="third">
@@ -53,6 +59,7 @@ const OrderLowerMenu = ({
                                 title={itemData.fields.Title}
                                 setPassProgress={setPassProgress}
                                 gpDataInput={gpDataInput}
+                                reload={reload}
                             />
                         </div>
                     </div>

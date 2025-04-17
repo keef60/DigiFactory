@@ -3,7 +3,8 @@ const OrderPickList = ({
     departmentName,
     selectedNumber,
     clearLoading,
-    setWOnDev
+    setWOnDev,
+    setReload
 }) => {
 
     const [accessToken, setAccessToken] = useState(null);
@@ -207,6 +208,7 @@ const getLocalJSON = (modelIn)=>{
                 alert("Pick list submission complete. All entries have been saved.")
                 setConfirmedPickList(updateResponse.ok);
                 setRowDataIn('');
+                setReload(prev => ({ ...prev, status: true, tab: '' }));
             } else {
                 const url = `https://graph.microsoft.com/v1.0/sites/${siteID}/lists/${postName}/items`;
 
@@ -234,6 +236,8 @@ const getLocalJSON = (modelIn)=>{
 
                 setConfirmedPickList(createResponse.ok);
                 setRowDataIn('');
+                setReload(prev => ({ ...prev, status: true, tab: '' }));
+
             }
 
         } catch (err) {
@@ -366,8 +370,6 @@ const getLocalJSON = (modelIn)=>{
                                                 </p>
                                             </div>
                                         </p>
-
-
 
                                         {
                                             departmentName === 'line' && <>

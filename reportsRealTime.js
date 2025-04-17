@@ -7,7 +7,7 @@ const ReportsRealTimeDashboard = ({ }) => {
     const [departmentClick, setDepartmentClick] = useState();
     const [departmentTitle, setDepartmentTitle] = useState();
 
-    async function convertToTableData() {
+    async function convertToTableData1() {
         const data = [];
         const noteData = []
         try {
@@ -89,7 +89,107 @@ const ReportsRealTimeDashboard = ({ }) => {
         }
     }
 
+    async function convertToTableData() {
+        const data = [];
+        const noteData = [];
+    
+        try {
+            const runRates = await main.fetchSharePointData('RunRates', 'runRates', false)
+                .then(e => JSON.parse(e.value[0].fields.runRates))
+                .catch(err => console.log("RunRates error", err));
+    
+            const issues = await main.fetchSharePointData('ISSUES', departmentClick, false)
+                .then(e => e.value)
+                .catch(err => console.log("Issues error", err));
+    
+            const reportItems = await main.fetchSharePointData('REPORTS', departmentClick, false)
+                .then(e => e.value)
+                .catch(err => console.log("Reports error", err));
+    
+            for (const item of reportItems) {
+
+              
+                const fields = item.fields;
+    
+                // Loop through each field to find departments
+                for (const key in fields) {
+                    // Skip non-department fields
+                    if (!['packout', 'handles', 'frames'].includes(key)) continue;
+    
+                    let departmentJson;
+                    try {
+                        departmentJson = JSON.parse(fields[key]);
+                         departmentJson = JSON.parse(departmentJson)
+                    } catch (e) {
+                        console.warn(`Skipping malformed field: ${key}`, e);
+                        continue;
+                    }
+    
+                    const model = departmentJson?.product?.id || fields["Title"];
+                    const department = departmentJson?.assignedTo?.department || key;
+                    const goal = parseInt(departmentJson?.goal || 0);
+                    const logs = departmentJson?.logs || [];
+
+
+                    // Log entries per hour
+                    for (const log of logs) {
+                        const hourData = log.data || [];
+
+                        for (const entry of hourData) {
+                            const hour = `H ${entry.hour - 6}`;
+                            const machinePrd = entry.progress;
+    
+                            const runRateEntry = runRates.find(r => String(r['Unit']) === String(model));
+                            if (runRateEntry) {
+                                const runRate = runRateEntry["Run Rate"];
+                                const machVar = machinePrd - runRate;
+                                const varPercentage = ((machinePrd / runRate) * 100).toFixed(2);
+    
+                                data.push({
+                                    hour,
+                                    model,
+                                    machinePrd,
+                                    runRate,
+                                    machVar,
+                                    varPercentage: `${varPercentage}%`
+                                });
+                            }
+                        }
+                    }
+    
+                    // Match with issues (if any)
+                    for (const issue of issues) {
+                        const title = issue.fields["Title"];
+                        const deptField = issue.fields[department];
+    
+                        if (deptField && String(title) === String(model)) {
+                            const deptData = JSON.parse(deptField);
+
+                            console.log(deptData)
+                            const cause = deptData.selectedOptions?.cause?.join(', ') || 'N/A';
+                            const creationDate = new Date(deptData.selectedOptions?.creationDate);
+                            const hour = creationDate.getHours() - 6;
+    
+                            noteData.push({
+                                cause,
+                                model,
+                                date: hour
+                            });
+                        }
+                    }
+                }
+            }
+    
+            setData(data);
+            setNotes(noteData);
+        } catch (err) {
+            console.log("convertToTableData failed", err);
+        }
+    }
+    
+  
     useEffect(() => {
+
         convertToTableData();
     }, [departmentClick]);
 

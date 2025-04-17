@@ -1,4 +1,110 @@
-const goalProgressJSONCreation = (item, departmentName) => {
+// 📚 Predefined Manufacturing Events
+const manufacturingEvents = [
+  // OrderLifecycle
+  "Order Created",
+  "Order Validated",
+  "Order Queued",
+  "Order Scheduled",
+  "Order Updated",
+  "Order Cancelled",
+  "Order On Hold",
+  "Order Released",
+  "Order Completed",
+  "Order Archived",
+
+  // Production Workflow
+  "Assigned to Machine",
+  "Assigned to Operator",
+  "Setup Started",
+  "Setup Completed",
+  "Production Started",
+  "Production Paused",
+  "Production Resumed",
+  "Production Completed",
+  "Job Changeover Initiated",
+  "Job Changeover Completed",
+
+  // Quality & Inspection
+  "First Article Inspection Started",
+  "First Article Inspection Passed",
+  "First Article Inspection Failed",
+  "In-Process Inspection Performed",
+  "Inspection Deviation Noted",
+  "Final Inspection Passed",
+  "Final Inspection Failed",
+
+  // Maintenance / Issues
+  "Machine Downtime Reported",
+  "Machine Maintenance Scheduled",
+  "Unplanned Downtime",
+  "Tooling Issue Detected",
+  "Deviation Logged",
+  "Defective Units Detected",
+
+  // Post-Production
+  "Moved to Packaging",
+  "Moved to Warehouse",
+  "Ready for Shipment",
+  "Shipped",
+  "Customer Notified",
+
+  // Tracking & Metrics
+  "Cycle Time Logged",
+  "Scrap Count Updated",
+  "Yield Calculated",
+  "Efficiency Metrics Captured"
+];
+
+const WorkOrderPriority = {
+  LOW: "Low",
+  MEDIUM: "Medium",
+  HIGH: "High",
+  CRITICAL: "Critical"
+};
+
+const UserRoles = {
+  OPERATOR: "Operator",
+  LEAD: "Lead",
+  SUPERVISOR: "Supervisor",
+  ADMIN: "Admin"
+};
+
+const WorkOrderStatus = {
+  PENDING: "Pending",
+  IN_PROGRESS: "InProgress",
+  ON_HOLD: "OnHold",
+  AWAITING_MATERIALS: "AwaitingMaterials",
+  READY: "Ready",
+  COMPLETED: "Completed",
+  CANCELLED: "Cancelled",
+  CLOSED: "Closed",
+  ERROR: "Error"
+};
+
+// Map which roles can set which statuses
+const StatusPermissions = {
+  [WorkOrderStatus.PENDING]: [UserRoles.OPERATOR, UserRoles.LEAD, UserRoles.SUPERVISOR, UserRoles.ADMIN],
+  [WorkOrderStatus.IN_PROGRESS]: [ UserRoles.LEAD, UserRoles.SUPERVISOR, UserRoles.ADMIN],
+  [WorkOrderStatus.ON_HOLD]: [UserRoles.LEAD, UserRoles.SUPERVISOR, UserRoles.ADMIN],
+  [WorkOrderStatus.AWAITING_MATERIALS]: [UserRoles.LEAD, UserRoles.SUPERVISOR, UserRoles.ADMIN],
+  [WorkOrderStatus.READY]: [UserRoles.LEAD, UserRoles.SUPERVISOR, UserRoles.ADMIN],
+  [WorkOrderStatus.COMPLETED]: [UserRoles.SUPERVISOR, UserRoles.ADMIN],
+  [WorkOrderStatus.CANCELLED]: [UserRoles.SUPERVISOR, UserRoles.ADMIN],
+  [WorkOrderStatus.CLOSED]: [UserRoles.ADMIN],
+  [WorkOrderStatus.ERROR]: [UserRoles.ADMIN]
+};
+
+
+function createReference(prefix = "FNA") {
+  const now = new Date();
+  const dateStr = now.toISOString().slice(0, 10).replace(/-/g, ""); // e.g., "20250417"
+  const randomSegment = Math.floor(Math.random() * 10000).toString().padStart(4, '0'); // e.g., "0382"
+
+  return `${prefix}-${dateStr}-${randomSegment}`;
+}
+
+
+const goalProgressJSONCreation = (item, departmentName,user) => {
     // Get the start and end of the current week
     const currentDate = new Date();
     const currentDay = currentDate.getDay();
@@ -21,7 +127,6 @@ const goalProgressJSONCreation = (item, departmentName) => {
 
     // Check if the record already exists in localStorage
     const existingGoalProgress = localStorage.getItem(key);
-
 
     // If the record exists, check its timestamp and isActive
     if (existingGoalProgress) {
@@ -50,24 +155,40 @@ const goalProgressJSONCreation = (item, departmentName) => {
         dev: deviations
     }; */
 
+
     const goalProgressData = {
-        goal: runQuantity, // Total quantity to be produced
-        progress: 0, // Quantity produced so far
-        "creation date": timestamp, // ISO string or timestamp
-        isActive: false, // Is the order still running?
+        goal: runQuantity, 
+        progress: 0, 
+        "creation date": timestamp, 
+        assignedTo:{
+          department:departmentName,
+        },
+        isActive: false, 
         workOrder: {
           id: workOrder,
-          reference: null,
-          status: null,
-          priority: null,
-          dueDate: null
+          reference: createReference('DTX'),
+          status: WorkOrderStatus.PENDING.label,
+          priority: WorkOrderPriority.MEDIUM.label,
+          dueDate: null,
+          material_Picks:{
+            confirmedBy:user,
+            timestamp:Date.now()
+          }
         },
-        deviations: deviations, // Array of any deviations or issues
-        machine: {
-          id: null,
-          name: null,
-          operator: null
-        },
+        deviations: deviations,
+        team: {
+          supervisor: {
+            UserRoles: UserRoles.SUPERVISOR,
+            name: null,
+            pin:1234
+          },
+          lead: {
+            UserRoles: UserRoles.LEAD,
+            name: null,
+            pin:1234
+          }
+        }
+        ,
         product: {
           id: fields.Title,
           name:null,
@@ -79,69 +200,12 @@ const goalProgressJSONCreation = (item, departmentName) => {
     // Store the object in localStorage
     localStorage.setItem(key, JSON.stringify(goalProgressData));
 }
-
-// 📚 Predefined Manufacturing Events
-const manufacturingEvents = [
-    // OrderLifecycle
-    "Order Created",
-    "Order Validated",
-    "Order Queued",
-    "Order Scheduled",
-    "Order Updated",
-    "Order Cancelled",
-    "Order On Hold",
-    "Order Released",
-    "Order Completed",
-    "Order Archived",
-  
-    // Production Workflow
-    "Assigned to Machine",
-    "Assigned to Operator",
-    "Setup Started",
-    "Setup Completed",
-    "Production Started",
-    "Production Paused",
-    "Production Resumed",
-    "Production Completed",
-    "Job Changeover Initiated",
-    "Job Changeover Completed",
-  
-    // Quality & Inspection
-    "First Article Inspection Started",
-    "First Article Inspection Passed",
-    "First Article Inspection Failed",
-    "In-Process Inspection Performed",
-    "Inspection Deviation Noted",
-    "Final Inspection Passed",
-    "Final Inspection Failed",
-  
-    // Maintenance / Issues
-    "Machine Downtime Reported",
-    "Machine Maintenance Scheduled",
-    "Unplanned Downtime",
-    "Tooling Issue Detected",
-    "Deviation Logged",
-    "Defective Units Detected",
-  
-    // Post-Production
-    "Moved to Packaging",
-    "Moved to Warehouse",
-    "Ready for Shipment",
-    "Shipped",
-    "Customer Notified",
-  
-    // Tracking & Metrics
-    "Cycle Time Logged",
-    "Scrap Count Updated",
-    "Yield Calculated",
-    "Efficiency Metrics Captured"
-  ];
   
   // 🧠 Utility to manage logs
   function handleLogs(orderData) {
     return {
       // ✅ Add a log only if the event is valid
-      addLog: function (event) {
+      addLog: function (event,data) {
         if (!manufacturingEvents.includes(event)) {
           console.warn(`🚫 Invalid event: "${event}". Log not added.`);
           return;
@@ -151,8 +215,9 @@ const manufacturingEvents = [
         if (!orderData.logs) {
           orderData.logs = [];
         }
-        orderData.logs.push({ time: timestamp, event });
+        orderData.logs.push({ time: timestamp, event,data:data });
         console.log(`✅ Log added: "${event}" at ${timestamp}`);
+        return orderData;
       },
   
       // 🔍 Get logs with optional keyword filter
@@ -183,4 +248,27 @@ const manufacturingEvents = [
       }
     };
   }
+  
+  function updateWorkOrderStatus(workOrder, newStatus, userRole) {
+    const validStatuses = Object.values(WorkOrderStatus);
+  
+    if (!validStatuses.includes(newStatus)) {
+      throw new Error(`Invalid status: "${newStatus}".`);
+    }
+  
+    const allowedRoles = StatusPermissions[newStatus] || [];
+  
+    if (!allowedRoles.includes(userRole)) {
+      throw new Error(`Role "${userRole}" is not authorized to set status "${newStatus}".`);
+    }
+  
+    const previousStatus = workOrder.status;
+    workOrder.status = newStatus;
+  
+    console.log(`Status changed from "${previousStatus}" to "${newStatus}" by ${userRole}`);
+    return workOrder;
+  }
+
+ 
+  
   

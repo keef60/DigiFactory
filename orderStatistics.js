@@ -3,13 +3,14 @@ const OrderStatistic = ({
   selectedNumber,
   title,
   setPassProgress,
-  gpDataInput
+  gpDataInput,
+  reload
 }) => {
 
   const modelId = title;
   const dpName = departmentName === 'line' ? departmentName + selectedNumber : departmentName;
   const [gpData] = useState(gpDataInput);
-  const [canStartOrder, setCanStartOrder] = useState({});
+  const [canStartOrder, setCanStartOrder] = useState(false);
   const isLine = localStorage.getItem(`goalProgress-${dpName}-${modelId}`);
   const notLine = localStorage.getItem(`goalProgress-${dpName}-${modelId}`);
   const storedGoalData = isLine ? JSON.parse(isLine) : JSON.parse(notLine);
@@ -17,25 +18,25 @@ const OrderStatistic = ({
   const [goal, setGoal] = useState(storedGoalData?.goal);
   const [progress, setProgress] = useState(storedGoalData?.progress);
   const boolRef = useRef('');
+  const [updatedHourly,setUpdatedHourly] = useState()
 
-
+  useEffect(()=>{
+    console.log('Reload in Stats = ', reload )
+},[reload]);
   useEffect(() => {
     try {
-      console.log('-------------------===',gpDataInput)
       gpDataInput.map(item => {
-console.log(item)
+        console.log( String(modelId) === String(item.fields.Title) &&
+        item.fields[dpName] !== undefined )
       String(modelId) === String(item.fields.Title) &&
         item.fields[dpName] !== undefined ?
-        setCanStartOrder({ bool: true }) : '';
-
+        setCanStartOrder(true) : setCanStartOrder(false);  
     });
     } catch (error) {
-      console.warn('------------------Waiting for data ')
+      console.warn('------------------Waiting for data ');
     }
    
-
-
-  }, [gpDataInput])
+  }, [gpDataInput,selectedNumber])
 
   const trackProgressPerHour = () => {
     const now = new Date();
@@ -60,6 +61,8 @@ console.log(item)
       updatedProgress.splice(0, updatedProgress.length - 12);
     }
 
+    setUpdatedHourly(updatedProgress);
+
     localStorage.setItem(`hourlyProgress-${dpName}-${modelId}`, JSON.stringify(updatedProgress));
   };
 
@@ -75,13 +78,15 @@ console.log(item)
     const listName = 'REPORTS';
     storedGoalData.progress = progress;
 
+    const logUpdatedData= handleLogs(storedGoalData).addLog("Cycle Time Logged",updatedHourly)
+
     localStorage.setItem(`goalProgress-${dpName}-${modelId}`, JSON.stringify(storedGoalData));
 
     const currentDepartmentName = dpName;
 
     main.handleSubmit(
       modelId,
-      JSON.stringify(storedGoalData),
+      JSON.stringify(logUpdatedData),
       currentDepartmentName,
       listName
     ).then(e => console.log(e)).catch(err => console.log(err));
@@ -131,11 +136,11 @@ console.log(item)
           </div>
         </div>
         <div className="ui divider hidden" />
-        {canStartOrder.bool && <div className="ui buttons small">
+        {canStartOrder && <div className="ui buttons small">
           <button className="ui black button" onClick={handleSave}>Save</button>
           <button className="ui  button" onClick={handleReset}>Reset</button>
         </div>}
-        {!canStartOrder.bool && <div class='ui message warning'>Pick List Incomplete – Pending Item Selection</div>}
+        {!canStartOrder && <div class='ui message warning'>Pick List Incomplete – Pending Item Selection</div>}
       </div>
     </div></>)
 };

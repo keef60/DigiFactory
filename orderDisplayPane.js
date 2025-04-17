@@ -16,7 +16,9 @@ const OrderDisplayPane = ({
     setClearLoading,
     loginModalOpen,
     handleDepartmentClick,
-    gpDataInput
+    gpDataInput,
+    setReload,
+    reload
 
 }) => {
     const [activeTab, setActiveTab] = useState('item'); // default to "Look Up" tab
@@ -29,6 +31,7 @@ const OrderDisplayPane = ({
                 departmentName={departmentName}
                 selectedNumber={selectedNumber}
                 setWOnDev={setWOnDev}
+                setReload={setReload}
             />
         ),
         item: (
@@ -42,6 +45,7 @@ const OrderDisplayPane = ({
                 issesListData={issesListData}
                 inventoryRef={inventoryRef}
                 gpDataInput={gpDataInput}
+                reload={reload}
             />
         ),
         inventory: (
@@ -79,6 +83,7 @@ const OrderDisplayPane = ({
                     setClearLoading={setClearLoading}
                     loginModalOpen={loginModalOpen}
                     handleDepartmentClick={handleDepartmentClick}
+                    setReload={setReload}
                 />
                             
                 {tabContent[activeTab]} {/* Render content based on the active tab */}

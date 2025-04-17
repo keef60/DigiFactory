@@ -22,7 +22,9 @@ const Editor = ({
   setClearLoading,
   loginModalOpen,
   handleDepartmentClick,
-  gpDataInput
+  gpDataInput,
+  setReload,
+  reload
   
 
 }) => {
@@ -43,7 +45,7 @@ const Editor = ({
   const [workingThisRow, setWorkingThisRow] = useState('');
 
   const handleClose = () => setVisible(false);
-  const handleOpen = () => setVisible(true);
+  
 
   useEffect(() => {
     const row = dataLifted[workingThisRow];
@@ -54,7 +56,7 @@ const Editor = ({
       spMethod.fetchSharePointData('ISSUES', departmentName);
       spMethod.fetchSharePointData('Maintenance', departmentName);
       spMethod.fetchSharePointData('PICKLIST', departmentName);
-
+      spMethod.fetchSharePointData('TIME', departmentName);
 
     } catch (error) {
       setError(error)
@@ -159,6 +161,8 @@ const Editor = ({
         handleDepartmentClick={handleDepartmentClick}
         loginModalOpen={loginModalOpen}
         gpDataInput={gpDataInput}
+        setReload={setReload}
+        reload={reload}
       />
 
     </div>

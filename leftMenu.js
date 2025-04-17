@@ -21,7 +21,7 @@ const LeftMenuBar = ({
     }, [userName]);
 
     useEffect(() => {
-
+$('.ui.dropdown.topMenu').dropdown()
     }, []);
 
     // List of manufacturing reports
@@ -57,7 +57,7 @@ const LeftMenuBar = ({
 
 
    {/* Departments Dropdown */}
-            <div className="ui dropdown item">
+            <div className="ui dropdown item topMenu">
 
                 Departments
                 <div className="menu">
@@ -77,7 +77,7 @@ const LeftMenuBar = ({
             </div>
 
             {/* Reports Dropdown for Manufacturing Managers */}
-            <div className="ui dropdown item">
+            <div className="ui dropdown item topMenu">
 
                 Manufacturing Reports
                 <div className="menu">

@@ -11,7 +11,7 @@ const {
 
 function DepartmentMenu() {
 
-    const [selectedDepartment, setSelectedDepartment] = useState('Handles');
+    const [selectedDepartment, setSelectedDepartment] = useState('Home');
     // State for handling search query
     const [searchQueryLifted, setSearchQuery] = useState('');
     // State for controlling the visibility of the save warning message
@@ -43,22 +43,39 @@ function DepartmentMenu() {
     const [quickVeiwTitle, setQuickVeiwTitle] = useState('Expand Details');
     const departmentRefName = selectedDepartment
     const [filterTask, setFilterTask] = useState(false);
-    const [gpDataInput, setGpDataInputt] = useState([]);
-
+    const [gpDataInput, setGpDataInput] = useState([]);
+    const [throttle, setThrottle] = useState(true);
+    const [reload, setReload] = useState({ status: false, tab: '' });
 
     useEffect(() => {
+
+        if (reload.tab === 'logout') {
+            setUserName(undefined);
+            setSelectedDepartment('Home');
+        }
+
+    }, [[reload]]);
+    useEffect(() => {
         try {
-           if(gpDataInput.length === 0) {
-            main.fetchSharePointData('PICKLIST', 'handles').then(e => {
-                console.log('=======-------',e)
-                setGpDataInputt(e.value) });
-            }  
+
+            if (throttle) {
+
+                main.fetchSharePointData('PICKLIST', 'load').then(e => {
+                    if (e.value.length === 0) {
+                        console.log('PICKLIST array is 0');
+                        setThrottle(false);
+                    } else if (gpDataInput.length === 0 || reload.status) {
+                        console.log('PICKLIST FOUND')
+                        setGpDataInput(e.value);
+
+                    };
+                });
+            }
         } catch (error) {
             console.warn(error)
         }
 
-    });
-
+    }, [reload]);
 
     useEffect(() => {
         $('.ui.login.dimmer').dimmer('hide');
@@ -73,7 +90,6 @@ function DepartmentMenu() {
                 .then(e => {
                     inventoryRef.current = e;
                     setInventory(e)
-                    console.log('Inventory LOADED', inventoryRef);
                 })
                 .catch(err => {
                     setError(err);
@@ -83,7 +99,7 @@ function DepartmentMenu() {
 
         stock();
 
-    }, []);
+    }, [userInfo]);
 
     useEffect(() => {
         const r = async () => {
@@ -91,7 +107,7 @@ function DepartmentMenu() {
             await main.fetchSharePointData('IssueList', 'issues')
                 .then((e) => {
                     const fields = e.value[0].fields;
-                    console.log("===================>>", fields);
+
                     // Save the data into the refs
                     setIssesListData(fields);
 
@@ -217,6 +233,15 @@ function DepartmentMenu() {
                     inventoryDepartmentName={['inventory', 'inventory']}
                     inventoryRef={inventory}
                     user={userName}
+                    gpDataInput={gpDataInput}
+                    setClearLoading={setClearLoading}
+                    setLoginModalOpen={setLoginModalOpen}
+                    handleDepartmentClick={handleDepartmentClick}
+                    loginModalOpen={loginModalOpen}
+                    setReload={setReload}
+                    reload={reload}
+
+
 
                 /> :
                 <Editor
@@ -244,6 +269,8 @@ function DepartmentMenu() {
                     handleDepartmentClick={handleDepartmentClick}
                     loginModalOpen={loginModalOpen}
                     gpDataInput={gpDataInput}
+                    setReload={setReload}
+                    reload={reload}
 
                 />
         )
@@ -251,6 +278,7 @@ function DepartmentMenu() {
 
     const renderContent = () => {
         switch (selectedDepartment) {
+            case 'Home': return (<HomeScreen />)
 
             case 'Paint':
                 return (
@@ -413,9 +441,12 @@ function DepartmentMenu() {
                 <div className="content">
                     <LoginTokenNew
                         setIsLoggedIn={loginUser}
-                        isLoggedIn={isLoggedIn}
+                        user={userInfo}
+                        setReload={setReload}
+                        setSelectedDepartment={setSelectedDepartment}
                     />
                 </div>
+                <div class='ui divider'></div>
                 <div className="actions">
                     <button
                         className="ui red button deny"
