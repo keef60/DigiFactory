@@ -30,11 +30,16 @@
 
 
 <style>
+
+.progress-circle {
+  transform: rotate(-90deg);
+  transition: stroke-dashoffset 0.1s linear;
+}
+
+
  body {
         background-color: #F2F0EF;
     }
-
-
 
     .header.huge {
         font-size: 2.5em;
@@ -44,8 +49,6 @@
 
   padding: 6rem 2rem;
 }
-
-
 
 .info-section {
   padding: 6rem 2rem;
@@ -75,6 +78,7 @@
     <div id="root"></div>
     
     <script type="text/babel" src="/components_ jsx/home.js"></script>
+    <script type="text/babel" src="/components_ jsx/progressCircle.js"></script>
 
     <script type="text/babel" src="/components_ jsx/orderSubNavMenu.js"></script>
     <script type="text/babel" src="/components_ jsx/maintenaceHeaderDetail.js"></script>

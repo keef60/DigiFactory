@@ -4,7 +4,8 @@ const OrderStatistic = ({
   title,
   setPassProgress,
   gpDataInput,
-  reload
+  reload,
+  setReload
 }) => {
 
   const modelId = title;
@@ -13,37 +14,73 @@ const OrderStatistic = ({
   const [canStartOrder, setCanStartOrder] = useState(false);
   const isLine = localStorage.getItem(`goalProgress-${dpName}-${modelId}`);
   const notLine = localStorage.getItem(`goalProgress-${dpName}-${modelId}`);
-  const storedGoalData = isLine ? JSON.parse(isLine) : JSON.parse(notLine);
+  //const storedGoalData = isLine ? JSON.parse(isLine) : JSON.parse(notLine);
+  const [storedGoalData, setStoredGoalData] = useState()
   const [currentProgressUpdate, setCurrentProgressUpdate] = useState();
   const [goal, setGoal] = useState(storedGoalData?.goal);
   const [progress, setProgress] = useState(storedGoalData?.progress);
   const boolRef = useRef('');
-  const [updatedHourly,setUpdatedHourly] = useState()
+  const [updatedHourly, setUpdatedHourly] = useState()
 
-  useEffect(()=>{
-    console.log('Reload in Stats = ', reload )
-},[reload]);
+  useEffect(() => {
+    console.log('Reload in Stats = ', reload)
+  }, [reload]);
+
   useEffect(() => {
     try {
-      gpDataInput.map(item => {
-        console.log( String(modelId) === String(item.fields.Title) &&
-        item.fields[dpName] !== undefined )
-      String(modelId) === String(item.fields.Title) &&
-        item.fields[dpName] !== undefined ?
-        setCanStartOrder(true) : setCanStartOrder(false);  
-    });
+      if (storedGoalData) {
+        let total = 0;
+        for (let p of storedGoalData.efficiencyMetricsCaptured) {
+          total += (p.progress);
+        };
+        setProgress(total);
+      };
     } catch (error) {
-      console.warn('------------------Waiting for data ');
+      console.warn('------------------Waiting for storedGoalData data ');
+
     }
-   
-  }, [gpDataInput,selectedNumber])
+
+  }, [storedGoalData])
+  useEffect(() => {
+    try {
+
+      gpDataInput.reports.map(item => {
+        let bool = String(modelId) === String(item.fields.Title) &&
+          item.fields[dpName] !== undefined;
+        const parsedData = JSON.parse(item.fields[dpName]);
+        if (bool) setStoredGoalData(parsedData);
+      });
+
+    } catch (error) {
+      console.warn('------------------Waiting for report data ');
+    }
+
+  }, [gpDataInput, selectedNumber, reload]);
+
+  useEffect(() => {
+    try {
+
+      gpDataInput.materialsPicks.map(item => {
+        String(modelId) === String(item.fields.Title) &&
+          item.fields[dpName] !== undefined ?
+          setCanStartOrder(true) : setCanStartOrder(false);
+      });
+    } catch (error) {
+      console.warn('------------------Waiting for material Picks data ');
+    }
+
+  }, [gpDataInput, selectedNumber, reload]);
+
+  useEffect(() => {
+    trackProgressPerHour();
+  }, [currentProgressUpdate]);
 
   const trackProgressPerHour = () => {
     const now = new Date();
     const currentHour = now.getHours();
-    const storedProgress = JSON.parse(localStorage.getItem(`hourlyProgress-${dpName}-${modelId}`)) || [];
+    const storedProgress = storedGoalData?.efficiencyMetricsCaptured || [] /* || JSON.parse(localStorage.getItem(`hourlyProgress-${dpName}-${modelId}`)) */;
 
-    const hourIndex = storedProgress.findIndex(item => item.hour === currentHour);
+    const hourIndex = storedProgress?.findIndex(item => item.hour === currentHour);
 
     const updatedProgress = storedProgress.filter(item => {
       const itemTime = new Date(item.date);
@@ -70,15 +107,16 @@ const OrderStatistic = ({
     let prgs = Number(e.target.value) + Number(storedGoalData?.progress);
     setProgress(prgs);
     setCurrentProgressUpdate(Number(e.target.value));
-    trackProgressPerHour()
   };
 
   const handleSave = () => {
-
+    trackProgressPerHour()
     const listName = 'REPORTS';
+
     storedGoalData.progress = progress;
 
-    const logUpdatedData= handleLogs(storedGoalData).addLog("Cycle Time Logged",updatedHourly)
+    const logUpdatedData = handleLogs(storedGoalData).addLog("Efficiency Metrics Captured");
+    handleLogs(logUpdatedData).addDataToLog("Efficiency Metrics Captured", updatedHourly);
 
     localStorage.setItem(`goalProgress-${dpName}-${modelId}`, JSON.stringify(storedGoalData));
 
@@ -86,13 +124,12 @@ const OrderStatistic = ({
 
     main.handleSubmit(
       modelId,
-      JSON.stringify(logUpdatedData),
+      logUpdatedData,
       currentDepartmentName,
       listName
-    ).then(e => console.log(e)).catch(err => console.log(err));
+    ).then(e => { }).catch(err => console.log(err));
+    setReload(prev => ({ ...prev, status: true }));
 
-    trackProgressPerHour();
-    setProgress('');
     alert('Goal and progress saved!');
     setPassProgress(true);
   };
@@ -103,7 +140,7 @@ const OrderStatistic = ({
   };
 
   return (<>
-    <h3 class='header ui'>Hourly Production Entry </h3>
+    <h3 class='header ui'>Hourly Production Entry  </h3>
     <div class='ui divider'></div>
     <div className="ui  horizontal statistics tiny" >
       <div className="ui statistic">

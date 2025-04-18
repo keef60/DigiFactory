@@ -62,12 +62,12 @@ const LinesEditorNew = ( {
 
   useEffect(() => {
     if (selectedNumber !== null) {
-      spMethod.fetchSharePointData('NOTES', departmentName);
-      spMethod.fetchSharePointData('REPORTS', departmentName);
-      spMethod.fetchSharePointData('ISSUES', departmentName);
-      spMethod.fetchSharePointData('Maintenance', departmentName);
-      spMethod.fetchSharePointData('PICKLIST', departmentName);
-      spMethod.fetchSharePointData('TIME', departmentName);
+      spMethod.fetchSharePointData('NOTES', `line${selectedNumber}`);
+      spMethod.fetchSharePointData('REPORTS', `line${selectedNumber}`);
+      spMethod.fetchSharePointData('ISSUES', `line${selectedNumber}`);
+      spMethod.fetchSharePointData('Maintenance', `line${selectedNumber}`);
+      spMethod.fetchSharePointData('PICKLIST', `line${selectedNumber}`);
+      spMethod.fetchSharePointData('TIME', `line${selectedNumber}`);
 
     }
   }, [selectedNumber]);

@@ -46,6 +46,7 @@ const OrderDisplayPane = ({
                 inventoryRef={inventoryRef}
                 gpDataInput={gpDataInput}
                 reload={reload}
+                setReload={setReload}
             />
         ),
         inventory: (

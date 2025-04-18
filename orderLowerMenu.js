@@ -6,7 +6,8 @@ const OrderLowerMenu = ({
     issesListData,
     gpDataInput,
     inventoryRef,
-    reload
+    reload,
+    setReload
 }) => {
 console.log(itemData.fields)
 
@@ -48,6 +49,8 @@ console.log(itemData.fields)
                                 departmentName={departmentName}
                                 modelId={itemData.fields.Title}
                                 progress={prgs}
+                                gpDataInput={gpDataInput}
+                                reload={reload}
                             />
                         </div>
                     </div>
@@ -60,6 +63,7 @@ console.log(itemData.fields)
                                 setPassProgress={setPassProgress}
                                 gpDataInput={gpDataInput}
                                 reload={reload}
+                                setReload={setReload}
                             />
                         </div>
                     </div>

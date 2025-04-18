@@ -24,10 +24,7 @@ const OrderPartsList = ({
         const fetchData = async () => {
             try {
                 const d = JSON.parse(inventoryRef.value[1].fields['inventory']);
-
                 setData(d);
-
-                console.log(rows)
             } catch (err) {
                 console.log(err);
             }

@@ -43,9 +43,31 @@ function DepartmentMenu() {
     const [quickVeiwTitle, setQuickVeiwTitle] = useState('Expand Details');
     const departmentRefName = selectedDepartment
     const [filterTask, setFilterTask] = useState(false);
-    const [gpDataInput, setGpDataInput] = useState([]);
+    const [gpDataInput, setGpDataInput] = useState({reports:[],materialsPicks:[]});
     const [throttle, setThrottle] = useState(true);
     const [reload, setReload] = useState({ status: false, tab: '' });
+    const [progressBar, setProgressBar] = useState(0);
+    useEffect(() => {
+        console.log(progressBar)
+        $('#example1').progress({
+            percent: progressBar
+        });
+    }, [progressBar]);
+    
+    
+    useEffect(() => {
+        const interval = setInterval(() => {
+            console.log("This runs every 30 seconds");
+            setReload({ status: true });
+    
+            setProgressBar(prev => {
+                const next = prev + 100;
+                return next > 100 ? 0 : next;
+            });
+        }, 30 * 1000); // 30 seconds
+    
+        return () => clearInterval(interval);
+    }, [reload]);
 
     useEffect(() => {
 
@@ -64,9 +86,19 @@ function DepartmentMenu() {
                     if (e.value.length === 0) {
                         console.log('PICKLIST array is 0');
                         setThrottle(false);
-                    } else if (gpDataInput.length === 0 || reload.status) {
+                    } else if (gpDataInput.materialsPicks.length === 0 || reload.status) {
                         console.log('PICKLIST FOUND')
-                        setGpDataInput(e.value);
+                        setGpDataInput(prev=>({...prev, materialsPicks:e.value}));
+                    };
+                });
+
+                main.fetchSharePointData('REPORTS', 'load').then(e => {
+                    if (e.value.length === 0) {
+                        console.log('REPORTS array is 0');
+                        setThrottle(false);
+                    } else if (gpDataInput.reports.length === 0 || reload.status) {
+                        console.log('REPORTS FOUND')
+                        setGpDataInput(prev=>({...prev, reports:e.value}));
 
                     };
                 });
@@ -80,7 +112,7 @@ function DepartmentMenu() {
     useEffect(() => {
         $('.ui.login.dimmer').dimmer('hide');
         getMe();
-    }, [userInfo, isLoggedIn, newError]);
+    }, [userInfo, isLoggedIn, newError,reload]);
 
     useEffect(() => {
 
@@ -99,7 +131,7 @@ function DepartmentMenu() {
 
         stock();
 
-    }, [userInfo]);
+    }, [userInfo,reload]);
 
     useEffect(() => {
         const r = async () => {
@@ -120,7 +152,7 @@ function DepartmentMenu() {
             r().then((e) => e).catch(er => setError(error))
 
         };
-    }, [issesListData]);
+    }, [issesListData,reload]);
 
     useEffect(() => {
         if (!tableData) {
@@ -162,13 +194,13 @@ function DepartmentMenu() {
             setData(table);
             setClearLoading(false);
         }
-    }, [tableData, packoutTableData, selectedDepartment]);
+    }, [tableData, packoutTableData, selectedDepartment,reload]);
 
     useEffect(() => {
         if (userInfo) {
             setUserName(userInfo.displayName);
         }
-    }, [userInfo]);
+    }, [userInfo,reload]);
 
     useEffect(() => {
         if (filterTask) {
@@ -476,11 +508,11 @@ function DepartmentMenu() {
                 userName={userName}
                 selectedDepartment={selectedDepartment}
                 loginModalOpen={loginModalOpen}
+                reload={reload}
             />
             <div className="ui grid contentPane">
                 {/* Left Sidebar Menu */}
-
-
+                
                 {/* Content Area with manually created tabs */}
                 <div className="ui fourteen wide column centered"
                     style={{ /* marginLeft: '15.5%', paddingRight: '5%' */ }}>

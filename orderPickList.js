@@ -17,6 +17,9 @@ const OrderPickList = ({
     const [siteID, setSiteID] = useState('');
     const [confirmPickList, setConfirmedPickList] = useState(true);
     const [rowData, setRowDataIn] = useState({});
+    const [sharepointDbEntry, setSharepointDbEntry] = useState();
+    const dpName = departmentName === 'line' ? departmentName + selectedNumber : departmentName;
+
 
     const checkImageExists = async (url) => {
         const img = new Image();
@@ -137,26 +140,26 @@ const OrderPickList = ({
         }
     }, [selectedDepartment]);
 
-const getLocalJSON = (modelIn)=>{
-    let data ;
-    Object.keys(localStorage).forEach(key =>{
-        const departmentBool = key.split('-')[1] === departmentName;
-        const modelBool = String(key.split('-')[2]) === String(modelIn);
-        if(departmentBool && modelBool){
-           data = localStorage.getItem(key);
-        }
-    });
+    const getLocalJSON = (modelIn) => {
+        let data;
+        Object.keys(localStorage).forEach(key => {
+            const departmentBool = key.split('-')[1] === departmentName;
+            const modelBool = String(key.split('-')[2]) === String(modelIn);
+            if (departmentBool && modelBool) {
+                data = localStorage.getItem(key);
+            }
+        });
 
-    return data;
-}
+        return data;
+    }
 
     const handleSubmit = async (modelNumber) => {
 
-        const sendData = getLocalJSON(modelNumber); 
-           main.handleSubmit(modelNumber,sendData,departmentName,'REPORTS')
-          .then(e=>console.log('New Json Created'))
-          .catch(err=>console.warn("Function Error handleSubmit in const orderPickList.js",err))
-     
+        const sendData = getLocalJSON(modelNumber);
+        main.handleSubmit(modelNumber, sharepointDbEntry, dpName, 'REPORTS')
+            .then(e => console.log('New Json Created'))
+            .catch(err => console.warn("Function Error handleSubmit in orderPickList.js", err))
+
         setConfirmedPickList(false);
         const delFieldData = JSON.stringify(rowData);
 
@@ -450,10 +453,10 @@ const getLocalJSON = (modelIn)=>{
 
         data.map(item => {
             if (departmentName !== 'line') {
-                goalProgressJSONCreation(item, departmentName);
+                setSharepointDbEntry(goalProgressJSONCreation(item, dpName));
             } else if (departmentName === 'line' &&
                 item.fields.Title === assginedLineNumber.model) {
-                goalProgressJSONCreation(item, departmentName + selectedNumber);
+                setSharepointDbEntry(goalProgressJSONCreation(item, dpName));
             }
         });
     };
@@ -476,9 +479,8 @@ const getLocalJSON = (modelIn)=>{
     return (
         <div>
             {error && <div className="ui red message">{error}</div>}
-
             {sharePointData.length > 0 ? (
-                <div id="sharePointData" className={`ui segment black ${clearLoading ? 'loading' : ''}`}>
+                <div id="sharePointData" className={`ui segment black ${!confirmPickList ? 'loading' : ''}`}>
                     {!error ? displaySharePointData(sharePointData) : ''}
                 </div>
             ) : (

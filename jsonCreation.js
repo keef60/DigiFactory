@@ -193,19 +193,21 @@ const goalProgressJSONCreation = (item, departmentName,user) => {
           id: fields.Title,
           name:null,
         },
-        logs: []
+        logs: [],
+        efficiencyMetricsCaptured:null
       };
     
 
     // Store the object in localStorage
     localStorage.setItem(key, JSON.stringify(goalProgressData));
+    return goalProgressData;
 }
   
   // 🧠 Utility to manage logs
   function handleLogs(orderData) {
     return {
       // ✅ Add a log only if the event is valid
-      addLog: function (event,data) {
+      addLog: function (event) {
         if (!manufacturingEvents.includes(event)) {
           console.warn(`🚫 Invalid event: "${event}". Log not added.`);
           return;
@@ -215,11 +217,31 @@ const goalProgressJSONCreation = (item, departmentName,user) => {
         if (!orderData.logs) {
           orderData.logs = [];
         }
-        orderData.logs.push({ time: timestamp, event,data:data });
+        orderData.logs.push({ time: timestamp, event });
         console.log(`✅ Log added: "${event}" at ${timestamp}`);
         return orderData;
       },
   
+
+      // ✅ Add a log only if the event is valid
+      addDataToLog: function (event,data) {
+        if (!manufacturingEvents.includes(event)) {
+          console.warn(`🚫 Invalid event: "${event}". Log not added.`);
+          return;
+        }
+  
+        const timestamp = new Date().toISOString();
+        if (!orderData.efficiencyMetricsCaptured) {
+          orderData.efficiencyMetricsCaptured;
+        }
+        
+        orderData.efficiencyMetricsCaptured=data;
+        console.log(`✅ Log added: "${event}" at ${timestamp}, submitted data: ${JSON.stringify(data)}`);
+        return orderData;
+      },
+  
+
+
       // 🔍 Get logs with optional keyword filter
       getLogs: function (filterKeyword = "") {
         if (!orderData.logs) return [];

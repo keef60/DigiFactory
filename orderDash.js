@@ -7,7 +7,8 @@ const ItemWorkOrderDash = ({
     issesListData,
     inventoryRef,
     gpDataInput,
-    reload
+    reload,
+    setReload
 }) => {
 
     const [accessToken, setAccessToken] = useState(null);
@@ -218,6 +219,7 @@ const ItemWorkOrderDash = ({
                                 gpDataInput={gpDataInput}
                                 inventoryRef={inventoryRef}
                                 reload={reload}
+                                setReload={setReload}
                                 />
                         </>
                     );
