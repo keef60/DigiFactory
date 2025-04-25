@@ -38,7 +38,7 @@
 
 
  body {
-        background-color: #F2F0EF;
+        background-color: #f9f9f9;
     }
 
     .header.huge {
@@ -67,6 +67,41 @@
   }
 }
 
+.live-dot {
+    display: inline-block;
+    height: 10px;
+    width: 10px;
+    margin-right: 8px;
+    background-color: #db2828; /* Semantic UI red */
+    border-radius: 50%;
+    animation: pulse-dot 1.2s infinite ease-in-out;
+    vertical-align: middle;
+}
+
+@keyframes pulse-dot {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.4);
+        opacity: 0.6;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+
+.job-image.flipped {
+  transform: rotate(180deg);
+}
+.job-status {
+    margin-top: 10px;
+    color: #4183c4;
+}
+
     
 </style>
 
@@ -76,7 +111,9 @@
 
 
     <div id="root"></div>
-    
+    <script src="/components_ jsx/js/Framework.js"></script>
+    <script type="text/babel" src="/components_ jsx/ordersList.js"></script>
+    <script type="text/babel" src="/components_ jsx/orderLiveLane.js"></script>
     <script type="text/babel" src="/components_ jsx/home.js"></script>
     <script type="text/babel" src="/components_ jsx/progressCircle.js"></script>
 

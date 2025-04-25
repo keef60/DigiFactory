@@ -46,24 +46,12 @@ function DepartmentMenu() {
     const [gpDataInput, setGpDataInput] = useState({reports:[],materialsPicks:[]});
     const [throttle, setThrottle] = useState(true);
     const [reload, setReload] = useState({ status: false, tab: '' });
-    const [progressBar, setProgressBar] = useState(0);
-    useEffect(() => {
-        console.log(progressBar)
-        $('#example1').progress({
-            percent: progressBar
-        });
-    }, [progressBar]);
+
     
     
     useEffect(() => {
         const interval = setInterval(() => {
-            console.log("This runs every 30 seconds");
             setReload({ status: true });
-    
-            setProgressBar(prev => {
-                const next = prev + 100;
-                return next > 100 ? 0 : next;
-            });
         }, 30 * 1000); // 30 seconds
     
         return () => clearInterval(interval);

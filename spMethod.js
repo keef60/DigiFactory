@@ -1,4 +1,18 @@
  const main = {
+
+   startOAuthLogin:()=> {
+    const tenant = "a8585420-4088-4906-a78d-06b2693cc3aa"; // Replace with your tenant ID
+    const clientId = "8db3d71f-62b7-457d-b653-9f874424f89e"; // Replace with your client ID
+    const redirectUri = 'http://localhost'; // Replace with your redirect URI
+
+    const scopes = 'Sites.Manage.All';
+    const responseType = 'token';
+    const authUrl = `https://login.microsoftonline.com/${tenant}/oauth2/v2.0/authorize?client_id=${clientId}&response_type=${responseType}&redirect_uri=${redirectUri}&scope=${scopes}`;
+
+    window.open(authUrl, '_blank', 'width=600,height=400,scrollbars=yes');
+
+},
+
     fetchSharePointData: async (selectedDepartment, departmentName, log, setTableData, setPackoutTableData) => {
       // Retrieve the token from sessionStorage
       const token = sessionStorage.getItem('access_token');
@@ -87,6 +101,8 @@
   
     handleSubmit: async (modelNumber, rowData, departmentName, list) => {
   
+console.log(`siteId-${departmentName}-${list}`)
+
       const siteID = sessionStorage.getItem(`siteId-${departmentName}-${list}`);
       const postName = sessionStorage.getItem(`postName-${departmentName}-${list}`);
       const accessToken = sessionStorage.getItem('access_token');

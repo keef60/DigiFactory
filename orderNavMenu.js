@@ -18,8 +18,8 @@ useEffect(()=>{
 
 },activeTab)
     return (
-        <div class="ui black segment">
-            <div class="ui mini stackable secondary menu">
+        <div class="ui  segment basic">
+            <div class="ui tiny stackable secondary menu">
 
                 <div class="header item">
                     {`${departmentName.toUpperCase()}`}

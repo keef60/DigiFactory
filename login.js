@@ -12,15 +12,13 @@ const LoginTokenNew = ({ setIsLoggedIn, user, setReload,setSelectedDepartment })
     const hashParams = new URLSearchParams(url.split('#')[1] || '');
     const accessToken = hashParams.get('access_token');
     if (accessToken) {
-      setReload(prev => ({ ...prev, status: true }))
+      setReload(prev => ({ ...prev, status: true }));
       return accessToken;
     }
 
     // If no access_token, try to extract code from query string (auth code flow)
     const queryParams = new URLSearchParams(url.split('?')[1] || '');
     return queryParams.get('code'); // This is the authorization code
-
-
   };
 
   const handleTokenSubmit = () => {
@@ -29,6 +27,7 @@ const LoginTokenNew = ({ setIsLoggedIn, user, setReload,setSelectedDepartment })
       setAccessToken(tokenFromUrl);
       sessionStorage.setItem('access_token', tokenFromUrl);
       setIsLoggedIn();
+      location.reload(); // Reloads the current page
     } else {
       setError('Please enter a valid URL containing the access token');
     }

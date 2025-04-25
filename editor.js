@@ -25,7 +25,7 @@ const Editor = ({
   gpDataInput,
   setReload,
   reload
-  
+
 
 }) => {
 
@@ -45,7 +45,7 @@ const Editor = ({
   const [workingThisRow, setWorkingThisRow] = useState('');
 
   const handleClose = () => setVisible(false);
-  
+
 
   useEffect(() => {
     const row = dataLifted[workingThisRow];
@@ -57,7 +57,8 @@ const Editor = ({
       spMethod.fetchSharePointData('Maintenance', departmentName);
       spMethod.fetchSharePointData('PICKLIST', departmentName);
       spMethod.fetchSharePointData('TIME', departmentName);
-
+      spMethod.fetchSharePointData('Live Packout', 'FarSide');
+      spMethod.fetchSharePointData('IP', 'FarSide');
     } catch (error) {
       setError(error)
     }
@@ -122,10 +123,10 @@ const Editor = ({
   };
 
   return (
-    <div className="ui grid" style={{ marginTop: '20px' }}>
+    <div className="ui grid" style={{ marginTop: '10px' }}>
 
-     
-      
+
+
       {/* Display each row in its own segment with name on top */}
       <OrderDisplayPane
         selectedDepartment={selectedDepartment}

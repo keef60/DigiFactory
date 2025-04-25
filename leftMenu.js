@@ -52,7 +52,9 @@ const LeftMenuBar = ({
 
     return (
         <div className="ui fluid menu  tiny navigation top fixed stackable" style={{ 'z-index': 1000 }}>
-            <div class="item">            <ProgressCircle reload={reload} /></div>
+            <div class="item">
+                <ProgressCircle reload={reload} />
+            </div>
             <div className="item">
                 <div className="ui header">{userName ? userName : 'Not Logged In'}</div>
             </div>

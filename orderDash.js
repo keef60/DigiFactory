@@ -52,9 +52,9 @@ const ItemWorkOrderDash = ({
     };
 
     const fetchSharePointData = async (token) => {
-  
+
         if (!token) {
-           
+
             setError('No valid access token provided. Please input a valid token.');
             return;
         }
@@ -69,18 +69,18 @@ const ItemWorkOrderDash = ({
                     Authorization: `Bearer ${token}`,
                 },
             });
-         
+
             if (!siteResponse.ok) {
-          
+
                 const errorData = await siteResponse.json();
                 throw new Error(`Failed to fetch site data: ${errorData.error.message}`);
             }
 
             const siteData = await siteResponse.json();
             const siteId = siteData.id;
-    
+
             if (!siteId) {
-         
+
                 throw new Error('Unable to get site ID');
             }
 
@@ -90,9 +90,9 @@ const ItemWorkOrderDash = ({
                     Authorization: `Bearer ${token}`,
                 },
             });
-        
+
             if (!listsResponse.ok) {
-          
+
                 const errorData = await listsResponse.json();
                 throw new Error(`Failed to fetch lists: ${errorData.error.message}`);
             }
@@ -102,9 +102,9 @@ const ItemWorkOrderDash = ({
             const pId = listsData.value.filter(e => e.displayName === 'PICKLIST')[0].id;
             setPostName(pId);
             setSiteID(siteId);
-       
+
             if (!list) {
-            
+
                 throw new Error(`Unable to find the ${selectedDepartment} list`);
             }
 
@@ -116,15 +116,15 @@ const ItemWorkOrderDash = ({
                     Authorization: `Bearer ${token}`,
                 },
             });
-          
+
             if (!itemsResponse.ok) {
-              
+
                 const errorData = await itemsResponse.json();
                 throw new Error(`Failed to fetch list items: ${errorData.error.message}`);
             }
 
             const itemsData = await itemsResponse.json();
-         
+
             if (itemsData) {
                 setSharePointData(itemsData.value);
                 setError(null);
@@ -165,11 +165,8 @@ const ItemWorkOrderDash = ({
         };
         return (
             <div className=''>
-                <h1 className="ui header medium" >
-                    Production Queue
-                </h1>
-                <div class='ui divider'></div>
-                <div className='ui top attached tabular menu stackable'>
+
+                {/*                 <div className='ui top attached tabular menu stackable'>
 
                     {data.map((item, index) => (
                         <a
@@ -181,10 +178,15 @@ const ItemWorkOrderDash = ({
                             {item.fields.Title}
                         </a>
                     ))}
-                </div>
+                </div> */}
                 <div className='ui'>
-
-                    {data.map((item, index) => {
+                    <OrdersList data={data} 
+                    imagePaths={imagePaths} 
+                    user={user} 
+                    departmentName={departmentName}
+                     selectedNumber={selectedNumber}
+                     handleTabClick={handleTabClick} />
+                    {/*  {data.map((item, index) => {
 
                         if (activeTab !== index) return null;
 
@@ -197,7 +199,7 @@ const ItemWorkOrderDash = ({
                             <OrderDeatil data={item} imageSrc={imageSrc} user={user} />
                         </>
                         );
-                    })}
+                    })} */}
                 </div>
             </div>
         );
@@ -205,7 +207,7 @@ const ItemWorkOrderDash = ({
 
     const displayLowerMenuData = (data) => {
         return (
-            <div className='ui   segment'>
+            <div className='ui'>
                 {data.map((item, index) => {
                     if (activeTab !== index) return null;
                     return (
@@ -220,7 +222,7 @@ const ItemWorkOrderDash = ({
                                 inventoryRef={inventoryRef}
                                 reload={reload}
                                 setReload={setReload}
-                                />
+                            />
                         </>
                     );
                 })}
@@ -230,11 +232,10 @@ const ItemWorkOrderDash = ({
 
     return (
         <div>
-
             {error && <div className="ui red message">{error}</div>}
 
             {sharePointData.length > 0 ? (
-                <div id="sharePointData" className={`ui segment  ${clearLoading ? 'loading' : ''}`}>
+                <div id="sharePointData" className={`ui segment   ${clearLoading ? 'loading' : ''}`}>
                     {!error ? <>
                         {displayUpperMenuData(sharePointData)}
                         {displayLowerMenuData(sharePointData)}

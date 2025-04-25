@@ -9,9 +9,31 @@ const OrderLowerMenu = ({
     reload,
     setReload
 }) => {
-console.log(itemData.fields)
+    console.log(itemData.fields)
 
+    const [liveStatus, setLiveStatus] = useState(false);
     const [prgs, setPassProgress] = useState(false);
+    const [ips , setIps]= useState({
+        FarSide:{}, 
+        OperatorSide:{},
+
+    });
+    const didRun = useRef(false);
+
+    useEffect(()=>{
+        if(!didRun){
+        main.fetchSharePointData('IP', 'load').then(e => {
+            const matchedItem = e.value.find(info => info.fields.Title === "DTXIP");
+            const { FarSide, OperatorSide } = matchedItem.fields;
+            setIps(prev =>({...prev,FarSide}));
+            setIps(prev =>({...prev,OperatorSide}));
+            didRun.current = true;
+        });
+    
+    }
+    })
+
+
     return (
         <>
             <div class="ui tabular menu stackable">
@@ -20,6 +42,19 @@ console.log(itemData.fields)
                 <a class="item" data-tab="third">Performance Monitoring </a>
                 <a class="item" data-tab="fourth">Comments</a>
                 <a class="item" data-tab="fifth">Issues</a>
+                {departmentName === 'packout' && (
+                    <a className="item" data-tab="six">
+                        {liveStatus ? (
+                            <>
+                                <span className="live-dot" /> Live
+                            </>
+                        ) : (
+                            'Live Viewer'
+                        )}
+                    </a>
+                )}
+
+
             </div>
 
             <div class="ui tab active" data-tab="first">
@@ -36,7 +71,7 @@ console.log(itemData.fields)
                     department={departmentName}
                     modelID={itemData.fields.Title}
                     workOrderID={itemData.fields['WO']}
-                     />
+                />
             </div>
 
             <div class="ui tab " data-tab="third">
@@ -85,6 +120,32 @@ console.log(itemData.fields)
                     department={departmentName}
                     modelId={itemData.fields.Title}
                     user={user} />
+            </div>
+
+            <div class="ui tab " data-tab="six">
+                <div className="ui two column stackable grid">
+                    <div className="column">
+                        <LiveLaneViewer
+                            reload={reload}
+                            name="Far Side"
+                            wsUrl={`ws://${ips?.FarSide.FarSide}/ws`}
+                            rawUrl={`${ips?.FarSide.FarSide}`}
+                            statusId="status1"
+                            setLiveStatus={setLiveStatus}
+                        />
+                    </div>
+                    <div className="column">
+                        <LiveLaneViewer
+                            reload={reload}
+                            name="Operator Side"
+                            wsUrl={`ws://${ips?.OperatorSide.OperatorSide}/ws`}
+                            rawUrl={`${ips?.OperatorSide.OperatorSide}`}
+                            statusId="status2"
+                            setLiveStatus={setLiveStatus}
+                        />
+                    </div>
+                </div>
+
             </div>
 
         </>

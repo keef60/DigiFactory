@@ -69,7 +69,9 @@ const OrderDisplayPane = ({
 
     return (
         <div style={{/*  position: 'center', marginLeft: '5%', width: '100%'  */}}>
-
+                 <div className='ui segment'> <h1 className="ui header medium " >
+                    Production Queue
+                </h1>   </div>
             <div className={`ui bottom   ${clearLoading ? 'ui active centered  loader' : ''}`}>
 
                 <OrderNavMenu
@@ -86,7 +88,7 @@ const OrderDisplayPane = ({
                     handleDepartmentClick={handleDepartmentClick}
                     setReload={setReload}
                 />
-                            
+        
                 {tabContent[activeTab]} {/* Render content based on the active tab */}
             </div>
         </div>
