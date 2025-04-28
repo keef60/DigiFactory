@@ -20,11 +20,13 @@ function LiveLaneViewer({
         jobChanged: {},
         keepAlive: {},
         ready: {},
-        imageUrl: ''
+        imageUrl: '',
+        listFiles: null,
+        selectedJob: null
     });
     const [incomingData, setIncomingData] = useState({
-        FarSide: {},
-        OperatorSide: {}
+        FarSide:undefined,
+        OperatorSide: undefined
     })
 
     const exports = {};
@@ -51,17 +53,19 @@ function LiveLaneViewer({
 
     const handleSubmitData = (data) => {
         try {
-            const lowCase = name.toLowerCase()
+            const lowCase = name.toLowerCase();
+
+
             main.fetchSharePointData('Live Packout', 'load').then(e => {
-                const matchedItem = e.value.find(info => info.fields.Title === "777");
-                const { FarSide, OperatorSide } = matchedItem.fields;
+                const matchedItem = e.value.find(info => info.fields.Title === jobFileName);
+
                 if (matchedItem) {
-
-
+                    const { FarSide, OperatorSide } = matchedItem.fields;
                     let parsed = {};
                     try {
                         parsed = typeof FarSide === 'string' ? JSON.parse(FarSide) : FarSide;
-
+                        console.log(parsed)
+                        setIncomingData(parsed);
                         const foundData = parsed?.data ?? [];
                         const data1 = { data: foundData };
                         data1.data.push({
@@ -69,12 +73,26 @@ function LiveLaneViewer({
                             timeStamp: Date.now()
                         });
 
-                        main.handleSubmit("777", data1, 'FarSide', 'Live Packout').then(e => console.log(e));
+                        main.handleSubmit(jobFileName, data1, 'FarSide', 'Live Packout').then(e => console.log(e));
                     } catch (e) {
-                        console.error('Failed to parse FarSide:', e);
+                        console.warn('Failed to parse FarSide:', e);
                     }
 
 
+                } else {
+
+                    try {
+                        console.log(data)
+
+                        const data1 = {
+                            info: data,
+                            timeStamp: Date.now()
+                        };
+
+                        main.handleSubmit(jobFileName, data1, 'FarSide', 'Live Packout').then(e => console.log(e));
+                    } catch (e) {
+                        console.warn(e);
+                    }
                 }
             });
 
@@ -85,11 +103,21 @@ function LiveLaneViewer({
 
 
     useEffect(() => {
+        $('.job.dropdown')
+            .dropdown({
+                onChange: function (value, text) {
+                    // custom action
+                    setJobListenerDetails(prev => ({ ...prev, selectedJob: value }));
+                }
+            });
+    });
+
+    useEffect(() => {
         if (sessionIdUrl) {
-            socket.log = (msg) => console.log(`[${name}]`, msg);
+            socket.log = (msg) => console.log(`[${name}]`);
+           
             socket.onopen = () => {
                 setStatus("Connected ✅");
-
                 socket.addListener(sessionIdUrl + "/resultChanged", (payload) => {
                     const link = ("http://" + rawUrl + payload.acqImageView.layers[0].url);
                     setJobListenerDetails(prev => ({ ...prev, imageUrl: link }));
@@ -116,6 +144,8 @@ function LiveLaneViewer({
                     setJobListenerDetails(prev => ({ ...prev, ready: res }))
                 );
 
+
+               
                 setInterval(() => {
                     socket.post(sessionIdUrl + '/keepAlive', (res) =>
                         setJobListenerDetails(prev => ({ ...prev, keepAlive: res }))
@@ -123,7 +153,6 @@ function LiveLaneViewer({
 
                 }, 20000);
             };
-
             socket.onerror = () => {
                 setStatus("Error ❌");
             };
@@ -133,19 +162,55 @@ function LiveLaneViewer({
                 console.warn(`[${name}] WebSocket closed`, e);
             };
 
-            return () => { if (socket) socket.close(); };
+
+            setTimeout(()=>{
+                listFiles();
+            },[5000])
+            return () => { if (socket ) socket.close(); };
         }
-    }, [sessionIdUrl, jobListenerDetails, reload]);
+    }, [sessionIdUrl,jobListenerDetails,reload]);
+
+
+    const routes = ['cam0/hmi/hs/~12706e62/liveMode', "cam0/hmi/hs/~50378263/listFiles", "cam0/hmi/hs/~8be739d6/loadJob"
+
+    ]
+
+
+    const liveMode = () => {
+        socket.post(sessionIdUrl + '/liveMode', (res) =>
+            setJobListenerDetails(prev => ({ ...prev, ready: res }))
+        )
+    }
+
+    const listFiles = () => {
+        socket.post(sessionIdUrl + '/listFiles', [''], (res) => {
+            setJobListenerDetails(prev => ({ ...prev, listFiles: res }))
+        }
+        );
+    }
+
+
+    const loadJob = () => {
+        console.log("Jod selected: ",jobListenerDetails.selectedJob);
+
+        socket.post(sessionIdUrl + '/loadJob', [jobListenerDetails.selectedJob], (res) =>{
+        }
+        )
+    }
+
+    useEffect(()=>{
+
+    },[incomingData])
 
     useEffect(() => {
         if (sessionIdUrl === undefined || reload) {
-            socket.log = (msg) => console.log(`[${name}]`, msg);
+            socket.log = (msg) => console.log(`[${name}]`);
             socket.onopen = () => {
-                setStatus("Connected ✅");
                 setLiveStatus(true);
                 socket.get("cam0/hmi/job", (res) => {
+                    const onlyJobDigits = res.name.match(/\d+/g)?.join('').slice(0, 6)
                     setJobFileName(res.name);
-                    setJobName(res.name.match(/\d+/g));
+                    setJobName(onlyJobDigits);
                 });
 
                 socket.post("cam0/hmi/openSession", {
@@ -157,76 +222,108 @@ function LiveLaneViewer({
                 }, (res) => {
                     setSeesionIdUrl(res);
                     socket.post(`${res}/login`, ["YWRtaW4=", "", true, true], () => { });
+                    setStatus("Connected ✅");
+
                 });
             };
 
-            socket.onerror = () => setStatus("Error ❌");
-            socket.onclose = (e) => { setStatus("Disconnected 🔁"); handleSubmitData("Disconnected 🔁"); }
 
-            return () => { if (socket) socket.close(); };
+            socket.onerror = () => setStatus("Error ❌");
+            socket.onclose = (e) => { setStatus("Disconnected 🔁"); }
+
+
+            return () => { if (socket  ) socket.close(); };
         }
     }, [wsUrl, reload]);
 
 
     return (
 
-        <div className="ui segments horizontal  lane-card">
-            {loading ? (
-                <div className=" ui segment">
-                    <div className="ui placeholder">
-                        <div className="image"></div>
-                    </div>
+        <div className="ui grid centered stackable">
+        <div className="eight wide column">
+          <div className="ui raised card">
+            <div className="content">
+              {loading ? (
+                <div className="ui placeholder">
+                  <div className="image"></div>
                 </div>
-            ) : (
-                <div className=" ui segment">
-                    <img
-                        className={`ui image medium job-image ${name === 'Far Side' ? 'flipped' : ''}`}
-                        src={jobListenerDetails.imageUrl}
-                        alt={`${name} Job Image`}
-                    />
-                </div>
-            )}
-
-
-            {loading ? (
-                <div className=" ui segment">
-                    <p id={statusId}
-                        className="job-status">
-                        <strong>{status}</strong>
-                    </p>
-
-                    <div className="ui placeholder">
-                        <div class="paragraph">
-                            <div class="line"></div>
-                            <div class="line"></div>
-                            <div class="line"></div>
-                            <div class="line"></div>
-                            <div class="line"></div>
-                        </div>
-                    </div>
-                </div>
-            ) : (
-                <div className=" ui segment">
-                    <p id={statusId} className="job-status"><strong>{status}</strong></p>
-                    <div className="ui header job-file-name">{jobFileName}</div>
-                    <small className="job-id grey-text">id:{jobId}</small>
-
-                    {results.map((cell, index) => (
-                        <div
-                            key={index}
-                            className="ui header grey-text">
-                            {cell.data}
-                        </div>
-                    ))}
-                    <button
-                        className="ui button"
-                        onClick={() => triggerCameraManually()}
-                    >Trigger</button>
-                </div>
-            )}
-
-
+              ) : (
+                <>
+                  <img
+                    className={`ui medium image job-image ${name === 'Far Side' ? 'flipped' : ''}`}
+                    src={jobListenerDetails.imageUrl}
+                    alt={`${name} Job Image`}
+                  />
+                  <div className="ui segment">
+                    <ClassificationChart rawData={incomingData} />
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
         </div>
+      
+        <div className="eight wide column">
+          <div className="ui raised card">
+            <div className="content">
+              <p id={statusId} className="job-status">
+                <strong>{status}</strong>
+              </p>
+      
+              {loading ? (
+                <div className="ui placeholder">
+                  <div className="paragraph">
+                    <div className="line"></div>
+                    <div className="line"></div>
+                    <div className="line"></div>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <h3 className="ui header job-file-name">{jobFileName}</h3>
+                  <small className="job-id grey-text">ID: {jobId}</small>
+      
+                  <div className="ui divided list" style={{ marginTop: '1em' }}>
+                    {results.map((cell, index) => (
+                      <div key={index} className="item">
+                        <div className="content grey-text">{cell.data}</div>
+                      </div>
+                    ))}
+                  </div>
+      
+                  <div className="ui form" style={{ marginTop: '2em' }}>
+                    <div className="field">
+                      <label>Select Job</label>
+                      <div className="ui fluid search selection dropdown job">
+                        <input type="hidden" name="job" />
+                        <i className="dropdown icon"></i>
+                        <div className="default text">Select Job</div>
+                        <div className="menu">
+                          {jobListenerDetails.listFiles?.map((itemn) => (
+                            <div key={itemn.name} className="item" data-value={itemn.name}>
+                              {itemn.name}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+      
+                  <div className="ui buttons" style={{ marginTop: '2em' }}>
+                    <button className="ui primary button" onClick={loadJob}>
+                      <i className="folder open icon"></i> Load Job
+                    </button>
+                    <button className="ui red button" onClick={triggerCameraManually}>
+                      <i className="video icon"></i> Trigger
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+      
 
     )
 }

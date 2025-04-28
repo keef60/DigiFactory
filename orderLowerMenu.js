@@ -9,31 +9,30 @@ const OrderLowerMenu = ({
     reload,
     setReload
 }) => {
-    console.log(itemData.fields)
 
     const [liveStatus, setLiveStatus] = useState(false);
     const [prgs, setPassProgress] = useState(false);
-    const [ips , setIps]= useState({
-        FarSide:{}, 
-        OperatorSide:{},
-
+    const [ips, setIps] = useState({
+        FarSide: '/',
+        OperatorSide: '/',
     });
     const didRun = useRef(false);
 
-    useEffect(()=>{
-        if(!didRun){
-        main.fetchSharePointData('IP', 'load').then(e => {
-            const matchedItem = e.value.find(info => info.fields.Title === "DTXIP");
-            const { FarSide, OperatorSide } = matchedItem.fields;
-            setIps(prev =>({...prev,FarSide}));
-            setIps(prev =>({...prev,OperatorSide}));
-            didRun.current = true;
-        });
-    
-    }
-    })
-
-
+    useEffect(() => {
+        try {
+            if (!didRun.current) {
+                main.fetchSharePointData('IP', 'load').then(e => {
+                    const matchedItem = e.value.find(info => info.fields.Title === "DTXIP");
+                    const { FarSide, OperatorSide } = matchedItem.fields;
+                    setIps(prev => ({ ...prev, FarSide }));
+                    setIps(prev => ({ ...prev, OperatorSide }));
+                    didRun.current = true;
+                });
+            }
+        } catch (err) {
+            console.warn(err)
+        }
+    });
     return (
         <>
             <div class="ui tabular menu stackable">
@@ -128,8 +127,8 @@ const OrderLowerMenu = ({
                         <LiveLaneViewer
                             reload={reload}
                             name="Far Side"
-                            wsUrl={`ws://${ips?.FarSide.FarSide}/ws`}
-                            rawUrl={`${ips?.FarSide.FarSide}`}
+                            wsUrl={`ws://${ips?.FarSide}/ws`}
+                            rawUrl={`${ips?.FarSide}`}
                             statusId="status1"
                             setLiveStatus={setLiveStatus}
                         />
@@ -138,8 +137,8 @@ const OrderLowerMenu = ({
                         <LiveLaneViewer
                             reload={reload}
                             name="Operator Side"
-                            wsUrl={`ws://${ips?.OperatorSide.OperatorSide}/ws`}
-                            rawUrl={`${ips?.OperatorSide.OperatorSide}`}
+                            wsUrl={`ws://${ips?.OperatorSide}/ws`}
+                            rawUrl={`${ips?.OperatorSide}`}
                             statusId="status2"
                             setLiveStatus={setLiveStatus}
                         />
