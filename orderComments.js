@@ -1,26 +1,29 @@
-const OrderComments = ({ noteId, department,user,workOrderRef }) => {
+const OrderComments = ({ noteId, department,user,workOrderRef ,selectedNumber}) => {
   const updatedNotes= useRef(department);
   const [newNote, setNewNote] = useState('');
+  const dpName = department === 'line' ? department + selectedNumber : department;
+
   const [savedNotes, setSavedNotes] = useState(() => {
-    const savedData = JSON.parse(localStorage.getItem(`saved-notes-${department}`));
+    const savedData = JSON.parse(localStorage.getItem(`saved-notes-${dpName}`));
     return savedData ? savedData : {};
   });
 
+
   useEffect(() => {
-    if(updatedNotes.current !== department){
+    if(updatedNotes.current !== dpName){
       setSavedNotes(() => {
-        const savedData = JSON.parse(localStorage.getItem(`saved-notes-${department}`));
+        const savedData = JSON.parse(localStorage.getItem(`saved-notes-${dpName}`));
         return savedData ? savedData : {};
       })
     }
 
-const test = async()=>{
-  await main.fetchSharePointData('NOTES', 'handles', false,'','',true)
+const getNotes = async()=>{
+  await main.fetchSharePointData('NOTES', dpName, false,'','',true)
   .then(e => console.log('---------------------]',e))
-  .catch(err => console.log('==================((((((((((((('));
+  .catch(err => console.warn ('---------------------]',err));
 }
-test()
-  }, [newNote,department]);
+getNotes()
+  }, [newNote,dpName]);
 
   const handleChange = (e) => {
     setNewNote(e.target.value);
@@ -36,7 +39,7 @@ test()
     const noteToSave = {
       noteId: `${noteId}-${Date.now()}`,
       date: Date.now(),
-      department,
+      dpName,
       uuid: generateUID(),
       text: newNote,
       author:user,
@@ -48,7 +51,7 @@ test()
   };
 
   const saveNoteToLocalStorage = (noteId, newNote) => {
-    let saveNotes = JSON.parse(localStorage.getItem(`saved-notes-${department}`)) || {};
+    let saveNotes = JSON.parse(localStorage.getItem(`saved-notes-${dpName}`)) || {};
 
     if (!saveNotes[noteId]) saveNotes[noteId] = { noteId, date: Date.now() };
     if (!saveNotes[noteId]['comments']) saveNotes[noteId]['comments'] = [];
@@ -60,9 +63,9 @@ test()
         );
         if (!noteExists) {
           saveNotes[noteId]['comments'].push(newNote);
-          localStorage.setItem(`saved-notes-${department}`, JSON.stringify(saveNotes));
+          localStorage.setItem(`saved-notes-${dpName}`, JSON.stringify(saveNotes));
 
-          main.handleSubmit(noteId, JSON.stringify(saveNotes), `${department}`, 'NOTES')
+          main.handleSubmit(noteId, JSON.stringify(saveNotes), `${dpName}`, 'NOTES')
             .then(() => {
               // Show success message when submission completes successfully
               alert('Comment saved successfully!');

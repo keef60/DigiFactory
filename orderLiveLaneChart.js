@@ -1,9 +1,9 @@
+
 const ClassificationChart = ({ rawData }) => {
   const chartRef = useRef(null);
   const chartInstanceRef = useRef(null);
 
   useEffect(() => {
-
     try {
       const validEntries = rawData?.data?.filter(entry =>
         Array.isArray(entry.info)
@@ -11,67 +11,89 @@ const ClassificationChart = ({ rawData }) => {
 
       const labels = validEntries.map(entry => {
         const date = new Date(entry.timeStamp);
-        return date.toLocaleTimeString(); // Just time
+        return date.toLocaleTimeString();
       });
 
-      const classify1Data = validEntries.map(entry => {
-        const c1 = entry.info.find(i => i.name === 'Classify_1.PredictedClass');
-        return c1?.data || null;
+      const allNames = new Set();
+      validEntries.forEach(entry => {
+        entry.info.forEach(item => {
+          if (typeof item.data === 'number' || typeof item.data === 'string') {
+            allNames.add(item.name);
+          }
+        });
       });
 
-      const classify2Data = validEntries.map(entry => {
-        const c2 = entry.info.find(i => i.name === 'Classify_2.PredictedClass');
-        return c2?.data || null;
+      const datasets = Array.from(allNames).map(name => {
+        const isNumeric = validEntries.some(
+          entry => typeof entry.info.find(i => i.name === name)?.data === 'number'
+        );
+
+        const data = validEntries.map(entry => {
+          const item = entry.info.find(i => i.name === name);
+          return isNumeric
+            ? item?.data ?? null
+            : item?.data === 'OK' ? 1 : item?.data ? 0 : null;
+        });
+
+        return {
+          label: name,
+          data,
+          backgroundColor: getRandomColor(),
+          type: isNumeric ? 'line' : 'bar',
+          stack: isNumeric ? undefined : 'categoricalStack'
+        };
       });
 
-      // Destroy old chart instance if it exists
+      // Destroy old chart
       if (chartInstanceRef.current) {
         chartInstanceRef.current.destroy();
       }
 
-      // Create new chart instance
       const ctx = chartRef.current.getContext('2d');
       chartInstanceRef.current = new Chart(ctx, {
-        type: 'line',
         data: {
           labels,
-          datasets: [
-            {
-              label: 'Classify_1.PredictedClass',
-              data: classify1Data,
-              backgroundColor: 'rgba(54, 162, 235, 0.6)'
-            },
-            {
-              label: 'Classify_2.PredictedClass',
-              data: classify2Data,
-              backgroundColor: 'rgba(255, 99, 132, 0.6)'
-            }
-          ]
+          datasets
         },
         options: {
           responsive: true,
           plugins: {
             title: {
               display: true,
-              text: 'Predicted Class Comparison'
+              text: 'Classification and Count Over Time'
+            },
+            tooltip: {
+              mode: 'index',
+              intersect: false
             }
+          },
+          interaction: {
+            mode: 'nearest',
+            axis: 'x',
+            intersect: false
           },
           scales: {
             y: {
-              type: 'category',
-              labels: Array.from(new Set([...classify1Data, ...classify2Data]))
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: 'Value / OK Count'
+              }
             }
           }
         }
       });
     } catch (err) {
-      console.warn(err)
+      console.warn(err);
     }
   }, [rawData]);
 
+  const getRandomColor = () =>
+    `hsl(${Math.floor(Math.random() * 360)}, 70%, 60%)`;
+
   return (
-    <div className="  ">
-      <canvas ref={chartRef} className="classification-chart"   height={400}></canvas>
+    <div>
+      <canvas ref={chartRef} height={400}></canvas>
     </div>
   );
 };

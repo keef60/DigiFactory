@@ -111,6 +111,7 @@ const OrderLowerMenu = ({
                     noteId={itemData.fields.Title}
                     user={user}
                     workOrderRef={itemData.fields['WO']}
+                    selectedNumber={selectedNumber}
                 />
             </div>
 
@@ -131,6 +132,7 @@ const OrderLowerMenu = ({
                             rawUrl={`${ips?.FarSide}`}
                             statusId="status1"
                             setLiveStatus={setLiveStatus}
+                            department={departmentName}
                         />
                     </div>
                     <div className="column">
@@ -141,6 +143,7 @@ const OrderLowerMenu = ({
                             rawUrl={`${ips?.OperatorSide}`}
                             statusId="status2"
                             setLiveStatus={setLiveStatus}
+                            department={departmentName}
                         />
                     </div>
                 </div>

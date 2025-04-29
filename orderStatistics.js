@@ -22,9 +22,7 @@ const OrderStatistic = ({
   const boolRef = useRef('');
   const [updatedHourly, setUpdatedHourly] = useState()
 
-  useEffect(() => {
-    console.log('Reload in Stats = ', reload)
-  }, [reload]);
+ 
 
   useEffect(() => {
     try {
@@ -157,7 +155,7 @@ const OrderStatistic = ({
 
       <div className="eight wide column grid">
         <div className="ui statistic">
-          <div className="value">{progress || storedGoalData?.progress || 0}</div>
+          <div className="value">{progress || storedGoalData?.progress  || 0}</div>
           <div className="label">Progress</div>
         </div>
         <div className="ui grid">

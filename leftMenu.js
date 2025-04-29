@@ -34,7 +34,10 @@ const LeftMenuBar = ({
         { name: 'Throughput Report', disabled: true },
         { name: 'Yield Analysis', disabled: true },
         { name: 'Production Downtime Report', disabled: false },
+
+        { name: 'Task/Time Logs', disabled: false },
     ];
+
 
     // List of departments
     const departments = [

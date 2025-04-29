@@ -85,7 +85,7 @@ function DepartmentMenu() {
                         console.log('REPORTS array is 0');
                         setThrottle(false);
                     } else if (gpDataInput.reports.length === 0 || reload.status) {
-                        console.log('REPORTS FOUND')
+                        console.log('REPORTS FOUND',e.value)
                         setGpDataInput(prev=>({...prev, reports:e.value}));
 
                     };
@@ -296,6 +296,278 @@ function DepartmentMenu() {
         )
     };
 
+    const taskData = [
+        {
+          "timestamp": "2025-04-29T21:28:31.309Z",
+          "taskId": 1745961972359,
+          "taskName": "HANDLES Assembly",
+          "employee": "Keith Carter",
+          "action": "start",
+          "department": "FRAMES",
+          "workCenter": "026",
+          "realDurationAtAction": 0,
+          "statusAfterAction": "In Progress",
+          "workOrderID": "WO - 00364434-04"
+        },
+        {
+          "timestamp": "2025-04-29T21:28:36.702Z",
+          "taskId": 1745962029813,
+          "taskName": "PACKOUT Assembly",
+          "employee": "Keith Carter",
+          "action": "start",
+          "department": "FRAMES",
+          "workCenter": "026",
+          "realDurationAtAction": 0,
+          "statusAfterAction": "In Progress",
+          "workOrderID": "WO - 00364434-03"
+        },
+        {
+          "timestamp": "2025-04-29T21:28:41.030Z",
+          "taskId": 1745961972875,
+          "taskName": "HANDLES Assembly",
+          "employee": "Keith Carter",
+          "action": "start",
+          "department": "FRAMES",
+          "workCenter": "026",
+          "realDurationAtAction": 0,
+          "statusAfterAction": "In Progress",
+          "workOrderID": "WO - 00364434-03"
+        },
+        {
+          "timestamp": "2025-04-29T21:28:43.877Z",
+          "taskId": 1745962030317,
+          "taskName": "PACKOUT Assembly",
+          "employee": "Keith Carter",
+          "action": "start",
+          "department": "FRAMES",
+          "workCenter": "026",
+          "realDurationAtAction": 0,
+          "statusAfterAction": "In Progress",
+          "workOrderID": "WO - 00364434-04"
+        },
+        {
+          "timestamp": "2025-04-29T21:28:45.773Z",
+          "taskId": 1745962079501,
+          "taskName": "FRAMES Assembly",
+          "employee": "Keith Carter",
+          "action": "start",
+          "department": "FRAMES",
+          "workCenter": "026",
+          "realDurationAtAction": 0,
+          "statusAfterAction": "In Progress",
+          "workOrderID": "WO - 00364434-03"
+        },
+        {
+          "timestamp": "2025-04-29T21:28:48.470Z",
+          "taskId": 1745962079998,
+          "taskName": "FRAMES Assembly",
+          "employee": "Keith Carter",
+          "action": "start",
+          "department": "FRAMES",
+          "workCenter": "026",
+          "realDurationAtAction": 0,
+          "statusAfterAction": "In Progress",
+          "workOrderID": "WO - 00364434-02"
+        },
+        {
+          "timestamp": "2025-04-29T21:29:50.872Z",
+          "taskId": 1745961972875,
+          "taskName": "HANDLES Assembly",
+          "employee": "Keith Carter",
+          "action": "pause",
+          "department": "FRAMES",
+          "workCenter": "026",
+          "realDurationAtAction": 0,
+          "statusAfterAction": "Paused",
+          "workOrderID": "WO - 00364434-03",
+          "pauseReason": "Material delay"
+        },
+        {
+          "timestamp": "2025-04-29T21:29:58.815Z",
+          "taskId": 1745962030317,
+          "taskName": "PACKOUT Assembly",
+          "employee": "Keith Carter",
+          "action": "pause",
+          "department": "FRAMES",
+          "workCenter": "026",
+          "realDurationAtAction": 0,
+          "statusAfterAction": "Paused",
+          "workOrderID": "WO - 00364434-04",
+          "pauseReason": "Operator error"
+        },
+        {
+          "timestamp": "2025-04-29T21:30:01.479Z",
+          "taskId": 1745962079501,
+          "taskName": "FRAMES Assembly",
+          "employee": "Keith Carter",
+          "action": "stop",
+          "department": "FRAMES",
+          "workCenter": "026",
+          "realDurationAtAction": 75,
+          "statusAfterAction": "Completed",
+          "workOrderID": "WO - 00364434-03"
+        },
+        {
+          "timestamp": "2025-04-29T21:34:32.189Z",
+          "taskId": 1745961972875,
+          "taskName": "HANDLES Assembly",
+          "employee": "Keith Carter",
+          "action": "start",
+          "department": "PACKOUT",
+          "workCenter": "026",
+          "realDurationAtAction": 0,
+          "statusAfterAction": "In Progress",
+          "workOrderID": "WO - 00364434-03"
+        },
+        {
+          "timestamp": "2025-04-29T21:34:34.445Z",
+          "taskId": 1745962030317,
+          "taskName": "PACKOUT Assembly",
+          "employee": "Keith Carter",
+          "action": "start",
+          "department": "PACKOUT",
+          "workCenter": "026",
+          "realDurationAtAction": 0,
+          "statusAfterAction": "In Progress",
+          "workOrderID": "WO - 00364434-04"
+        },
+        {
+          "timestamp": "2025-04-29T21:34:41.670Z",
+          "taskId": 1745962079998,
+          "taskName": "FRAMES Assembly",
+          "employee": "Keith Carter",
+          "action": "pause",
+          "department": "PACKOUT",
+          "workCenter": "026",
+          "realDurationAtAction": 0,
+          "statusAfterAction": "Paused",
+          "workOrderID": "WO - 00364434-02",
+          "pauseReason": "Machine issue"
+        },
+        {
+          "timestamp": "2025-04-29T21:34:43.389Z",
+          "taskId": 1745961972875,
+          "taskName": "HANDLES Assembly",
+          "employee": "Keith Carter",
+          "action": "stop",
+          "department": "PACKOUT",
+          "workCenter": "026",
+          "realDurationAtAction": 11,
+          "statusAfterAction": "Completed",
+          "workOrderID": "WO - 00364434-03"
+        },
+        {
+          "timestamp": "2025-04-29T21:34:49.286Z",
+          "taskId": 1745961972359,
+          "taskName": "HANDLES Assembly",
+          "employee": "Keith Carter",
+          "action": "stop",
+          "department": "PACKOUT",
+          "workCenter": "026",
+          "realDurationAtAction": 377,
+          "statusAfterAction": "Completed",
+          "workOrderID": "WO - 00364434-04"
+        },
+        {
+          "timestamp": "2025-04-29T21:34:56.966Z",
+          "taskId": 1745962029813,
+          "taskName": "PACKOUT Assembly",
+          "employee": "Keith Carter",
+          "action": "pause",
+          "department": "PACKOUT",
+          "workCenter": "026",
+          "realDurationAtAction": 0,
+          "statusAfterAction": "Paused",
+          "workOrderID": "WO - 00364434-03",
+          "pauseReason": "Break"
+        },
+        {
+          "timestamp": "2025-04-29T21:35:00.189Z",
+          "taskId": 1745962030317,
+          "taskName": "PACKOUT Assembly",
+          "employee": "Keith Carter",
+          "action": "pause",
+          "department": "PACKOUT",
+          "workCenter": "026",
+          "realDurationAtAction": 0,
+          "statusAfterAction": "Paused",
+          "workOrderID": "WO - 00364434-04",
+          "pauseReason": "Break"
+        },
+        {
+          "timestamp": "2025-04-29T21:35:52.759Z",
+          "taskId": 1745962029813,
+          "taskName": "PACKOUT Assembly",
+          "employee": "Keith Carter",
+          "action": "start",
+          "department": "HANDLES",
+          "workCenter": "026",
+          "realDurationAtAction": 0,
+          "statusAfterAction": "In Progress",
+          "workOrderID": "WO - 00364434-03"
+        },
+        {
+          "timestamp": "2025-04-29T21:35:55.639Z",
+          "taskId": 1745962030317,
+          "taskName": "PACKOUT Assembly",
+          "employee": "Keith Carter",
+          "action": "start",
+          "department": "HANDLES",
+          "workCenter": "026",
+          "realDurationAtAction": 0,
+          "statusAfterAction": "In Progress",
+          "workOrderID": "WO - 00364434-04"
+        },
+        {
+          "timestamp": "2025-04-29T21:36:04.839Z",
+          "taskId": 1745962079998,
+          "taskName": "FRAMES Assembly",
+          "employee": "Keith Carter",
+          "action": "start",
+          "department": "FRAMES",
+          "workCenter": "026",
+          "realDurationAtAction": 0,
+          "statusAfterAction": "In Progress",
+          "workOrderID": "WO - 00364434-02"
+        },
+        {
+          "timestamp": "2025-04-29T21:36:23.792Z",
+          "taskId": 1745962029813,
+          "taskName": "PACKOUT Assembly",
+          "employee": "Keith Carter",
+          "action": "stop",
+          "department": "FRAMES",
+          "workCenter": "026",
+          "realDurationAtAction": 31,
+          "statusAfterAction": "Completed",
+          "workOrderID": "WO - 00364434-03"
+        },
+        {
+          "timestamp": "2025-04-29T21:36:27.881Z",
+          "taskId": 1745962030317,
+          "taskName": "PACKOUT Assembly",
+          "employee": "Keith Carter",
+          "action": "stop",
+          "department": "FRAMES",
+          "workCenter": "026",
+          "realDurationAtAction": 32,
+          "statusAfterAction": "Completed",
+          "workOrderID": "WO - 00364434-04"
+        },
+        {
+          "timestamp": "2025-04-29T21:36:31.416Z",
+          "taskId": 1745962079998,
+          "taskName": "FRAMES Assembly",
+          "employee": "Keith Carter",
+          "action": "stop",
+          "department": "FRAMES",
+          "workCenter": "026",
+          "realDurationAtAction": 26,
+          "statusAfterAction": "Completed",
+          "workOrderID": "WO - 00364434-02"
+        }
+      ]
+
     const renderContent = () => {
         switch (selectedDepartment) {
             case 'Home': return (<HomeScreen />)
@@ -396,6 +668,11 @@ function DepartmentMenu() {
             case 'Yield Analysis': return (
                 <YieldAnalysis />
             );
+
+            case 'Task/Time Logs': return (
+                <TaskDataChart data={taskData} />
+            );
+
 
             case 'Production Downtime Report': return (
                 <ProductionDowntimeReport spMethod={main} />

@@ -1,3 +1,4 @@
+
 const OrdreShopFloorTimer = ({ user, department, workOrderID, modelID }) => {
     const [tasks, setTasks] = useState([]);
     const [modalOpen, setModalOpen] = useState(false);
@@ -5,6 +6,7 @@ const OrdreShopFloorTimer = ({ user, department, workOrderID, modelID }) => {
     const [actionType, setActionType] = useState('start');
     const [pauseModalTaskId, setPauseModalTaskId] = useState(null);
     const [pauseReason, setPauseReason] = useState('');
+    
     const pauseReasons = [
         'Machine issue',
         'Material delay',
@@ -15,38 +17,47 @@ const OrdreShopFloorTimer = ({ user, department, workOrderID, modelID }) => {
 
     const actionLogRef = useRef([]);
 
-    // Load tasks and logs from localStorage
+    // Load and conditionally add task
     useEffect(() => {
-        const savedTasks = localStorage.getItem('tasks');
-        const savedLogs = localStorage.getItem('taskActionLogs');
-
-        if (savedTasks) {
-            setTasks(JSON.parse(savedTasks));
-        } else {
-            setTasks([
-                {
-                    id: 1,
-                    name: `${department.toUpperCase()} Assembly` || 'Main Assembly',
-                    assigned: user,
-                    workCenter: '026',
-                    expectedDuration: 60,
-                    realDuration: 0,
-                    startTime: null,
-                    status: 'Not Started',
-                    workOrderID: workOrderID,
-                },
-            ]);
+        if (!department || !user || !workOrderID) return;
+    
+        const savedTasks = JSON.parse(localStorage.getItem('tasks')) || [];
+        const savedLogs = JSON.parse(localStorage.getItem('taskActionLogs')) || [];
+    
+        // Only create task if none exists with the same department and workOrderID
+        const taskExists = savedTasks.some(
+            (task) =>
+                task.workOrderID === workOrderID &&
+                task.name === `${department.toUpperCase()} Assembly`
+        );
+    
+        let updatedTasks = [...savedTasks];
+    
+        if (!taskExists) {
+            const newTask = {
+                id: Date.now(),
+                name: `${department.toUpperCase()} Assembly`,
+                assigned: user,
+                workCenter: '026',
+                expectedDuration: 60,
+                realDuration: 0,
+                startTime: null,
+                status: 'Not Started',
+                workOrderID: workOrderID,
+            };
+    
+            updatedTasks.push(newTask);
+            localStorage.setItem('tasks', JSON.stringify(updatedTasks));
         }
-
-        if (savedLogs) {
-            actionLogRef.current = JSON.parse(savedLogs);
-        }
-    }, []);
-
-    // Live update every second for dynamic rendering
+    
+        setTasks(updatedTasks);
+        actionLogRef.current = savedLogs;
+    }, [department, user, workOrderID]);
+    
+    // Live refresh for durations
     useEffect(() => {
         const interval = setInterval(() => {
-            setTasks((prev) => [...prev]); // Force re-render
+            setTasks((prev) => [...prev]);
         }, 1000);
         return () => clearInterval(interval);
     }, []);
@@ -97,6 +108,7 @@ const OrdreShopFloorTimer = ({ user, department, workOrderID, modelID }) => {
     const startTaskTimer = (taskId) => {
         setEmployeeName(user);
         setModalOpen(true);
+        setActionType('start');
 
         const updatedTasks = [...tasks];
         const index = updatedTasks.findIndex((t) => t.id === taskId);
@@ -111,13 +123,10 @@ const OrdreShopFloorTimer = ({ user, department, workOrderID, modelID }) => {
     };
 
     const pauseTaskTimer = (taskId) => {
-        setPauseModalTaskId(taskId);  // Store task ID for pause reason modal
-
+        setPauseModalTaskId(taskId);
         const updatedTasks = [...tasks];
         const index = updatedTasks.findIndex((t) => t.id === taskId);
-        const task = updatedTasks[index];
-
-        if (task.startTime) {
+        if (updatedTasks[index].startTime) {
             updatedTasks[index].status = 'Paused';
             updatedTasks[index].startTime = null;
             persistTasks(updatedTasks);
@@ -126,6 +135,8 @@ const OrdreShopFloorTimer = ({ user, department, workOrderID, modelID }) => {
 
     const stopTaskTimer = (taskId) => {
         setModalOpen(true);
+        setActionType('stop');
+
         const updatedTasks = [...tasks];
         const index = updatedTasks.findIndex((t) => t.id === taskId);
         const task = updatedTasks[index];
@@ -152,7 +163,7 @@ const OrdreShopFloorTimer = ({ user, department, workOrderID, modelID }) => {
         }
 
         const updatedTasks = tasks.map((task) => {
-            if (task.assigned === employeeName) {
+            if (task.assigned === user) {
                 return { ...task, assigned: employeeName };
             }
             return task;
@@ -165,13 +176,13 @@ const OrdreShopFloorTimer = ({ user, department, workOrderID, modelID }) => {
 
     const handlePauseSubmit = () => {
         const updatedTasks = [...tasks];
-        const taskIndex = updatedTasks.findIndex((task) => task.id === pauseModalTaskId);
-        const task = updatedTasks[taskIndex];
+        const index = updatedTasks.findIndex((task) => task.id === pauseModalTaskId);
+        const task = updatedTasks[index];
 
         logTaskAction({
             task,
             action: 'pause',
-            reason: pauseReason,  // Log the reason when paused
+            reason: pauseReason,
         });
 
         setPauseModalTaskId(null);
@@ -181,8 +192,7 @@ const OrdreShopFloorTimer = ({ user, department, workOrderID, modelID }) => {
     };
 
     const exportLogs = () => {
-        const dataStr =
-            'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(actionLogRef.current, null, 2));
+        const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(actionLogRef.current, null, 2));
         const downloadAnchorNode = document.createElement('a');
         downloadAnchorNode.setAttribute('href', dataStr);
         downloadAnchorNode.setAttribute('download', 'task_action_logs.json');
@@ -206,8 +216,8 @@ const OrdreShopFloorTimer = ({ user, department, workOrderID, modelID }) => {
                     </tr>
                 </thead>
                 <tbody>
-                    {tasks.map((task, index) => (
-                        <tr key={index}>
+                    {tasks.map((task) => (
+                        <tr key={task.id}>
                             <td>{task.name}</td>
                             <td>{task.assigned || '-'}</td>
                             <td>{task.workCenter}</td>
@@ -217,27 +227,23 @@ const OrdreShopFloorTimer = ({ user, department, workOrderID, modelID }) => {
                             <td>
                                 {task.status === 'Not Started' && (
                                     <button className="ui button mini labeled icon green" onClick={() => startTaskTimer(task.id)}>
-                                        <i className="play icon"></i>
-                                        Start
+                                        <i className="play icon"></i> Start
                                     </button>
                                 )}
                                 {task.status === 'In Progress' && (
                                     <div className="ui buttons mini">
                                         <button className="ui button mini labeled icon yellow" onClick={() => pauseTaskTimer(task.id)}>
-                                            <i className="pause icon"></i>
-                                            Pause
+                                            <i className="pause icon"></i> Pause
                                         </button>
                                         <div className="or"></div>
                                         <button className="ui button mini labeled icon red" onClick={() => stopTaskTimer(task.id)}>
-                                            <i className="stop icon"></i>
-                                            Stop
+                                            <i className="stop icon"></i> Stop
                                         </button>
                                     </div>
                                 )}
                                 {task.status === 'Paused' && (
                                     <button className="ui button mini labeled icon basic blue" onClick={() => startTaskTimer(task.id)}>
-                                        <i className="play icon"></i>
-                                        Resume
+                                        <i className="play icon"></i> Resume
                                     </button>
                                 )}
                             </td>
@@ -257,7 +263,7 @@ const OrdreShopFloorTimer = ({ user, department, workOrderID, modelID }) => {
                                 : 'Enter Employee Name to Stop Task'}
                         </div>
                         <div className="content">
-                            <div className="ui form">
+                            <form className="ui form" onSubmit={handleSubmit}>
                                 <div className="field">
                                     <label>Employee Name</label>
                                     <input
@@ -267,10 +273,10 @@ const OrdreShopFloorTimer = ({ user, department, workOrderID, modelID }) => {
                                         placeholder="Enter employee name"
                                     />
                                 </div>
-                                <button className="ui primary button" onClick={handleSubmit}>
+                                <button className="ui primary button" type="submit">
                                     Submit
                                 </button>
-                            </div>
+                            </form>
                         </div>
                     </div>
                 </div>
@@ -307,3 +313,4 @@ const OrdreShopFloorTimer = ({ user, department, workOrderID, modelID }) => {
         </div>
     );
 };
+

@@ -81,7 +81,7 @@ const Editor = ({
 
 
 
-  $(document).on('click', '.save-note-paint', function (e) {
+/*   $(document).on('click', '.save-note-paint', function (e) {
     e.preventDefault()
     let rowIndex = $(this).data('rowindexsave');
     let noteId = $(this).data('noteidsave');
@@ -92,7 +92,7 @@ const Editor = ({
     let rowIndex = $(this).data('rowindex');
     let noteId = $(this).data('noteid');
     handleNoteChange(rowIndex, e, noteId);
-  });
+  }); */
 
   const getPdfPath = (row) => {
     const pdfFolder = departmentName === 'packout' ? "img/packout/pdfs/" : "img/";
