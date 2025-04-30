@@ -104,8 +104,12 @@ function createReference(prefix = "FNA") {
 }
 
 
-const goalProgressJSONCreation = (item, departmentName,user) => {
-    // Get the start and end of the current week
+const goalProgressJSONCreation = (item, departmentName,user,modelId) => {
+
+  
+if(modelId !== item.fields.Title) return false;
+
+  // Get the start and end of the current week
     const currentDate = new Date();
     const currentDay = currentDate.getDay();
     const daysToStartOfWeek = currentDay === 0 ? 6 : currentDay - 1; // Get days to Monday
@@ -144,17 +148,6 @@ const goalProgressJSONCreation = (item, departmentName,user) => {
             return; // Skip adding the new record if the existing record is active
         }
     }
-
-    // Create the object to store in localStorage if not exists or if it's inactive
- /*    const goalProgressData = {
-        goal: runQuantity,
-        progress: "0",
-        "creation date": timestamp,
-        isActive: true,
-        wo: workOrder,
-        dev: deviations
-    }; */
-
 
     const goalProgressData = {
         goal: runQuantity, 

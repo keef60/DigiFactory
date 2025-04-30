@@ -32,6 +32,7 @@ const OrderDisplayPane = ({
                 selectedNumber={selectedNumber}
                 setWOnDev={setWOnDev}
                 setReload={setReload}
+                user={user}
             />
         ),
         item: (

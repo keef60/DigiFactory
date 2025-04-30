@@ -1,7 +1,7 @@
 const OrderDeatil = ({ data, imageSrc, user }) => {
     const item = data.fields;
     const label = is24HoursOld(item['Created']);
-
+console.log('===============================}',item)
     return (<>
         <div class="ui grid" style={{ padding: '2%' }}>
             <div className="row">

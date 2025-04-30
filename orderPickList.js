@@ -4,7 +4,7 @@ const OrderPickList = ({
     selectedNumber,
     clearLoading,
     setWOnDev,
-    setReload
+    setReload, user
 }) => {
 
     const [accessToken, setAccessToken] = useState(null);
@@ -18,6 +18,9 @@ const OrderPickList = ({
     const [confirmPickList, setConfirmedPickList] = useState(true);
     const [rowData, setRowDataIn] = useState({});
     const [sharepointDbEntry, setSharepointDbEntry] = useState();
+    const didCreate = useRef(false);
+
+    const [currentItem, setCurrentItem] = useState(null);
     const dpName = departmentName === 'line' ? departmentName + selectedNumber : departmentName;
 
 
@@ -131,6 +134,7 @@ const OrderPickList = ({
         }
     };
 
+    useEffect(() => { }, [currentItem])
     useEffect(() => {
 
         const storedToken = sessionStorage.getItem('access_token');
@@ -154,7 +158,6 @@ const OrderPickList = ({
     }
 
     const handleSubmit = async (modelNumber) => {
-
         const sendData = getLocalJSON(modelNumber);
         main.handleSubmit(modelNumber, sharepointDbEntry, dpName, 'REPORTS')
             .then(e => console.log('New Json Created'))
@@ -312,8 +315,10 @@ const OrderPickList = ({
     const displaySharePointData = (data) => {
         const [activeTab, setActiveTab] = useState(0);
 
-        const handleTabClick = (index) => {
+        const handleTabClick = (index, item) => {
             setActiveTab(index);
+            setCurrentItem(item.fields.Title);
+            didCreate.current === false;
         };
 
         return (
@@ -327,7 +332,7 @@ const OrderPickList = ({
                         <a
                             key={item.fields.Title}
                             className={`item ${activeTab === index ? 'active' : ''}`}
-                            onClick={() => handleTabClick(index)}
+                            onClick={() => { handleTabClick(index, item); }}
                         >
                             {item.fields.Title}
                         </a>
@@ -452,11 +457,21 @@ const OrderPickList = ({
     const createGoalsFromPickList = (data, departmentName, selectedNumber) => {
 
         data.map(item => {
-            if (departmentName !== 'line') {
-                setSharepointDbEntry(goalProgressJSONCreation(item, dpName));
+            if (departmentName !== 'line' && !didCreate.current) {
+                const response = goalProgressJSONCreation(item, dpName, user, currentItem);
+                if (response !== false) {
+                    setSharepointDbEntry(response);
+                    didCreate.current === true;
+                }
+
             } else if (departmentName === 'line' &&
-                item.fields.Title === assginedLineNumber.model) {
-                setSharepointDbEntry(goalProgressJSONCreation(item, dpName));
+                item.fields.Title === assginedLineNumber.model &&
+                !didCreate.current) {
+                const response = goalProgressJSONCreation(item, dpName, user, currentItem);
+                if (response !== false) {
+                    setSharepointDbEntry(response);
+                    didCreate.current === true;
+                }
             }
         });
     };

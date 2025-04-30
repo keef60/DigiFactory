@@ -10,7 +10,6 @@ const OrderStatistic = ({
 
   const modelId = title;
   const dpName = departmentName === 'line' ? departmentName + selectedNumber : departmentName;
-  const [gpData] = useState(gpDataInput);
   const [canStartOrder, setCanStartOrder] = useState(false);
   const isLine = localStorage.getItem(`goalProgress-${dpName}-${modelId}`);
   const notLine = localStorage.getItem(`goalProgress-${dpName}-${modelId}`);
@@ -21,8 +20,6 @@ const OrderStatistic = ({
   const [progress, setProgress] = useState(storedGoalData?.progress);
   const boolRef = useRef('');
   const [updatedHourly, setUpdatedHourly] = useState()
-
- 
 
   useEffect(() => {
     try {
@@ -61,7 +58,7 @@ const OrderStatistic = ({
       gpDataInput.materialsPicks.map(item => {
         String(modelId) === String(item.fields.Title) &&
           item.fields[dpName] !== undefined ?
-          setCanStartOrder(true) : setCanStartOrder(false);
+          setCanStartOrder(true) :null;
       });
     } catch (error) {
       console.warn('------------------Waiting for material Picks data ');
