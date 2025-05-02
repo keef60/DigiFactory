@@ -50,6 +50,21 @@ const OrderDisplayPane = ({
                 setReload={setReload}
             />
         ),
+        itemClosed: (
+            <ItemWorkOrderDashClosed
+                selectedDepartment={selectedDepartment}
+                departmentName={departmentName}
+                selectedNumber={selectedNumber}
+                setWOnDev={setWOnDev}
+                setSelectedNumber={setSelectedNumber}
+                user={user}
+                issesListData={issesListData}
+                inventoryRef={inventoryRef}
+                gpDataInput={gpDataInput}
+                reload={reload}
+                setReload={setReload}
+            />
+        ),
         inventory: (
             <OrderInventoryLookup
                 selectedDepartment={selectedDepartment}

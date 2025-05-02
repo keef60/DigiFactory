@@ -41,6 +41,20 @@ function is24HoursOld(dateString) {
 
 }
 
+function isDateAWeekOld(dateString) {
+    const inputDate = new Date(dateString);
+    const now = new Date();
+    
+    // Calculate the time difference in milliseconds
+    const diffInMs = now - inputDate;
+  
+    // 7 days in milliseconds
+    const oneWeekInMs = 7 * 24 * 60 * 60 * 1000;
+  
+    return diffInMs >= oneWeekInMs;
+  }
+
+
 function minutesToHours(time) {
     return Math.floor(time / 60) + ":" + (time % 60).toString().padStart(2, '0')
 }

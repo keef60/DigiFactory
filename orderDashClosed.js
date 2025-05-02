@@ -1,4 +1,4 @@
-const ItemWorkOrderDash = ({
+const ItemWorkOrderDashClosed = ({
     selectedDepartment,
     departmentName,
     selectedNumber,
@@ -166,19 +166,6 @@ const ItemWorkOrderDash = ({
         return (
             <div className=''>
 
-                {/*                 <div className='ui top attached tabular menu stackable'>
-
-                    {data.map((item, index) => (
-                        <a
-                            key={item.fields.Title}
-                            className={`item  ${activeTab === index ? `active` : ''}`}
-                            onClick={() => handleTabClick(index)}
-                        >
-                            {key(item) ? <i class="lock open icon"></i> : departmentName === 'line' ? <i class="lock closed icon"></i> : ''}
-                            {item.fields.Title}
-                        </a>
-                    ))}
-                </div> */}
                 <div className='ui'>
                     <OrdersList data={data}
                         imagePaths={imagePaths}
@@ -186,21 +173,9 @@ const ItemWorkOrderDash = ({
                         departmentName={departmentName}
                         selectedNumber={selectedNumber}
                         handleTabClick={handleTabClick}
-                        closed={false} />
-                    {/*  {data.map((item, index) => {
+                        closed={true}
+                         />
 
-                        if (activeTab !== index) return null;
-
-                        const fields = item.fields;
-                        const imageSrc = imagePaths[fields.Title] && imagePaths[fields.Title] !== 'img/placeholder.jpg'
-                            ? imagePaths[fields.Title]
-                            : 'img/placeholder.jpg';
-
-                        return (<>
-                            <OrderDeatil data={item} imageSrc={imageSrc} user={user} />
-                        </>
-                        );
-                    })} */}
                 </div>
             </div>
         );

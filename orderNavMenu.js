@@ -40,6 +40,13 @@ useEffect(()=>{
                 </a>
 
                 <a
+                    className={`item ${activeTab === 'itemClosed' ? 'active black' : ''}`}
+                    onClick={() => setActiveTab('itemClosed')}
+                >
+                   Closed Work Order
+                </a>
+
+                <a
                     className={`item ${activeTab === 'pickList' ? 'active black' : ''}`}
                     onClick={() => setActiveTab('pickList')}
                 >
