@@ -14,7 +14,7 @@ const OrderStatistic = ({
   const isLine = localStorage.getItem(`goalProgress-${dpName}-${modelId}`);
   const notLine = localStorage.getItem(`goalProgress-${dpName}-${modelId}`);
   //const storedGoalData = isLine ? JSON.parse(isLine) : JSON.parse(notLine);
-  const [storedGoalData, setStoredGoalData] = useState()
+  const [storedGoalData, setStoredGoalData] = useState();
   const [currentProgressUpdate, setCurrentProgressUpdate] = useState();
   const [goal, setGoal] = useState(storedGoalData?.goal);
   const [progress, setProgress] = useState(storedGoalData?.progress);
@@ -22,6 +22,7 @@ const OrderStatistic = ({
   const [updatedHourly, setUpdatedHourly] = useState()
 
   useEffect(() => {
+    console.log("storedGoalData", storedGoalData)
     try {
       if (storedGoalData) {
         let total = 0;
@@ -35,19 +36,26 @@ const OrderStatistic = ({
 
     }
 
-  }, [storedGoalData])
+  }, [storedGoalData, gpDataInput]);
+
   useEffect(() => {
     try {
 
-      gpDataInput.reports.map(item => {
-        let bool = String(modelId) === String(item.fields.Title) &&
-          item.fields[dpName] !== undefined;
-        const parsedData = JSON.parse(item.fields[dpName]);
-        if (bool) setStoredGoalData(parsedData);
+      gpDataInput.reports.map(i => {
+        const hasValidData = String(modelId) === String(i.fields.Title) && i.fields[dpName] !== undefined;
+
+        if (hasValidData) {
+          try {
+            const parsedData = JSON.parse(i.fields[dpName]);
+            setStoredGoalData(parsedData);
+          } catch (error) {
+            console.error("Invalid JSON for:", i.fields.Title, error);
+          }
+        }
       });
 
     } catch (error) {
-      console.warn('------------------Waiting for report data ');
+      console.warn('Waiting for report data');
     }
 
   }, [gpDataInput, selectedNumber, reload]);
@@ -56,9 +64,8 @@ const OrderStatistic = ({
     try {
 
       gpDataInput.materialsPicks.map(item => {
-        String(modelId) === String(item.fields.Title) &&
-          item.fields[dpName] !== undefined ?
-          setCanStartOrder(true) :null;
+        String(modelId) === String(item.fields.Title) && item.fields[dpName] !== undefined ?
+          setCanStartOrder(true) : null;
       });
     } catch (error) {
       console.warn('------------------Waiting for material Picks data ');
@@ -152,7 +159,7 @@ const OrderStatistic = ({
 
       <div className="eight wide column grid">
         <div className="ui statistic">
-          <div className="value">{progress || storedGoalData?.progress  || 0}</div>
+          <div className="value">{progress || storedGoalData?.progress || 0}</div>
           <div className="label">Progress</div>
         </div>
         <div className="ui grid">

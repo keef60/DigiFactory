@@ -1,67 +1,80 @@
-const OrdersList = ({ data, imagePaths, user, departmentName, selectedNumber, handleTabClick,closed }) => {
+const { useState, useEffect, useMemo } = React;
 
+const OrdersList = ({
+  data,
+  imagePaths,
+  user,
+  departmentName,
+  selectedNumber,
+  handleTabClick,
+  closed,
+  selectedDaysFilter
+}) => {
   const [currentIndex, setCurrentIndex] = useState(0);
 
-
-  const key = (item) => {
-    const logKey = 'goalProgress-' + `${departmentName + selectedNumber}-${item.fields.Title}`
-    const markLine = localStorage.getItem(logKey);
-    if (markLine) {
-      return true;
-    } else {
-      return false;
-    };
-  }
+  // Filter data based on closed/open status
+  const filteredData = useMemo(() => {
+    return data.filter((item) => {
+      const isClosedBool = isDateAWeekOld(item.fields['Created'], selectedDaysFilter);
+      return isClosedBool === closed;
+    });
+  }, [data, closed, selectedDaysFilter]);
 
   useEffect(() => {
     handleTabClick(currentIndex);
-  }, [currentIndex])
+  }, [currentIndex]);
 
   const handlePrev = () => {
-    setCurrentIndex((prev) => (prev > 0 ? prev - 1 : data.length - 1));
-
+    setCurrentIndex((prev) =>
+      prev > 0 ? prev - 1 : filteredData.length - 1
+    );
   };
 
   const handleNext = () => {
-    setCurrentIndex((prev) => (prev < data.length - 1 ? prev + 1 : 0));
-
+    setCurrentIndex((prev) =>
+      prev < filteredData.length - 1 ? prev + 1 : 0
+    );
   };
 
-  if (!data.length) return <div>No orders to show.</div>;
+  const isItemMarked = (item) => {
+    const logKey = `goalProgress-${departmentName + selectedNumber}-${item.fields.Title}`;
+    return Boolean(localStorage.getItem(logKey));
+  };
 
+  if (!filteredData.length) return <div>No orders to show.</div>;
 
-  const item = data[currentIndex];
+  const item = filteredData[currentIndex];
   const fields = item.fields;
-  const isClosedBool =  isDateAWeekOld(fields['Created']) === closed;
   const imageSrc =
     imagePaths[fields.Title] && imagePaths[fields.Title] !== 'img/placeholder.jpg'
       ? imagePaths[fields.Title]
       : 'img/placeholder.jpg';
 
-
   return (
-    isClosedBool && <div className="">
+    <div className="">
       <OrderDeatil
         data={item}
         imageSrc={imageSrc}
-        user={user} />
+        user={user}
+      />
 
-      <div className="ui centered aligned basic segment" style={{ padding: '-40%' }}>
+      <div className="ui centered aligned basic segment" style={{ padding: '1em' }}>
         <button className="ui left labeled icon red button" onClick={handlePrev}>
           <i className="left arrow icon"></i>
+          Previous
         </button>
+
         <button className="ui right labeled icon black button" onClick={handleNext}>
+          Next
           <i className="right arrow icon"></i>
         </button>
-        {
-          key(item) ?
-            <i class="lock open icon"></i> : departmentName === 'line'
-              ? <i class="lock closed icon"></i> : ''
-        }
 
+        {isItemMarked(item) ? (
+          <i className="lock open icon" />
+        ) : departmentName === 'line' ? (
+          <i className="lock closed icon" />
+        ) : null}
       </div>
-
     </div>
   );
 };
-

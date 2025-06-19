@@ -59,6 +59,10 @@ const Editor = ({
       spMethod.fetchSharePointData('TIME', departmentName);
       spMethod.fetchSharePointData('Live Packout', 'FarSide');
       spMethod.fetchSharePointData('IP', 'FarSide');
+      spMethod.fetchSharePointData('ELECTRIC KIT', departmentName);
+
+
+      
     } catch (error) {
       setError(error)
     }

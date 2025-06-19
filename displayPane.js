@@ -38,6 +38,7 @@ const DisplayPaneNew = ({
                 setWOnDev={setWOnDev}
                 setSelectedNumber={setSelectedNumber}
                 user={user}
+                selectedDaysFilter={5}
             />
         ),
         inventory: (

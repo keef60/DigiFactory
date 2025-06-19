@@ -8,7 +8,9 @@ const ItemWorkOrderDashClosed = ({
     inventoryRef,
     gpDataInput,
     reload,
-    setReload
+    setReload,
+    selectedDaysFilter, 
+    setSelectedDaysFilter
 }) => {
 
     const [accessToken, setAccessToken] = useState(null);
@@ -17,10 +19,16 @@ const ItemWorkOrderDashClosed = ({
     const [imagePaths, setImagePaths] = useState({});
     const [postName, setPostName] = useState('');
     const [siteID, setSiteID] = useState('');
+//    const [selectedDaysFilter, setSelectedDaysFilter] = useState(7);
 
 
     useEffect(() => {
         $('.menu .item').tab();
+        $('.ui.dropdown.dayFilter').dropdown({
+            action: (_, value) => {
+                setSelectedDaysFilter(value);
+            }
+        });
     });
     useEffect(() => {
         const storedToken = sessionStorage.getItem('access_token');
@@ -29,6 +37,8 @@ const ItemWorkOrderDashClosed = ({
             fetchSharePointData(storedToken);
         }
     }, [selectedDepartment]);
+
+    useEffect(() => {}, [selectedDaysFilter])
 
     const checkImageExists = async (url) => {
         const img = new Image();
@@ -174,12 +184,22 @@ const ItemWorkOrderDashClosed = ({
                         selectedNumber={selectedNumber}
                         handleTabClick={handleTabClick}
                         closed={true}
-                         />
+                        selectedDaysFilter={selectedDaysFilter}
+                    />
 
                 </div>
             </div>
         );
     };
+
+    const createDays = () => {
+        return Array.from({ length: 15 }, (_, index) => (
+            <div className="item" data-value={index + 1} key={index}>
+                {index + 1}
+            </div>
+        ));
+    };
+
 
     const displayLowerMenuData = (data) => {
         return (
@@ -187,19 +207,16 @@ const ItemWorkOrderDashClosed = ({
                 {data.map((item, index) => {
                     if (activeTab !== index) return null;
                     return (
-                        <>
-                            <OrderLowerMenu
-                                itemData={item}
-                                selectedNumber={selectedNumber}
-                                departmentName={departmentName}
-                                user={user}
-                                issesListData={issesListData}
-                                gpDataInput={gpDataInput}
-                                inventoryRef={inventoryRef}
-                                reload={reload}
-                                setReload={setReload}
-                            />
-                        </>
+
+                        <div className="ui raised very padded text container segment">
+                            <h4 className="ui header">Select a Day Range</h4>
+                            <div className="ui fluid  dropdown dayFilter">
+                                <input type="hidden" name="day" />
+                                <i className="dropdown icon"></i>
+                                <div className="default text">Choose Day</div>
+                                <div className="menu">{createDays()}</div>
+                            </div>
+                        </div>
                     );
                 })}
             </div>
@@ -215,6 +232,7 @@ const ItemWorkOrderDashClosed = ({
                     {!error ? <>
                         {displayUpperMenuData(sharePointData)}
                         {displayLowerMenuData(sharePointData)}
+
                     </> : 'No data'}
                 </div>
             ) : (

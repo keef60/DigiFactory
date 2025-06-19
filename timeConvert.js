@@ -41,16 +41,17 @@ function is24HoursOld(dateString) {
 
 }
 
-function isDateAWeekOld(dateString) {
+function isDateAWeekOld(dateString,selectedClosedDays) {
+
     const inputDate = new Date(dateString);
     const now = new Date();
     
     // Calculate the time difference in milliseconds
-    const diffInMs = now - inputDate;
+    const diffInMs = now.getTime() - inputDate.getTime();
   
     // 7 days in milliseconds
-    const oneWeekInMs = 7 * 24 * 60 * 60 * 1000;
-  
+    const oneWeekInMs = selectedClosedDays * 24 * 60 * 60 * 1000;
+
     return diffInMs >= oneWeekInMs;
   }
 

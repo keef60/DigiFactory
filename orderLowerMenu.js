@@ -18,6 +18,7 @@ const OrderLowerMenu = ({
     });
     const didRun = useRef(false);
 
+
     useEffect(() => {
         try {
             if (!didRun.current) {
@@ -37,7 +38,7 @@ const OrderLowerMenu = ({
         <>
             <div class="ui tabular menu stackable">
                 <a class="item active" data-tab="first">Components</a>
-                <a class="item" data-tab="second">Work Orders</a>
+                <a class="item" data-tab="second">Work Order Timer</a>
                 <a class="item" data-tab="third">Performance Monitoring </a>
                 <a class="item" data-tab="fourth">Comments</a>
                 <a class="item" data-tab="fifth">Issues</a>
@@ -124,7 +125,7 @@ const OrderLowerMenu = ({
 
             <div class="ui tab " data-tab="six">
                 <div className="ui two column stackable grid">
-                    <div className="column">
+                    {/* <div className="column">
                         <LiveLaneViewer
                             reload={reload}
                             name="Far Side"
@@ -145,7 +146,7 @@ const OrderLowerMenu = ({
                             setLiveStatus={setLiveStatus}
                             department={departmentName}
                         />
-                    </div>
+                    </div> */}
                 </div>
 
             </div>

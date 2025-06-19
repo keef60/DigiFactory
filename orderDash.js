@@ -8,7 +8,8 @@ const ItemWorkOrderDash = ({
     inventoryRef,
     gpDataInput,
     reload,
-    setReload
+    setReload,
+    selectedDaysFilter
 }) => {
 
     const [accessToken, setAccessToken] = useState(null);
@@ -144,7 +145,7 @@ const ItemWorkOrderDash = ({
             fetchImages();
         } catch (err) {
             setError('Error fetching SharePoint data: ' + err.message);
-            console.error(err);
+            console.warn(err);
         }
     };
 
@@ -186,7 +187,8 @@ const ItemWorkOrderDash = ({
                         departmentName={departmentName}
                         selectedNumber={selectedNumber}
                         handleTabClick={handleTabClick}
-                        closed={false} />
+                        closed={false}
+                        selectedDaysFilter={selectedDaysFilter} />
                     {/*  {data.map((item, index) => {
 
                         if (activeTab !== index) return null;

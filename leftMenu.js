@@ -47,6 +47,7 @@ const LeftMenuBar = ({
         'Packout',
         'Hose',
         'Frames',
+        'Electric',
         'Lines',
         'Inventory',
         'Warehouse',

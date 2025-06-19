@@ -22,6 +22,8 @@ const OrderDisplayPane = ({
 
 }) => {
     const [activeTab, setActiveTab] = useState('item'); // default to "Look Up" tab
+    const [selectedDaysFilter, setSelectedDaysFilter] = useState(7);
+
     console.log('display Pane', departmentName);
     const setting = { report: false }
     const tabContent = {
@@ -48,6 +50,8 @@ const OrderDisplayPane = ({
                 gpDataInput={gpDataInput}
                 reload={reload}
                 setReload={setReload}
+                selectedDaysFilter={selectedDaysFilter}
+
             />
         ),
         itemClosed: (
@@ -63,6 +67,8 @@ const OrderDisplayPane = ({
                 gpDataInput={gpDataInput}
                 reload={reload}
                 setReload={setReload}
+                selectedDaysFilter={selectedDaysFilter}
+                setSelectedDaysFilter={setSelectedDaysFilter}
             />
         ),
         inventory: (
