@@ -129,8 +129,6 @@ const Editor = ({
   return (
     <div className="ui grid" style={{ marginTop: '10px' }}>
 
-
-
       {/* Display each row in its own segment with name on top */}
       <OrderDisplayPane
         selectedDepartment={selectedDepartment}

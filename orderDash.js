@@ -18,6 +18,7 @@ const ItemWorkOrderDash = ({
     const [imagePaths, setImagePaths] = useState({});
     const [postName, setPostName] = useState('');
     const [siteID, setSiteID] = useState('');
+    const [quantityOffset, setQuantityOffset] = useState({});
 
 
     useEffect(() => {
@@ -74,6 +75,7 @@ const ItemWorkOrderDash = ({
             if (!siteResponse.ok) {
 
                 const errorData = await siteResponse.json();
+                setError(`Failed to fetch site data: ${errorData.error.message}`);
                 throw new Error(`Failed to fetch site data: ${errorData.error.message}`);
             }
 
@@ -82,7 +84,8 @@ const ItemWorkOrderDash = ({
 
             if (!siteId) {
 
-                throw new Error('Unable to get site ID');
+                setError('Unable to get site ID');
+               // throw new Error('Unable to get site ID');
             }
 
             const listsResponse = await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists`, {
@@ -95,7 +98,9 @@ const ItemWorkOrderDash = ({
             if (!listsResponse.ok) {
 
                 const errorData = await listsResponse.json();
-                throw new Error(`Failed to fetch lists: ${errorData.error.message}`);
+                setError(`Failed to fetch lists: ${errorData.error.message}`);
+
+               // throw new Error(`Failed to fetch lists: ${errorData.error.message}`);
             }
 
             const listsData = await listsResponse.json();
@@ -105,8 +110,8 @@ const ItemWorkOrderDash = ({
             setSiteID(siteId);
 
             if (!list) {
-
-                throw new Error(`Unable to find the ${selectedDepartment} list`);
+                setError(`Unable to find the ${selectedDepartment} list`);
+               // throw new Error(`Unable to find the ${selectedDepartment} list`);
             }
 
             const listId = list.id;
@@ -118,13 +123,29 @@ const ItemWorkOrderDash = ({
                 },
             });
 
+            const pickListResponse = await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${pId}/items?$expand=fields`, {
+                method: 'GET',
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
             if (!itemsResponse.ok) {
 
                 const errorData = await itemsResponse.json();
-                throw new Error(`Failed to fetch list items: ${errorData.error.message}`);
+                setError(`Failed to fetch list items: ${errorData.error.message}`);
+               // throw new Error(`Failed to fetch list items: ${errorData.error.message}`);
+            }
+            if (!pickListResponse.ok) {
+                const errorData = await pickListResponse.json();
+                setError(`Failed to fetch list items: ${errorData.error.message}`);
+               // throw new Error(`Failed to fetch list items: ${errorData.error.message}`);
             }
 
+            const pickListData = await pickListResponse.json();
+
             const itemsData = await itemsResponse.json();
+
+            processQuantityOffsets(itemsData, pickListData);
 
             if (itemsData) {
                 setSharePointData(itemsData.value);
@@ -148,6 +169,63 @@ const ItemWorkOrderDash = ({
             console.warn(err);
         }
     };
+
+    function processQuantityOffsets(itemsData, pickListData) {
+        itemsData.value.forEach(item => {
+            const title = item.fields.Title;
+
+            // Parse partNumber, QtyToPick from the item
+            const itemPartNumbers = JSON.parse(item.fields.PartNumber || '[]'); // array of { pid, ref }
+            const itemQtyToPick = JSON.parse(item.fields.QtyToPick || '[]');   // array of { pid, ref }
+
+            // Map refs to partNumbers and their expected quantities
+            const partRefMap = {};
+            itemPartNumbers.forEach(part => {
+                const ref = part.ref;
+                partRefMap[ref] = part.pid; // ref -> partNumber
+            });
+
+            const qtyMap = {};
+            itemQtyToPick.forEach(qty => {
+                const ref = qty.ref;
+                const quantity = parseInt(qty.pid, 10);
+                const partNumber = partRefMap[ref];
+                if (partNumber) {
+                    qtyMap[partNumber] = quantity;
+                }
+            });
+
+            // Match corresponding pick list entry
+            const pickEntry = pickListData.value.find(pick => pick.fields.Title === title);
+            if (!pickEntry) return;
+
+            const handles = JSON.parse(pickEntry.fields?.handles || '{}');
+
+            // Accumulate mismatches
+            const mismatches = [];
+
+            Object.values(handles).forEach(handle => {
+                const partNumber = handle.partNumber;
+                const picked = parseInt(handle.qtyPicked, 10);
+                const expected = qtyMap[partNumber];
+
+                if (expected !== undefined && expected !== picked) {
+                    mismatches.push({
+                        partNumber,
+                        expectedQty: expected,
+                        actualQty: picked
+                    });
+                }
+            });
+
+            if (mismatches.length > 0) {
+                setQuantityOffset(prev => ({
+                    ...prev,
+                    [title]: mismatches
+                }));
+            }
+        });
+    }
 
     const [activeTab, setActiveTab] = useState(0);
 
@@ -207,11 +285,13 @@ const ItemWorkOrderDash = ({
             </div>
         );
     };
-
     const displayLowerMenuData = (data) => {
         return (
             <div className='ui'>
-                {data.map((item, index) => {
+                {data.filter((item) => {
+                    const isClosedBool = isDateAWeekOld(item.fields['Created'], selectedDaysFilter);
+                    return isClosedBool === closed;
+                }).map((item, index) => {
                     if (activeTab !== index) return null;
                     return (
                         <>
@@ -236,6 +316,10 @@ const ItemWorkOrderDash = ({
     return (
         <div>
             {error && <div className="ui red message">{error}</div>}
+            <QuantityMismatchNags
+                quantityOffsets={quantityOffset}
+                activeTitle={sharePointData[activeTab]?.fields?.Title}
+            />
 
             {sharePointData.length > 0 ? (
                 <div id="sharePointData" className={`ui segment   ${clearLoading ? 'loading' : ''}`}>

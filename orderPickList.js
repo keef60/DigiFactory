@@ -12,7 +12,7 @@ const OrderPickList = ({
     const [assginedLineNumber, setAssginedLineNumber] = useState();
     const [sharePointData, setSharePointData] = useState([]);
     const [tokenInput, setTokenInput] = useState('');
-    const [imagePaths, setImagePaths] = useState({});
+    const [materialPicked, setMaterialPicked] = useState([]);
     const [postName, setPostName] = useState('');
     const [siteID, setSiteID] = useState('');
     const [confirmPickList, setConfirmedPickList] = useState(true);
@@ -22,28 +22,6 @@ const OrderPickList = ({
 
     const [currentItem, setCurrentItem] = useState(null);
     const dpName = departmentName === 'line' ? departmentName + selectedNumber : departmentName;
-
-
-    const checkImageExists = async (url) => {
-        const img = new Image();
-        img.src = url;
-
-        return new Promise((resolve) => {
-            img.onload = () => resolve(true);
-            img.onerror = () => resolve(false);
-        });
-    };
-
-    const getImagePath = async (imageName) => {
-        const extensions = ['jpg', 'jpeg', 'png', 'gif', 'avif', 'webp'];
-        for (let ext of extensions) {
-            const path = departmentName === 'packout' ? `img/packout/${imageName}.${ext}` : `img/${imageName}.${ext}`;
-            if (await checkImageExists(path)) {
-                return path;
-            }
-        }
-        return 'img/placeholder.jpg';
-    };
 
     const fetchSharePointData = async (token) => {
         if (!token) {
@@ -105,29 +83,45 @@ const OrderPickList = ({
                 },
             });
 
+            const pickListResponse = await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${pId}/items?$expand=fields`, {
+                method: 'GET',
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
             if (!itemsResponse.ok) {
                 const errorData = await itemsResponse.json();
                 throw new Error(`Failed to fetch list items: ${errorData.error.message}`);
             }
 
+            if (!pickListResponse.ok) {
+                const errorData = await pickListResponse.json();
+                throw new Error(`Failed to fetch list items: ${errorData.error.message}`);
+            }
+
+            const pickListData = await pickListResponse.json();
             const itemsData = await itemsResponse.json();
+
+            pickListData.value.forEach(item => {
+                if (!!item.fields[departmentName]) {
+                    setMaterialPicked(prev => ({
+                        ...prev,
+                        [item.fields.Title]: { isPicked: true }
+                    }));
+                } else if (!item.fields[departmentName]) {
+                    setMaterialPicked(prev => ({
+                        ...prev,
+                        [item.fields.Title]: { isPicked: false }
+                    }));
+                }
+            })
             setSharePointData(itemsData.value);
 
             setWOnDev(itemsData.value);
+
             setError(null);
 
-            const fetchImages = async () => {
-                const imageMap = {};
-                await Promise.all(
-                    itemsData.value.map(async (item) => {
-                        const imagePath = await getImagePath(item.fields.Title);
-                        imageMap[item.fields.Title] = imagePath;
-                    })
-                );
-                setImagePaths(imageMap);
-            };
-
-            fetchImages();
         } catch (err) {
             setError('Error fetching SharePoint data: ' + err.message);
             console.error(err);
@@ -160,7 +154,7 @@ const OrderPickList = ({
     const handleSubmit = async (modelNumber) => {
         const sendData = getLocalJSON(modelNumber);
         main.handleSubmit(modelNumber, sharepointDbEntry, dpName, 'REPORTS')
-            .then(e => console.log('New Json Created'))
+            .then(e => console.log('Json Added in REPORTS for: ',e))
             .catch(err => console.warn("Function Error handleSubmit in orderPickList.js", err))
 
         setConfirmedPickList(false);
@@ -341,8 +335,8 @@ const OrderPickList = ({
                 <div className='ui '>
                     {
                         data.map((item, index) => {
-                            if (activeTab !== index) return null;
 
+                            if (activeTab !== index) return null;
                             const key = (item) => {
                                 const logKey = 'goalProgress-' + `${departmentName + selectedNumber}-${item.fields.Title}`
                                 const markLine = localStorage.getItem(logKey);
@@ -357,9 +351,7 @@ const OrderPickList = ({
                             const partQtyToPick = JSON.parse(fields['QtyToPick']);
                             const workOrder = fields['WO'];
                             const label = is24HoursOld(item.fields['Created']);
-                            const imageSrc = imagePaths[fields.Title] && imagePaths[fields.Title] !== 'img/placeholder.jpg'
-                                ? imagePaths[fields.Title]
-                                : 'img/placeholder.jpg';
+
 
                             return (/* segments horizontal */
                                 <div className='ui segments ' key={fields.Title}>
@@ -367,6 +359,14 @@ const OrderPickList = ({
                                     <div class="ui  very padded segment red" >
                                         {label.status && <div class={`ui label basic  ${label.color}`}>{label.message}</div>}
                                         <p class="ui header  ">Work Order Summary</p>
+                                        <p className="column ui grey">
+                                            Material Status:
+                                            <div className={`ui label ${materialPicked[fields.Title]?.isPicked ? 'green' : 'grey basic'}`}>
+                                                <i className={` circle icon ${materialPicked[fields.Title]?.isPicked ? 'check' : ' times disabled'}`}></i>
+                                                {materialPicked[fields.Title]?.isPicked ? 'Picked' : 'Not Picked'}
+                                            </div>
+
+                                        </p>
                                         <p class="column ui grey ">Work Order: {fields['WO'].replace('WO - ', '')}</p>
                                         <p class='column ui grey'>Deviations:
                                             <div

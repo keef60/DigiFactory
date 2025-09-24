@@ -193,7 +193,7 @@ const ItemWorkOrderDashClosed = ({
     };
 
     const createDays = () => {
-        return Array.from({ length: 15 }, (_, index) => (
+        return Array.from({ length: 30 }, (_, index) => (
             <div className="item" data-value={index + 1} key={index}>
                 {index + 1}
             </div>
