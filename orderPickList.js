@@ -367,10 +367,10 @@ const OrderPickList = ({
                                             </div>
 
                                         </p>
-                                        <p class="column ui grey ">Work Order: {fields['WO'].replace('WO - ', '')}</p>
+                                        <p class="column ui grey ">Work Order: {fields['WO']?.replace('WO - ', '')}</p>
                                         <p class='column ui grey'>Deviations:
                                             <div
-                                                className={`ui label  ${fields['DEV'].includes('NONE') ? 'grey basic' : 'red'
+                                                className={`ui label  ${fields['DEV']?.includes('NONE') ? 'grey basic' : 'red'
                                                     }`}
                                             >
                                                 <p className="ui text">

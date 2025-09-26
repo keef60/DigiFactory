@@ -1,7 +1,7 @@
 const OrderDeatil = ({ data, imageSrc, user }) => {
     const item = data.fields;
     const label = is24HoursOld(item['Created']);
-console.log('===============================}',item)
+console.log('OrderDetail')
     return (<>
         <div class="ui grid" style={{ padding: '2%' }}>
             <div className="row">
@@ -22,7 +22,7 @@ console.log('===============================}',item)
                     )}
 
                     <h2 className="ui header">
-                        Work Order Reference: {item['WO'].replace('WO - ', '')}
+                        Work Order Reference: {item['WO']?.replace('WO - ', '')}
                     </h2>
 
                     <div className="ui two column grid">
@@ -60,7 +60,7 @@ console.log('===============================}',item)
                             </div>
                             <div className="column">
                                 <strong>Deviations:</strong>
-                                <div className={`ui label ${item['DEV'].includes('NONE') ? 'grey basic' : 'red'}`}>
+                                <div className={`ui label ${item['DEV']?.includes('NONE') ? 'grey basic' : 'red'}`}>
                                     {item['DEV']}
                                 </div>
                             </div>

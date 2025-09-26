@@ -19,7 +19,7 @@ const ItemWorkOrderDash = ({
     const [postName, setPostName] = useState('');
     const [siteID, setSiteID] = useState('');
     const [quantityOffset, setQuantityOffset] = useState({});
-
+    const [activeTab, setActiveTab] = useState(0);
 
     useEffect(() => {
         $('.menu .item').tab();
@@ -30,7 +30,7 @@ const ItemWorkOrderDash = ({
             setAccessToken(storedToken);
             fetchSharePointData(storedToken);
         }
-    }, [selectedDepartment]);
+    }, [selectedDepartment, selectedNumber, activeTab]);
 
     const checkImageExists = async (url) => {
         const img = new Image();
@@ -76,7 +76,7 @@ const ItemWorkOrderDash = ({
 
                 const errorData = await siteResponse.json();
                 setError(`Failed to fetch site data: ${errorData.error.message}`);
-                throw new Error(`Failed to fetch site data: ${errorData.error.message}`);
+                //throw new Error(`Failed to fetch site data: ${errorData.error.message}`);
             }
 
             const siteData = await siteResponse.json();
@@ -85,7 +85,7 @@ const ItemWorkOrderDash = ({
             if (!siteId) {
 
                 setError('Unable to get site ID');
-               // throw new Error('Unable to get site ID');
+                // throw new Error('Unable to get site ID');
             }
 
             const listsResponse = await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists`, {
@@ -100,10 +100,12 @@ const ItemWorkOrderDash = ({
                 const errorData = await listsResponse.json();
                 setError(`Failed to fetch lists: ${errorData.error.message}`);
 
-               // throw new Error(`Failed to fetch lists: ${errorData.error.message}`);
+                // throw new Error(`Failed to fetch lists: ${errorData.error.message}`);
             }
 
             const listsData = await listsResponse.json();
+
+            const allListID = listsData.value.filter(item => { return item.name.includes('KIT') }).map(i => i.id);
             const list = listsData.value.find(l => l.name === selectedDepartment);
             const pId = listsData.value.filter(e => e.displayName === 'PICKLIST')[0].id;
             setPostName(pId);
@@ -111,7 +113,7 @@ const ItemWorkOrderDash = ({
 
             if (!list) {
                 setError(`Unable to find the ${selectedDepartment} list`);
-               // throw new Error(`Unable to find the ${selectedDepartment} list`);
+                // throw new Error(`Unable to find the ${selectedDepartment} list`);
             }
 
             const listId = list.id;
@@ -129,23 +131,47 @@ const ItemWorkOrderDash = ({
                     Authorization: `Bearer ${token}`,
                 },
             });
+
+
             if (!itemsResponse.ok) {
 
                 const errorData = await itemsResponse.json();
                 setError(`Failed to fetch list items: ${errorData.error.message}`);
-               // throw new Error(`Failed to fetch list items: ${errorData.error.message}`);
+                // throw new Error(`Failed to fetch list items: ${errorData.error.message}`);
             }
+
             if (!pickListResponse.ok) {
                 const errorData = await pickListResponse.json();
                 setError(`Failed to fetch list items: ${errorData.error.message}`);
-               // throw new Error(`Failed to fetch list items: ${errorData.error.message}`);
+                // throw new Error(`Failed to fetch list items: ${errorData.error.message}`);
             }
 
             const pickListData = await pickListResponse.json();
 
             const itemsData = await itemsResponse.json();
 
-            processQuantityOffsets(itemsData, pickListData);
+            for (const id of allListID) {
+                const listMeta = listsData.value.find(list => list.id === id);
+                const listName = listMeta?.name || `List-${id}`;
+
+                const response = await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${id}/items?$expand=fields`, {
+                    method: 'GET',
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    setError(`Failed to fetch list items: ${errorData.error.message}`);
+                    // throw new Error(`Failed to fetch list items: ${errorData.error.message}`);
+                }
+                const itemData = await response.json();
+                if (itemData.value.length != 0) processQuantityOffsets(itemData, pickListData, listName);
+            }
+
+
+            // processQuantityOffsets(itemsData, pickListData,);
 
             if (itemsData) {
                 setSharePointData(itemsData.value);
@@ -170,10 +196,10 @@ const ItemWorkOrderDash = ({
         }
     };
 
-    function processQuantityOffsets(itemsData, pickListData) {
+    function processQuantityOffsetsOld(itemsData, pickListData) {
+
         itemsData.value.forEach(item => {
             const title = item.fields.Title;
-
             // Parse partNumber, QtyToPick from the item
             const itemPartNumbers = JSON.parse(item.fields.PartNumber || '[]'); // array of { pid, ref }
             const itemQtyToPick = JSON.parse(item.fields.QtyToPick || '[]');   // array of { pid, ref }
@@ -227,7 +253,82 @@ const ItemWorkOrderDash = ({
         });
     }
 
-    const [activeTab, setActiveTab] = useState(0);
+    function processQuantityOffsets(itemsData, pickListData, listName) {
+        const kitDepartmentsMap = {
+            "FRAME KIT": ['frames'],
+            "LINES KIT": ['line1', 'line2', 'line3', 'line4', 'line5', 'line6', 'line7'],
+            "HANDLE KIT": ['handles'],
+            "PACKOUT KIT": ['packout'],
+        };
+
+        const TOLERANCE = 0.5; // tweak this as needed
+
+        const departmentsToCheck = kitDepartmentsMap[listName] || [];
+
+        itemsData.value.forEach(item => {
+            const title = item.fields.Title;
+            const itemPartNumbers = JSON.parse(item.fields.PartNumber || '[]');
+            const itemQtyToPick = JSON.parse(item.fields.QtyToPick || '[]');
+
+            const partRefMap = {};
+            itemPartNumbers.forEach(part => {
+                partRefMap[part.ref] = part.pid;
+            });
+
+            const qtyMap = {};
+            itemQtyToPick.forEach(qty => {
+                const partNumber = partRefMap[qty.ref];
+                if (partNumber) {
+                    qtyMap[partNumber] = parseFloat(qty.pid);
+                }
+            });
+
+            const pickEntry = pickListData.value.find(pick => pick.fields.Title === title);
+
+            if (!pickEntry) return;
+
+            const mismatches = [];
+
+            departmentsToCheck.forEach(dep => {
+                const depDataRaw = pickEntry.fields[dep];
+                if (!depDataRaw) return;
+
+                let depHandles;
+                try {
+                    depHandles = JSON.parse(depDataRaw);
+                } catch (e) {
+                    console.error(`Failed to parse JSON for ${dep} in title ${title}`, e);
+                    return;
+                }
+
+                Object.values(depHandles).forEach(handle => {
+                    const partNumber = handle.partNumber;
+                    const picked = parseFloat(handle.qtyPicked);
+                    const expected = qtyMap[partNumber];
+
+                    if (expected !== undefined && Math.abs(expected - picked) > TOLERANCE) {
+                        mismatches.push({
+                            department: dep,
+                            partNumber,
+                            expectedQty: expected,
+                            actualQty: picked,
+                        });
+                    }
+                });
+            });
+
+            if (mismatches.length > 0) {
+                setQuantityOffset(prev => ({
+                    ...prev,
+                    [listName]: {
+                        ...(prev[listName] || {}),
+                        [title]: mismatches,
+                    },
+                }));
+            }
+        });
+    }
+
 
     const displayUpperMenuData = (data) => {
         const key = (item) => {
@@ -316,9 +417,12 @@ const ItemWorkOrderDash = ({
     return (
         <div>
             {error && <div className="ui red message">{error}</div>}
+
             <QuantityMismatchNags
                 quantityOffsets={quantityOffset}
                 activeTitle={sharePointData[activeTab]?.fields?.Title}
+                departmentName={departmentName}
+                selectedNumber={selectedDepartment}
             />
 
             {sharePointData.length > 0 ? (
