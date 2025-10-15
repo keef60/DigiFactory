@@ -1,97 +1,165 @@
-const OrderComments = ({ noteId, department,user,workOrderRef ,selectedNumber}) => {
-  const updatedNotes= useRef(department);
-  const [newNote, setNewNote] = useState('');
+
+const OrderComments = ({ noteId, department, user, workOrderRef, selectedNumber }) => {
   const dpName = department === 'line' ? department + selectedNumber : department;
 
-  const [savedNotes, setSavedNotes] = useState(() => {
-    const savedData = JSON.parse(localStorage.getItem(`saved-notes-${dpName}`));
-    return savedData ? savedData : {};
-  });
-
+  const [savedNotes, setSavedNotes] = useState({ comments: [] });
+  const [newNote, setNewNote] = useState('');
+  const [replyingTo, setReplyingTo] = useState(null);
+  const [replyTexts, setReplyTexts] = useState({}); // local state for reply inputs
+  useEffect(() => {
+    const loadDraft = async () => {
+      const savedDraft = await getSetting(`draft-${dpName}-${noteId}`);
+      if (savedDraft) setNewNote(savedDraft);
+    };
+    loadDraft();
+  }, [dpName, noteId]);
 
   useEffect(() => {
-    if(updatedNotes.current !== dpName){
-      setSavedNotes(() => {
-        const savedData = JSON.parse(localStorage.getItem(`saved-notes-${dpName}`));
-        return savedData ? savedData : {};
-      })
-    }
+    const getNotes = async () => {
+      try {
+        const response = await main.fetchSharePointData('NOTES', dpName, false, '', '', true);
+        if (response?.value?.length) {
+          const rawNotes = response.value[0].fields?.[dpName];
+          if (rawNotes) {
+            const notesObj = JSON.parse(rawNotes);
+            setSavedNotes(notesObj[noteId] || { comments: [] });
+          } else {
+            setSavedNotes({ comments: [] });
+          }
+        } else {
+          setSavedNotes({ comments: [] });
+        }
+      } catch (err) {
+        console.error('Error fetching notes:', err);
+        setSavedNotes({ comments: [] });
+      }
+    };
 
-const getNotes = async()=>{
-  await main.fetchSharePointData('NOTES', dpName, false,'','',true)
-  .then(e => console.log('---------------------]',e))
-  .catch(err => console.warn ('---------------------]',err));
-}
-getNotes()
-  }, [newNote,dpName]);
+    getNotes();
+  }, [dpName, noteId]);
 
-  const handleChange = (e) => {
-    setNewNote(e.target.value);
+  const handleChange = async (e) => {
+    const value = e.target.value;
+    setNewNote(value);
+    await saveSetting(`draft-${dpName}-${noteId}`, value);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!newNote.trim()) {
       alert('Please enter a comment.');
       return;
     }
 
-    const noteToSave = {
+    const commentToAdd = {
       noteId: `${noteId}-${Date.now()}`,
       date: Date.now(),
       dpName,
       uuid: generateUID(),
-      text: newNote,
-      author:user,
-      workOrderRef
+      text: newNote.trim(),
+      author: user || 'Anonymous',
+      workOrderRef,
+      replies: [],
     };
 
-    saveNoteToLocalStorage(noteId, noteToSave);
-    setNewNote('');
-  };
+    const updatedNotes = { ...savedNotes };
+    updatedNotes.comments = [commentToAdd, ...(updatedNotes.comments || [])];
 
-  const saveNoteToLocalStorage = (noteId, newNote) => {
-    let saveNotes = JSON.parse(localStorage.getItem(`saved-notes-${dpName}`)) || {};
+    const objectToSave = {
+      [noteId]: {
+        noteId,
+        date: Date.now(),
+        comments: updatedNotes.comments,
+      },
+    };
 
-    if (!saveNotes[noteId]) saveNotes[noteId] = { noteId, date: Date.now() };
-    if (!saveNotes[noteId]['comments']) saveNotes[noteId]['comments'] = [];
-
-    if (Array.isArray(saveNotes[noteId]['comments'])) {
-      if (newNote && newNote.noteId) {
-        const noteExists = saveNotes[noteId]['comments'].find(
-          (note) => note.noteId === newNote.noteId && note.date === newNote.date
-        );
-        if (!noteExists) {
-          saveNotes[noteId]['comments'].push(newNote);
-          localStorage.setItem(`saved-notes-${dpName}`, JSON.stringify(saveNotes));
-
-          main.handleSubmit(noteId, JSON.stringify(saveNotes), `${dpName}`, 'NOTES')
-            .then(() => {
-              // Show success message when submission completes successfully
-              alert('Comment saved successfully!');
-            })
-            .catch((err) => {
-              console.error('Error saving comment:', err);
-              alert('There was an error saving the comment.');
-            });
-
-          setSavedNotes(saveNotes);
-        }
-      } else {
-        console.error('Invalid newNote object', newNote);
-      }
-    } else {
-      console.error(`Expected an array for savedNotes[${noteId}]['comments'], but found:`, saveNotes[noteId]['comments']);
+    try {
+      await main.handleSubmit(noteId, objectToSave, dpName, 'NOTES');
+      setSavedNotes(updatedNotes);
+      setNewNote('');
+      await saveSetting(`draft-${dpName}-${noteId}`, '');
+      alert('Comment saved successfully!');
+    } catch (error) {
+      console.error('Error saving comment:', error);
+      alert('There was an error saving the comment.');
     }
   };
 
+
+  // Load reply draft for the currently replying comment
+  useEffect(() => {
+    if (replyingTo) {
+      (async () => {
+        const savedDraft = await getSetting(`draft-${dpName}-${noteId}-reply-${replyingTo}`);
+        if (savedDraft) {
+          setReplyTexts((prev) => ({ ...prev, [replyingTo]: savedDraft }));
+        }
+      })();
+    }
+  }, [replyingTo, dpName, noteId]);
+
+  const handleReplyTextChange = async (commentId, value) => {
+    setReplyTexts((prev) => ({ ...prev, [commentId]: value }));
+    await saveSetting(`draft-${dpName}-${noteId}-reply-${commentId}`, value);
+  };
+
+  const clearReplyText = async (commentId) => {
+    setReplyTexts((prev) => {
+      const copy = { ...prev };
+      delete copy[commentId];
+      return copy;
+    });
+    await saveSetting(`draft-${dpName}-${noteId}-reply-${commentId}`, '');
+  };
+
+  const handleReplySubmit = async (e, parentNoteId) => {
+    e.preventDefault();
+    const currentReplyText = replyTexts[parentNoteId] || '';
+    if (!currentReplyText.trim()) {
+      alert('Reply cannot be empty.');
+      return;
+    }
+
+    const newReply = {
+      replyId: `reply-${Date.now()}`,
+      date: Date.now(),
+      author: user || 'Anonymous',
+      text: currentReplyText.trim(),
+    };
+
+    const updatedNotes = { ...savedNotes };
+    updatedNotes.comments = updatedNotes.comments.map((comment) => {
+      if (comment.noteId === parentNoteId) {
+        const updatedReplies = comment.replies ? [...comment.replies, newReply] : [newReply];
+        return { ...comment, replies: updatedReplies };
+      }
+      return comment;
+    });
+
+    const objectToSave = {
+      [noteId]: {
+        noteId,
+        date: Date.now(),
+        comments: updatedNotes.comments,
+      },
+    };
+
+    try {
+      await main.handleSubmit(noteId, objectToSave, dpName, 'NOTES');
+      setSavedNotes(updatedNotes);
+      await clearReplyText(parentNoteId);
+      setReplyingTo(null);
+    } catch (error) {
+      console.error('Error saving reply:', error);
+      alert('There was an error saving the reply.');
+    }
+  };
+
+
   return (
-    <div className="ui minimal comments " >
-      <div className="ui segments horizontal ">
-      {/* Add a comment form */}
-      <div className='ui segment  '
-    
-      >
+    <div className="ui segments">
+      {/* 🔹 New Comment Input */}
+      <div className="ui segment">
         <form onSubmit={handleSubmit} className="ui reply form">
           <div className="field">
             <textarea
@@ -102,56 +170,86 @@ getNotes()
             />
           </div>
           <button type="submit" className="ui black labeled submit icon button">
-            <i className="icon edit"></i> Save Comment
+            <i className="icon edit" /> Save Comment
           </button>
         </form>
       </div>
 
-      {/* List of comments */}
-      <div class='ui segment red'>
-      <div className="comments-list  "
-      style={{ maxHeight: '300px', overflowY: 'auto' }}
-      >
-        {savedNotes[noteId] && savedNotes[noteId]['comments'] && savedNotes[noteId]['comments'].map((comment) => (
-          <div key={comment.noteId} className="comment">
-            <div className="content">
-              <a className="author">{comment.author || 'Anonymous'}</a>
-              <div className="metadata">
-                <span className="date">{new Date(comment.date).toLocaleString()}</span>
-              </div>
-              <div className="text">{comment.text}</div>
-              <div className="actions">
-                <a className="reply">Reply</a>
-              </div>
-            </div>
-
-            {/* Replies (nested comments) */}
-            {comment.replies && comment.replies.length > 0 && (
-              <div className="comments">
-                {comment.replies.map((reply) => (
-                  <div key={reply.replyId} className="comment">
-                    <a className="avatar">
-                      <img src="/images/avatar/small/jenny.jpg" alt="avatar" />
-                    </a>
-                    <div className="content">
-                      <a className="author">{reply.author || 'Anonymous'}</a>
-                      <div className="metadata">
-                        <span className="date">{new Date(reply.date).toLocaleString()}</span>
-                      </div>
-                      <div className="text">{reply.text}</div>
-                      <div className="actions">
-                        <a className="reply">Reply</a>
-                      </div>
-                    </div>
+      {/* 🔹 Comments Feed */}
+      <div className="ui segment red" style={{ maxHeight: '300px', overflowY: 'auto' }}>
+        <div className="ui connected feed">
+          {savedNotes.comments.length > 0 ? (
+            savedNotes.comments.map((comment) => (
+              <div key={comment.noteId} className="event">
+               
+                <div className="content">
+                  <div className="summary">
+                    <a className="user">{comment.author || 'Anonymous'}</a>
+                    <div className="date">{new Date(comment.date).toLocaleString()}</div>
                   </div>
-                ))}
+                  <div className="extra text">{comment.text}</div>
+                  <div className="meta">
+                    <a className="like" onClick={() => setReplyingTo(comment.noteId)}>
+                      <i className="reply icon"></i> Reply
+                    </a>
+                  </div>
+
+                  {/* 🔹 Reply Form */}
+                  {replyingTo === comment.noteId && (
+                    <form
+                      className="ui reply form"
+                      onSubmit={(e) => handleReplySubmit(e, comment.noteId)}
+                      style={{ marginTop: '1em' }}
+                    >
+                      <div className="field">
+                        <textarea
+                          placeholder="Write a reply..."
+                          value={replyTexts[comment.noteId] || ''}
+                          onChange={(e) => handleReplyTextChange(comment.noteId, e.target.value)}
+                          rows="2"
+                        />
+
+                      </div>
+                      <button type="submit" className="ui primary button">Submit Reply</button>
+                      <button
+                        type="button"
+                        className="ui button"
+                        onClick={() => {
+                          setReplyingTo(null);
+                          setReplyText('');
+                        }}
+                      >
+                        Cancel
+                      </button>
+                    </form>
+                  )}
+
+                  {/* 🔹 Replies */}
+                  {comment.replies && comment.replies.length > 0 && (
+                    <div className="ui feed" style={{ marginLeft: '2em', marginTop: '1em' }}>
+                      {comment.replies.map((reply) => (
+                        <div key={reply.replyId} className="event">
+                          
+                          <div className="content">
+                            <div className="summary">
+                              <a className="user">{reply.author || 'Anonymous'}</a>
+                              <div className="date">{new Date(reply.date).toLocaleString()}</div>
+                            </div>
+                            <div className="extra text">{reply.text}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
-            )}
-          </div>
-        ))}
-      </div>
-      </div>
+            ))
+          ) : (
+            <p>No comments yet.</p>
+          )}
+        </div>
       </div>
     </div>
   );
 };
+

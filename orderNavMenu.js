@@ -67,14 +67,6 @@ useEffect(()=>{
                     Inventory
                 </a>
 
-
-                <div class="right menu">
-                    {<a class="item" href="#">
-
-                        <i class="user icon"></i>
-                        {user}
-                    </a>}
-                </div>
             </div>
         </div>
     );

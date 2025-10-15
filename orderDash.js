@@ -20,38 +20,99 @@ const ItemWorkOrderDash = ({
     const [siteID, setSiteID] = useState('');
     const [quantityOffset, setQuantityOffset] = useState({});
     const [activeTab, setActiveTab] = useState(0);
+    const [orderState, setOrderState] = useState();
 
     useEffect(() => {
         $('.menu .item').tab();
     });
+
+    useEffect(() => {
+        if (!departmentName || !selectedNumber) return;
+
+        const loadStoredTab = async () => {
+            const storageKey = `${departmentName}_${selectedNumber}_activeTab`;
+            const savedTab = await getSetting(storageKey);
+            if (typeof savedTab === 'number') {
+                setActiveTab(savedTab);
+            }
+        };
+
+        loadStoredTab();
+    }, [departmentName, selectedNumber]);
+
     useEffect(() => {
         const storedToken = sessionStorage.getItem('access_token');
         if (storedToken) {
+            setSharePointData([]);
             setAccessToken(storedToken);
             fetchSharePointData(storedToken);
         }
-    }, [selectedDepartment, selectedNumber, activeTab]);
 
-    const checkImageExists = async (url) => {
-        const img = new Image();
-        img.src = url;
+    }, [gpDataInput, departmentName, reload]);
 
+    useEffect(() => {
+        if (
+            !Array.isArray(sharePointData) ||
+            !Array.isArray(gpDataInput?.reports) ||
+            !sharePointData[activeTab]?.fields?.Title
+        ) return;
+
+        const currentTitle = sharePointData[activeTab].fields.Title;
+        const matchedItem = gpDataInput.reports.find(item =>
+            item.fields?.Title?.trim().toLowerCase() === currentTitle.trim().toLowerCase()
+        );
+
+        if (matchedItem) {
+            const dpName = departmentName.includes('line') ? departmentName + selectedNumber : departmentName;
+            setOrderState(matchedItem.fields[dpName]);
+        } else {
+            console.log("No match found for", currentTitle);
+            setOrderState(undefined);
+        }
+    }, [sharePointData, gpDataInput, activeTab, departmentName, selectedNumber]);
+
+
+    const checkImageExists1 = async (url) => {
         return new Promise((resolve) => {
+            const img = new Image();
             img.onload = () => resolve(true);
-            img.onerror = () => resolve(false);
+            img.onerror = () => {
+                console.warn(`Warning: Image not found at ${url}`);
+                resolve(false);
+            };
+            img.src = url;
         });
     };
 
+    const checkImageExists = async (url) => {
+        try {
+            const response = await fetch(url, { method: 'HEAD' });
+            return response.ok;
+        } catch (err) {
+            console.warn(`Warning: Failed to check image existence at ${url}`, err);
+            return false;
+        }
+    };
+
+
     const getImagePath = async (imageName) => {
-        const extensions = ['jpg', 'jpeg', 'png', 'gif', 'avif', 'webp'];
-        for (let ext of extensions) {
-            const path = departmentName === 'packout' ? `img/packout/${imageName}.${ext}` : `img/${imageName}.${ext}`;
-            if (await checkImageExists(path)) {
-                return path;
+        try {
+            const extensions = ['jpg', 'jpeg', 'png', 'gif', 'avif', 'webp'];
+            for (let ext of extensions) {
+                const path = departmentName === 'packout'
+                    ? `img/packout/${imageName}.${ext}`
+                    : `img/${imageName}.${ext}`;
+                if (await checkImageExists(path)) {
+                    return path;
+                }
             }
+            console.warn(`Warning: No image found for "${imageName}", using placeholder.`);
+        } catch (err) {
+            console.warn(`Warning: Failed to get image path for "${imageName}"`, err);
         }
         return 'img/placeholder.jpg';
     };
+
 
     const fetchSharePointData = async (token) => {
 
@@ -151,7 +212,7 @@ const ItemWorkOrderDash = ({
             const itemsData = await itemsResponse.json();
 
             for (const id of allListID) {
-                const listMeta = listsData.value.find(list => list.id === id);
+                const listMeta = listsData?.value.find(list => list.id === id);
                 const listName = listMeta?.name || `List-${id}`;
 
                 const response = await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${id}/items?$expand=fields`, {
@@ -167,7 +228,7 @@ const ItemWorkOrderDash = ({
                     // throw new Error(`Failed to fetch list items: ${errorData.error.message}`);
                 }
                 const itemData = await response.json();
-                if (itemData.value.length != 0) processQuantityOffsets(itemData, pickListData, listName);
+                if (itemData?.value?.length != 0) processQuantityOffsets(itemData, pickListData, listName);
             }
 
 
@@ -179,15 +240,25 @@ const ItemWorkOrderDash = ({
             }
 
             const fetchImages = async () => {
-                const imageMap = {};
-                await Promise.all(
-                    await itemsData.value.map(async (item) => {
-                        const imagePath = await getImagePath(item.fields.Title);
-                        imageMap[item.fields.Title] = imagePath;
-                    })
-                );
-                setImagePaths(imageMap);
+                try {
+                    const imageMap = {};
+                    await Promise.all(
+                        itemsData.value.map(async (item) => {
+                            try {
+                                const imagePath = await getImagePath(item?.fields?.Title);
+                                imageMap[item?.fields?.Title] = imagePath;
+                            } catch (innerErr) {
+                                console.warn(`Warning: Failed to fetch image for item "${item?.fields?.Title}"`, innerErr);
+                                imageMap[item?.fields?.Title] = null; // or a fallback image path
+                            }
+                        })
+                    );
+                    setImagePaths(imageMap);
+                } catch (err) {
+                    console.warn("Warning: Error occurred during fetchImages", err);
+                }
             };
+
 
             fetchImages();
         } catch (err) {
@@ -265,7 +336,7 @@ const ItemWorkOrderDash = ({
 
         const departmentsToCheck = kitDepartmentsMap[listName] || [];
 
-        itemsData.value.forEach(item => {
+        itemsData?.value.forEach(item => {
             const title = item.fields.Title;
             const itemPartNumbers = JSON.parse(item.fields.PartNumber || '[]');
             const itemQtyToPick = JSON.parse(item.fields.QtyToPick || '[]');
@@ -342,6 +413,8 @@ const ItemWorkOrderDash = ({
         }
         const handleTabClick = (index) => {
             setActiveTab(index);
+            const storageKey = `${departmentName}_${selectedNumber}_activeTab`;
+            saveSetting(storageKey, index);
         };
         return (
             <div className=''>
@@ -367,7 +440,12 @@ const ItemWorkOrderDash = ({
                         selectedNumber={selectedNumber}
                         handleTabClick={handleTabClick}
                         closed={false}
-                        selectedDaysFilter={selectedDaysFilter} />
+                        selectedDaysFilter={selectedDaysFilter}
+                        orderState={orderState}
+                        selectedDepartment={selectedDepartment}
+                        activeTab={activeTab}
+
+                    />
                     {/*  {data.map((item, index) => {
 
                         if (activeTab !== index) return null;

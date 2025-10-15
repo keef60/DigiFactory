@@ -92,39 +92,39 @@ const ReportsRealTimeDashboard = ({ }) => {
     async function convertToTableData() {
         const data = [];
         const noteData = [];
-    
+
         try {
             const runRates = await main.fetchSharePointData('RunRates', 'runRates', false)
                 .then(e => JSON.parse(e.value[0].fields.runRates))
                 .catch(err => console.log("RunRates error", err));
-    
+
             const issues = await main.fetchSharePointData('ISSUES', departmentClick, false)
                 .then(e => e.value)
                 .catch(err => console.log("Issues error", err));
-    
+
             const reportItems = await main.fetchSharePointData('REPORTS', departmentClick, false)
                 .then(e => e.value)
                 .catch(err => console.log("Reports error", err));
-    
+
             for (const item of reportItems) {
 
                 const fields = item.fields;
-    
+
                 // Loop through each field to find departments
                 for (const key in fields) {
                     // Skip non-department fields
-                    
+
                     if (![departmentClick].includes(key)) continue;
-    
+
                     let departmentJson;
                     try {
                         departmentJson = JSON.parse(fields[key]);
-                        
+
                     } catch (e) {
                         console.warn(`Skipping malformed field: ${key}`, e);
                         continue;
                     }
-    
+
                     const model = departmentJson?.product?.id || fields["Title"];
                     const department = departmentJson?.assignedTo?.department || key;
                     const goal = parseInt(departmentJson?.goal || 0);
@@ -132,44 +132,44 @@ const ReportsRealTimeDashboard = ({ }) => {
 
 
                     // Log entries per hour
-                  
 
 
-                        const hourData = logs || [];
 
-                        for (const entry of hourData) {
-                            const hour = `H ${entry.hour - 6}`;
-                            const machinePrd = entry.progress;
-    
-                            const runRateEntry = runRates.find(r => String(r['Unit']) === String(model));
-                            if (runRateEntry) {
-                                const runRate = runRateEntry["Run Rate"];
-                                const machVar = machinePrd - runRate;
-                                const varPercentage = ((machinePrd / runRate) * 100).toFixed(2);
-    
-                                data.push({
-                                    hour,
-                                    model,
-                                    machinePrd,
-                                    runRate,
-                                    machVar,
-                                    varPercentage: `${varPercentage}%`
-                                });
-                            }
+                    const hourData = logs || [];
+
+                    for (const entry of hourData) {
+                        const hour = `H ${entry.hour - 6}`;
+                        const machinePrd = entry.progress;
+
+                        const runRateEntry = runRates.find(r => String(r['Unit']) === String(model));
+                        if (runRateEntry) {
+                            const runRate = runRateEntry["Run Rate"];
+                            const machVar = machinePrd - runRate;
+                            const varPercentage = ((machinePrd / runRate) * 100).toFixed(2);
+
+                            data.push({
+                                hour,
+                                model,
+                                machinePrd,
+                                runRate,
+                                machVar,
+                                varPercentage: `${varPercentage}%`
+                            });
                         }
-                    
-    
+                    }
+
+
                     // Match with issues (if any)
                     for (const issue of issues) {
                         const title = issue.fields["Title"];
                         const deptField = issue.fields[department];
                         if (deptField && String(title) === String(model)) {
                             const deptData = JSON.parse(deptField);
-                           
+
                             const cause = deptData.selectedOptions?.cause?.join(', ') || 'N/A';
                             const creationDate = new Date(deptData.selectedOptions?.creationDate);
                             const hour = creationDate.getHours() - 6;
-                            console.log({cause,creationDate,hour})
+                            console.log({ cause, creationDate, hour })
                             noteData.push({
                                 cause,
                                 model,
@@ -179,7 +179,7 @@ const ReportsRealTimeDashboard = ({ }) => {
                     }
                 }
             }
-                setNotes(noteData);
+            setNotes(noteData);
             setData(data);
 
         } catch (err) {
@@ -232,6 +232,39 @@ const ReportsRealTimeDashboard = ({ }) => {
         }
     }, [tableView, data]);
 
+
+    const handleExportToExcel = () => {
+        const transformedData = {
+            runRates: [], // Optional: fill if you want to include
+            report: [],   // Optional
+            overview: [], // Optional
+            efficiency: [], // Optional
+            lineHourByHour: data.map(row => ({
+                hour: row.hour,
+                line: departmentTitle || "N/A",
+                model: row.model,
+                produced: row.machinePrd,
+                runRate: row.runRate,
+                variance: row.machVar,
+                variancePercent: parseFloat(row.varPercentage.replace('%', '')) || 0
+            })),
+            kitting: [], // Optional
+            recap: { coldWater: [] }, // Optional
+            unitInfo: [], // Optional
+            assemblyNotes: notes.map(note => ({
+                timestamp: `H ${note.date}`,
+                line: departmentTitle || "N/A",
+                author: "N/A", // Replace if you have author info
+                content: note.cause
+            })),
+            productionSummary: [] // Optional
+        };
+
+        const formatter = new DTXProductionFormatter(transformedData);
+        formatter.buildWorkbook();
+    };
+
+
     return (
         <div className="ui">
             <SelectionMenuTab_DashComponent
@@ -281,7 +314,18 @@ const ReportsRealTimeDashboard = ({ }) => {
                                 </h3>
 
                                 {departmentTitle && (
-                                    <Table_DashboardComponent data={data} />
+
+                                    <>
+                                        <button
+                                            className="ui primary button"
+                                            onClick={handleExportToExcel}
+                                            style={{ marginBottom: "1em" }}
+                                        >
+                                            Export to Excel
+                                        </button>
+                                        <Table_DashboardComponent data={data} />
+
+                                    </>
                                 )}
                             </div>
                         </div>

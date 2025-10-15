@@ -23,7 +23,7 @@ const LinesEditorNew = ( {
   inventoryDepartmentName,
   inventoryRef,
   gpDataInput,
-  
+  email,
   user,
   setLoginModalOpen,
   setClearLoading,
@@ -34,31 +34,15 @@ const LinesEditorNew = ( {
   
 }) => {
 
-
-  const [sheetName, setSheetName] = useState(sheetNameLifted);
-  const [searchQuery, setSearchQueryOld] = useState(searchQueryLifted);
-  const [newRecord, setNewRecord] = useState({});
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [imagePaths, setImagePaths] = useState({});
   const [pdfPath, setPdfPath] = useState({});
   const [pdfPath2, setPdfPath2] = useState({});
   const [pdfPath3, setPdfPath3] = useState({});
   const [notePath, setNotePath] = useState({});
-  const [notes, setNotes] = useState({});
-  const [pickListActiveTab, setPickListActiveTab] = useState(false);
-  const [savedNotes, setSavedNotes] = useState(
-    JSON.parse(localStorage.getItem(`saved-notes-line${selectedNumber}`)) || {}
-  );
-  const [visible, setVisible] = useState(visibleLifted);
-  const [goal, setGoal] = useState(
-    JSON.parse(localStorage.getItem(`goalProgress-line${selectedNumber}-${notePath}`))?.goal
-  );
-  const [progress, setProgress] = useState(
-    JSON.parse(localStorage.getItem(`goalProgress-line${selectedNumber}-${notePath}`))?.progress
-  );
+
+  const [goal, setGoal] = useState(0);
+  const [progress, setProgress] = useState(0);
   const [workingThisRow, setWorkingThisRow] = useState('');
-
-
 
   useEffect(() => {
     if (selectedNumber !== null) {
@@ -68,30 +52,7 @@ const LinesEditorNew = ( {
       spMethod.fetchSharePointData('Maintenance', `line${selectedNumber}`);
       spMethod.fetchSharePointData('PICKLIST', `line${selectedNumber}`);
       spMethod.fetchSharePointData('TIME', `line${selectedNumber}`);
-
     }
-  }, [selectedNumber]);
-
-  useEffect(() => {
-    const row = dataLifted[workingThisRow];
-    const storedData = JSON.parse(
-      localStorage.getItem(`goalProgress-line${selectedNumber}-${row?.id}`)
-    );
-
-    if (storedData) {
-      setGoal(storedData.goal);
-      setProgress(storedData.progress);
-    }
-  }, [dataLifted, workingThisRow]);
-
-  useEffect(() => {
-    localStorage.setItem(`saved-notes-line${selectedNumber}`, JSON.stringify(savedNotes));
-  }, [savedNotes]);
-
-  useEffect(() => {
-    setSavedNotes(
-      JSON.parse(localStorage.getItem(`saved-notes-line${selectedNumber}`)) || {}
-    );
   }, [selectedNumber]);
 
   useEffect(() => {
@@ -100,27 +61,6 @@ const LinesEditorNew = ( {
     $('.ui.dropdown').dropdown({ allowAdditions: true });
     $('.ui.progress').progress();
   }, []);
-
-  useEffect(() => {
-    const fetchImages = async () => {
-      const imageMap = {};
-      await Promise.all(
-        dataLifted.map(async (row) => {
-          const path = await getImagePath(row);
-          imageMap[row[0]] = path;
-        })
-      );
-      setImagePaths(imageMap);
-    };
-
-    if (dataLifted.length > 0) {
-      fetchImages();
-    }
-  }, [dataLifted]);
-
-
-
-
 
   const getPdfPath = (row) => {
     const pdfFolder = 'img/';
@@ -139,13 +79,6 @@ const LinesEditorNew = ( {
   const openPdfModal = (pdfFile) => {
     $('.ui.fullscreen.modal.pdf-viewer.line').modal('show');
   };
-
-  const filteredData = dataLifted.filter((row) => {
-    return row.some((cell) => {
-      const cellValue = (cell || '').toString().trim().toLowerCase();
-      return cellValue.includes(searchQueryLifted.toLowerCase().trim());
-    });
-  });
 
   const headers = dataLifted[0] || [];
 
@@ -188,7 +121,6 @@ const LinesEditorNew = ( {
     <div className="ui grid" style={{ marginTop: '20px' }}>
       <OrderDisplayPane
         selectedDepartment={selectedDepartment}
-        filteredData={filteredData}
         imagePaths={imagePaths}
         headers={headers}
         getPdfPath={getPdfPath}
@@ -221,6 +153,7 @@ const LinesEditorNew = ( {
         inventoryRef={inventoryRef}
         gpDataInput={ gpDataInput}
         user={user}
+        email={email}
         setClearLoading={setClearLoading}
         setLoginModalOpen={setLoginModalOpen}
         handleDepartmentClick={handleDepartmentClick}

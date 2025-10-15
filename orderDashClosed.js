@@ -19,7 +19,6 @@ const ItemWorkOrderDashClosed = ({
     const [imagePaths, setImagePaths] = useState({});
     const [postName, setPostName] = useState('');
     const [siteID, setSiteID] = useState('');
-//    const [selectedDaysFilter, setSelectedDaysFilter] = useState(7);
 
 
     useEffect(() => {

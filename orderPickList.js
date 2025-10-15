@@ -18,9 +18,11 @@ const OrderPickList = ({
     const [confirmPickList, setConfirmedPickList] = useState(true);
     const [rowData, setRowDataIn] = useState({});
     const [sharepointDbEntry, setSharepointDbEntry] = useState();
+    const [activeTab, setActiveTab] = useState(0);
+    const [currentItem, setCurrentItem] = useState();
+
     const didCreate = useRef(false);
 
-    const [currentItem, setCurrentItem] = useState(null);
     const dpName = departmentName === 'line' ? departmentName + selectedNumber : departmentName;
 
     const fetchSharePointData = async (token) => {
@@ -130,6 +132,11 @@ const OrderPickList = ({
 
     useEffect(() => { }, [currentItem])
     useEffect(() => {
+        if (sharePointData.length !== 0) {
+            setCurrentItem(sharePointData[activeTab].fields.Title)
+        }
+    }, [sharePointData])
+    useEffect(() => {
 
         const storedToken = sessionStorage.getItem('access_token');
         if (storedToken) {
@@ -154,7 +161,9 @@ const OrderPickList = ({
     const handleSubmit = async (modelNumber) => {
         const sendData = getLocalJSON(modelNumber);
         main.handleSubmit(modelNumber, sharepointDbEntry, dpName, 'REPORTS')
-            .then(e => console.log('Json Added in REPORTS for: ',e))
+            .then(e => {
+                console.log('Json Added in REPORTS');
+            })
             .catch(err => console.warn("Function Error handleSubmit in orderPickList.js", err))
 
         setConfirmedPickList(false);
@@ -205,7 +214,12 @@ const OrderPickList = ({
 
                 const result = await updateResponse.json();
                 console.log("Updated item:", result);
-                alert("Pick list submission complete. All entries have been saved.")
+                $.toast({
+                    class: 'success',
+                    title: 'Success',
+                    message: 'Pick list submission complete. All entries have been saved.',
+                    showIcon: true
+                });
                 setConfirmedPickList(updateResponse.ok);
                 setRowDataIn('');
                 setReload(prev => ({ ...prev, status: true, tab: '' }));
@@ -232,7 +246,12 @@ const OrderPickList = ({
 
                 const result = await createResponse.json();
                 console.log("Created new item:", result);
-                alert("Pick list submission complete. All entries have been saved.")
+                                $.toast({
+                    class: 'success',
+                    title: 'Success',
+                    message: 'Pick list submission complete. All entries have been saved.',
+                    showIcon: true
+                });
 
                 setConfirmedPickList(createResponse.ok);
                 setRowDataIn('');
@@ -307,7 +326,6 @@ const OrderPickList = ({
     };
 
     const displaySharePointData = (data) => {
-        const [activeTab, setActiveTab] = useState(0);
 
         const handleTabClick = (index, item) => {
             setActiveTab(index);
@@ -459,7 +477,9 @@ const OrderPickList = ({
         data.map(item => {
             if (departmentName !== 'line' && !didCreate.current) {
                 const response = goalProgressJSONCreation(item, dpName, user, currentItem);
+
                 if (response !== false) {
+
                     setSharepointDbEntry(response);
                     didCreate.current === true;
                 }

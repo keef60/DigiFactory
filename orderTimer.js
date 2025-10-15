@@ -1,12 +1,13 @@
-
 const OrdreShopFloorTimer = ({ user, department, workOrderID, modelID }) => {
-    const [tasks, setTasks] = useState([]);
+    const [tasks, setTasks] = useFormPersistence(`tasks-${department}-${modelID}`, []);
     const [modalOpen, setModalOpen] = useState(false);
     const [employeeName, setEmployeeName] = useState('');
     const [actionType, setActionType] = useState('start');
     const [pauseModalTaskId, setPauseModalTaskId] = useState(null);
     const [pauseReason, setPauseReason] = useState('');
-    
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
     const pauseReasons = [
         'Machine issue',
         'Material delay',
@@ -15,45 +16,128 @@ const OrdreShopFloorTimer = ({ user, department, workOrderID, modelID }) => {
         'Waiting for supervisor',
     ];
 
-    const actionLogRef = useRef([]);
+    // Use form persistence for logs as well
+    const [actionLogs, setActionLogs] = useFormPersistence(`taskActionLogs-${department}-${modelID}`, []);
+    const actionLogRef = useRef(actionLogs);
 
-    // Load and conditionally add task
+    // Keep ref synced with latest actionLogs
     useEffect(() => {
-        if (!department || !user || !workOrderID) return;
-    
-        const savedTasks = JSON.parse(localStorage.getItem('tasks')) || [];
-        const savedLogs = JSON.parse(localStorage.getItem('taskActionLogs')) || [];
-    
-        // Only create task if none exists with the same department and workOrderID
-        const taskExists = savedTasks.some(
-            (task) =>
-                task.workOrderID === workOrderID &&
-                task.name === `${department.toUpperCase()} Assembly`
-        );
-    
-        let updatedTasks = [...savedTasks];
-    
-        if (!taskExists) {
-            const newTask = {
-                id: Date.now(),
-                name: `${department.toUpperCase()} Assembly`,
-                assigned: user,
-                workCenter: '026',
-                expectedDuration: 60,
-                realDuration: 0,
-                startTime: null,
-                status: 'Not Started',
-                workOrderID: workOrderID,
-            };
-    
-            updatedTasks.push(newTask);
-            localStorage.setItem('tasks', JSON.stringify(updatedTasks));
+        actionLogRef.current = actionLogs;
+    }, [actionLogs]);
+
+    // Fetch SharePoint data and initialize tasks on mount or when dependencies change
+    useEffect(() => {
+        if (!department || !user || !workOrderID || !modelID) {
+            console.warn("Missing one of dependencies, skipping data load", {
+                department,
+                user,
+                workOrderID,
+                modelID,
+            });
+            setTasks([
+                {
+                    id: Date.now(),
+                    name: `${department?.toUpperCase() || 'UNKNOWN'} Assembly`,
+                    assigned: user,
+                    workCenter: '026',
+                    expectedDuration: 60,
+                    realDuration: 0,
+                    startTime: null,
+                    status: 'Not Started',
+                    workOrderID,
+                },
+            ]);
+            setLoading(false);
+            return;
         }
-    
-        setTasks(updatedTasks);
-        actionLogRef.current = savedLogs;
-    }, [department, user, workOrderID]);
-    
+
+        const loadData = async () => {
+            console.log("OrdreShopFloorTimer: loadData start", { department, modelID });
+            try {
+                const spData = await main.fetchSharePointData("TIME", department, false);
+                console.log("Fetched SP data:", spData);
+
+                let matchedEntry = null;
+                if (spData?.value && Array.isArray(spData.value)) {
+                    matchedEntry = spData.value.find(item => {
+                        return item.fields?.Title === modelID.toString();
+                    });
+                }
+
+                console.log("Matched entry:", matchedEntry);
+
+                let taskDataFromSP = [];
+                if (matchedEntry && matchedEntry.fields?.[department]) {
+                    try {
+                        const parsed = JSON.parse(matchedEntry.fields[department]);
+                        if (Array.isArray(parsed)) {
+                            taskDataFromSP = parsed;
+                        } else {
+                            console.warn("Parsed SP field is not an array:", parsed);
+                        }
+                    } catch (e) {
+                        console.warn("JSON parse failed:", e);
+                    }
+                }
+
+                console.log("taskDataFromSP:", taskDataFromSP);
+
+                const baseTask = {
+                    id: Date.now(),
+                    name: `${department.toUpperCase()} Assembly`,
+                    assigned: user,
+                    workCenter: '026',
+                    expectedDuration: 60,
+                    realDuration: 0,
+                    startTime: null,
+                    status: 'Not Started',
+                    workOrderID,
+                };
+
+                let loadedTask = baseTask;
+                if (taskDataFromSP.length > 0) {
+                    const lastLog = taskDataFromSP[taskDataFromSP.length - 1];
+                    const durationsByTaskId = calculateRealDurationsFromLogs(taskDataFromSP);
+
+                    loadedTask = {
+                        ...baseTask,
+                        realDuration: durationsByTaskId[lastLog.taskId] || 0,
+                        status: lastLog.statusAfterAction || baseTask.status,
+                    };
+                }
+
+
+                console.log("Loaded task:", loadedTask);
+
+                setTasks([loadedTask]);
+                actionLogRef.current = taskDataFromSP;
+            } catch (err) {
+                console.error("Error loadData in OrdreShopFloorTimer:", err);
+                // fallback single row
+                setTasks([
+                    {
+                        id: Date.now(),
+                        name: `${department.toUpperCase()} Assembly`,
+                        assigned: user,
+                        workCenter: '026',
+                        expectedDuration: 60,
+                        realDuration: 0,
+                        startTime: null,
+                        status: 'Not Started',
+                        workOrderID,
+                    },
+                ]);
+                actionLogRef.current = [];
+            } finally {
+                console.log("loadData finally — setting loading false");
+                setLoading(false);
+            }
+        };
+
+        loadData();
+    }, [department, user, workOrderID, modelID]);
+
+
     // Live refresh for durations
     useEffect(() => {
         const interval = setInterval(() => {
@@ -61,6 +145,8 @@ const OrdreShopFloorTimer = ({ user, department, workOrderID, modelID }) => {
         }, 1000);
         return () => clearInterval(interval);
     }, []);
+
+    
 
     const formatTime = (timeInSeconds) => {
         const hours = String(Math.floor(timeInSeconds / 3600)).padStart(2, '0');
@@ -94,15 +180,15 @@ const OrdreShopFloorTimer = ({ user, department, workOrderID, modelID }) => {
             ...(reason && { pauseReason: reason }),
         };
 
-        actionLogRef.current.push(logEntry);
-        localStorage.setItem('taskActionLogs', JSON.stringify(actionLogRef.current));
+        const updatedLogs = [...actionLogRef.current, logEntry];
+        setActionLogs(updatedLogs);
 
-        main.handleSubmit(modelID, actionLogRef.current, department, 'TIME');
+        main.handleSubmit(modelID, updatedLogs, department, 'TIME');
     };
 
     const persistTasks = (updatedTasks) => {
+
         setTasks(updatedTasks);
-        localStorage.setItem('tasks', JSON.stringify(updatedTasks));
     };
 
     const startTaskTimer = (taskId) => {
@@ -110,7 +196,8 @@ const OrdreShopFloorTimer = ({ user, department, workOrderID, modelID }) => {
         setModalOpen(true);
         setActionType('start');
 
-        const updatedTasks = [...tasks];
+        console.log('tasks:', tasks);
+        const updatedTasks = [...(Array.isArray(tasks) ? tasks : [])];
         const index = updatedTasks.findIndex((t) => t.id === taskId);
         const task = updatedTasks[index];
 
@@ -190,6 +277,37 @@ const OrdreShopFloorTimer = ({ user, department, workOrderID, modelID }) => {
         setModalOpen(false);
         persistTasks(updatedTasks);
     };
+    const calculateRealDurationsFromLogs = (logs) => {
+        const taskDurations = {};
+
+        logs.forEach((log) => {
+            const { taskId, action, timestamp } = log;
+
+            if (!taskDurations[taskId]) {
+                taskDurations[taskId] = {
+                    runningSince: null,
+                    realDuration: 0,
+                };
+            }
+
+            const task = taskDurations[taskId];
+            const time = new Date(timestamp).getTime();
+
+            if (action === 'start') {
+                task.runningSince = time;
+            } else if ((action === 'pause' || action === 'stop') && task.runningSince) {
+                const elapsed = Math.floor((time - task.runningSince) / 1000); // in seconds
+                task.realDuration += elapsed;
+                task.runningSince = null;
+            }
+        });
+
+        return Object.entries(taskDurations).reduce((acc, [taskId, { realDuration }]) => {
+            acc[taskId] = realDuration;
+            return acc;
+        }, {});
+    };
+
 
     const exportLogs = () => {
         const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(actionLogRef.current, null, 2));
@@ -200,6 +318,9 @@ const OrdreShopFloorTimer = ({ user, department, workOrderID, modelID }) => {
         downloadAnchorNode.click();
         downloadAnchorNode.remove();
     };
+
+    if (loading) return <div>Loading tasks...</div>;
+    if (error) return <div>Error: {error}</div>;
 
     return (
         <div>

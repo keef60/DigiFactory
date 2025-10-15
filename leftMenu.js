@@ -13,6 +13,7 @@ const LeftMenuBar = ({
     sheetNameLifted,
     setSheetName,
     userName,
+    email,
     selectedDepartment,
     loginModalOpen,
     reload
@@ -28,13 +29,14 @@ const LeftMenuBar = ({
     // List of manufacturing reports
     const reports = [
         { name: 'Real-Time Production Report', disabled: false },
+        { name: 'Order Status', disabled: false },
         { name: 'Daily Production Overview', disabled: false },
+        { name: 'Edit SharePoint Data', disabled: false },
         { name: 'Inventory Levels', disabled: false },
         { name: 'Maintenance Status', disabled: false },
         { name: 'Throughput Report', disabled: true },
         { name: 'Yield Analysis', disabled: true },
         { name: 'Production Downtime Report', disabled: false },
-
         { name: 'Task/Time Logs', disabled: false },
     ];
 
@@ -59,8 +61,18 @@ const LeftMenuBar = ({
             <div class="item">
                 <ProgressCircle reload={reload} />
             </div>
+            <div class="item">
+                <img  style={{height:"100%",}} src="./img/logo.jpg" />
+            </div>
             <div className="item">
-                <div className="ui header">{userName ? userName : 'Not Logged In'}</div>
+                <>
+
+                    <div className="ui header">{userName ? userName : 'Not Logged In'}
+                        <div className="ui sub header">{email ? email : ''}</div>
+
+                    </div>
+                </>
+
             </div>
 
 
@@ -87,7 +99,7 @@ const LeftMenuBar = ({
             {/* Reports Dropdown for Manufacturing Managers */}
             <div className="ui dropdown item topMenu">
 
-                Manufacturing Reports
+                Reports
                 <div className="menu">
                     {reports.map((report, index) => (
                         <a

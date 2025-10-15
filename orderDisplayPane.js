@@ -12,6 +12,7 @@ const OrderDisplayPane = ({
     inventoryDepartmentName,
     inventoryRef,
     user,
+    email,
     setLoginModalOpen,
     setClearLoading,
     loginModalOpen,
@@ -22,9 +23,9 @@ const OrderDisplayPane = ({
 
 }) => {
     const [activeTab, setActiveTab] = useState('item'); // default to "Look Up" tab
-    const [selectedDaysFilter, setSelectedDaysFilter] = useState(7);
+    const [selectedDaysFilter, setSelectedDaysFilter] = useState(30);
 
-    console.log('display Pane', departmentName);
+    console.log('OrderDisplayPane department: ', departmentName);
     const setting = { report: false }
     const tabContent = {
         pickList: (
@@ -35,6 +36,7 @@ const OrderDisplayPane = ({
                 setWOnDev={setWOnDev}
                 setReload={setReload}
                 user={user}
+                email={email}
             />
         ),
         item: (
@@ -45,6 +47,7 @@ const OrderDisplayPane = ({
                 setWOnDev={setWOnDev}
                 setSelectedNumber={setSelectedNumber}
                 user={user}
+                email={email}
                 issesListData={issesListData}
                 inventoryRef={inventoryRef}
                 gpDataInput={gpDataInput}
@@ -62,6 +65,7 @@ const OrderDisplayPane = ({
                 setWOnDev={setWOnDev}
                 setSelectedNumber={setSelectedNumber}
                 user={user}
+                email={email}
                 issesListData={issesListData}
                 inventoryRef={inventoryRef}
                 gpDataInput={gpDataInput}
@@ -85,15 +89,16 @@ const OrderDisplayPane = ({
                 issuesListData={issesListData}
                 department={departmentName}
                 user={user}
+                email={email}
             />
         )
     };
 
     return (
-        <div style={{/*  position: 'center', marginLeft: '5%', width: '100%'  */}}>
-                 <div className='ui segment'> <h1 className="ui header medium " >
-                    Production Queue
-                </h1>   </div>
+        <div style={{/*  position: 'center', marginLeft: '5%', width: '100%'  */ }}>
+            <div className='ui segment'> <h1 className="ui header medium " >
+                Production Queue
+            </h1>   </div>
             <div className={`ui bottom   ${clearLoading ? 'ui active centered  loader' : ''}`}>
 
                 <OrderNavMenu
@@ -110,7 +115,7 @@ const OrderDisplayPane = ({
                     handleDepartmentClick={handleDepartmentClick}
                     setReload={setReload}
                 />
-        
+
                 {tabContent[activeTab]} {/* Render content based on the active tab */}
             </div>
         </div>

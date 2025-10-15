@@ -84,7 +84,7 @@ const WorkOrderStatus = {
 // Map which roles can set which statuses
 const StatusPermissions = {
   [WorkOrderStatus.PENDING]: [UserRoles.OPERATOR, UserRoles.LEAD, UserRoles.SUPERVISOR, UserRoles.ADMIN],
-  [WorkOrderStatus.IN_PROGRESS]: [ UserRoles.LEAD, UserRoles.SUPERVISOR, UserRoles.ADMIN],
+  [WorkOrderStatus.IN_PROGRESS]: [UserRoles.LEAD, UserRoles.SUPERVISOR, UserRoles.ADMIN],
   [WorkOrderStatus.ON_HOLD]: [UserRoles.LEAD, UserRoles.SUPERVISOR, UserRoles.ADMIN],
   [WorkOrderStatus.AWAITING_MATERIALS]: [UserRoles.LEAD, UserRoles.SUPERVISOR, UserRoles.ADMIN],
   [WorkOrderStatus.READY]: [UserRoles.LEAD, UserRoles.SUPERVISOR, UserRoles.ADMIN],
@@ -104,186 +104,184 @@ function createReference(prefix = "FNA") {
 }
 
 
-const goalProgressJSONCreation = (item, departmentName,user,modelId) => {
+const goalProgressJSONCreation = (item, departmentName, user, modelId) => {
 
-  
-if(modelId !== item.fields.Title) return false;
+  if (modelId !== item.fields.Title)return false;
 
   // Get the start and end of the current week
-    const currentDate = new Date();
-    const currentDay = currentDate.getDay();
-    const daysToStartOfWeek = currentDay === 0 ? 6 : currentDay - 1; // Get days to Monday
-    const startOfWeek = new Date(currentDate.setDate(currentDate.getDate() - daysToStartOfWeek));
-    startOfWeek.setHours(0, 0, 0, 0); // Start of week at midnight
+  const currentDate = new Date();
+  const currentDay = currentDate.getDay();
+  const daysToStartOfWeek = currentDay === 0 ? 6 : currentDay - 1; // Get days to Monday
+  const startOfWeek = new Date(currentDate.setDate(currentDate.getDate() - daysToStartOfWeek));
+  startOfWeek.setHours(0, 0, 0, 0); // Start of week at midnight
 
-    const endOfWeek = new Date(startOfWeek);
-    endOfWeek.setDate(startOfWeek.getDate() + 6); // End of the week (Sunday)
-    endOfWeek.setHours(23, 59, 59, 999); // End of week just before midnight
-    
-    const fields = item.fields;
-    const runQuantity = fields.Quantity
-    const title = fields.Title;  // Assuming the title field is here 
-    const workOrder = fields['WO'];
-    const deviations = fields['DEV'];
-    const key = 'goalProgress-' + `${departmentName}-${title}`
-    // Generating a timestamp for the record
-    const timestamp = new Date().toISOString();
+  const endOfWeek = new Date(startOfWeek);
+  endOfWeek.setDate(startOfWeek.getDate() + 6); // End of the week (Sunday)
+  endOfWeek.setHours(23, 59, 59, 999); // End of week just before midnight
 
-    // Check if the record already exists in localStorage
-    const existingGoalProgress = localStorage.getItem(key);
-
-    // If the record exists, check its timestamp and isActive
-    if (existingGoalProgress) {
-        const existingData = JSON.parse(existingGoalProgress);
-        const existingTimestamp = new Date(existingData["creation date"]);
-
-        // If it's active, check if the timestamp is within the current week
-        if (existingData.isActive === true) {
-            // If the timestamp is outside the current week, set isActive to false
-            if (existingTimestamp < startOfWeek || existingTimestamp > endOfWeek) {
-                existingData.isActive = false;
-                // Update localStorage with isActive set to false
-                localStorage.setItem(key, JSON.stringify(existingData));
-            }
-            return; // Skip adding the new record if the existing record is active
-        }
-    }
-
-    const goalProgressData = {
-        goal: runQuantity, 
-        progress: 0, 
-        "creation date": timestamp, 
-        assignedTo:{
-          department:departmentName,
-        },
-        isActive: false, 
-        workOrder: {
-          id: workOrder,
-          reference: createReference('DTX'),
-          status: WorkOrderStatus.PENDING.label,
-          priority: WorkOrderPriority.MEDIUM.label,
-          dueDate: null,
-          material_Picks:{
-            confirmedBy:user,
-            timestamp:Date.now()
+  const fields = item.fields;
+  const runQuantity = fields.Quantity
+  const title = fields.Title;  // Assuming the title field is here 
+  const workOrder = fields['WO'];
+  const deviations = fields['DEV'];
+  const key = 'goalProgress-' + `${departmentName}-${title}`
+  // Generating a timestamp for the record
+  const timestamp = new Date().toISOString();
+  /* 
+      // Check if the record already exists in localStorage
+      const existingGoalProgress = localStorage.getItem(key);
+  
+      // If the record exists, check its timestamp and isActive
+      if (existingGoalProgress) {
+          const existingData = JSON.parse(existingGoalProgress);
+          const existingTimestamp = new Date(existingData["creation date"]);
+  
+          // If it's active, check if the timestamp is within the current week
+          if (existingData.isActive === false) {
+              // If the timestamp is outside the current week, set isActive to false
+              if (existingTimestamp < startOfWeek || existingTimestamp > endOfWeek) {
+                  existingData.isActive = true;
+                  // Update localStorage with isActive set to false
+                  localStorage.setItem(key, JSON.stringify(existingData));
+              }
+              return; // Skip adding the new record if the existing record is active
           }
-        },
-        deviations: deviations,
-        team: {
-          supervisor: {
-            UserRoles: UserRoles.SUPERVISOR,
-            name: null,
-            pin:1234
-          },
-          lead: {
-            UserRoles: UserRoles.LEAD,
-            name: null,
-            pin:1234
-          }
-        }
-        ,
-        product: {
-          id: fields.Title,
-          name:null,
-        },
-        logs: [],
-        efficiencyMetricsCaptured:null
-      };
-    
+      } */
 
-    // Store the object in localStorage
-    localStorage.setItem(key, JSON.stringify(goalProgressData));
-    return goalProgressData;
-}
-  
-  // 🧠 Utility to manage logs
-  function handleLogs(orderData) {
-    return {
-      // ✅ Add a log only if the event is valid
-      addLog: function (event) {
-        if (!manufacturingEvents.includes(event)) {
-          console.warn(`🚫 Invalid event: "${event}". Log not added.`);
-          return;
-        }
-  
-        const timestamp = new Date().toISOString();
-        if (!orderData.logs) {
-          orderData.logs = [];
-        }
-        orderData.logs.push({ time: timestamp, event });
-        console.log(`✅ Log added: "${event}" at ${timestamp}`);
-        return orderData;
-      },
-  
-
-      // ✅ Add a log only if the event is valid
-      addDataToLog: function (event,data) {
-        if (!manufacturingEvents.includes(event)) {
-          console.warn(`🚫 Invalid event: "${event}". Log not added.`);
-          return;
-        }
-  
-        const timestamp = new Date().toISOString();
-        if (!orderData.efficiencyMetricsCaptured) {
-          orderData.efficiencyMetricsCaptured;
-        }
-        
-        orderData.efficiencyMetricsCaptured=data;
-        console.log(`✅ Log added: "${event}" at ${timestamp}, submitted data: ${JSON.stringify(data)}`);
-        return orderData;
-      },
-  
-
-
-      // 🔍 Get logs with optional keyword filter
-      getLogs: function (filterKeyword = "") {
-        if (!orderData.logs) return [];
-        return orderData.logs.filter(log =>
-          log.event.toLowerCase().includes(filterKeyword.toLowerCase())
-        );
-      },
-  
-      // 📋 Print all logs
-      printTimeline: function () {
-        if (!orderData.logs || orderData.logs.length === 0) {
-          console.log("No logs available.");
-          return;
-        }
-  
-        console.log("🔍 Order Timeline:");
-        orderData.logs.forEach(log => {
-          console.log(`📌 ${log.time} — ${log.event}`);
-        });
-      },
-  
-      // 📂 List all possible events
-      listValidEvents: function () {
-        console.log("🧾 Valid Manufacturing Events:");
-        manufacturingEvents.forEach(event => console.log(`- ${event}`));
+  const goalProgressData = {
+    goal: runQuantity,
+    progress: 0,
+    "creation date": timestamp,
+    assignedTo: {
+      department: departmentName,
+    },
+    isActive: true,
+    workOrder: {
+      id: workOrder,
+      reference: createReference('DTX'),
+      status: WorkOrderStatus.PENDING.label,
+      priority: WorkOrderPriority.MEDIUM.label,
+      dueDate: null,
+      material_Picks: {
+        confirmedBy: user,
+        timestamp: Date.now()
       }
-    };
-  }
-  
-  function updateWorkOrderStatus(workOrder, newStatus, userRole) {
-    const validStatuses = Object.values(WorkOrderStatus);
-  
-    if (!validStatuses.includes(newStatus)) {
-      throw new Error(`Invalid status: "${newStatus}".`);
+    },
+    deviations: deviations,
+    team: {
+      supervisor: {
+        UserRoles: UserRoles.SUPERVISOR,
+        name: null,
+        pin: 1234
+      },
+      lead: {
+        UserRoles: UserRoles.LEAD,
+        name: null,
+        pin: 1234
+      }
     }
-  
-    const allowedRoles = StatusPermissions[newStatus] || [];
-  
-    if (!allowedRoles.includes(userRole)) {
-      throw new Error(`Role "${userRole}" is not authorized to set status "${newStatus}".`);
+    ,
+    product: {
+      id: fields.Title,
+      name: null,
+    },
+    logs: [],
+    efficiencyMetricsCaptured: null
+  };
+
+
+  // Store the object in localStorage
+  // localStorage.setItem(key, JSON.stringify(goalProgressData));
+  return goalProgressData;
+}
+
+// 🧠 Utility to manage logs
+function handleLogs(orderData) {
+  return {
+    // ✅ Add a log only if the event is valid
+    addLog: function (event) {
+      if (!manufacturingEvents.includes(event)) {
+        console.warn(`🚫 Invalid event: "${event}". Log not added.`);
+        return;
+      }
+
+      const timestamp = new Date().toISOString();
+      if (!orderData.logs) {
+        orderData.logs = [];
+      }
+      orderData.logs.push({ time: timestamp, event });
+      console.log(`✅ Log added: "${event}" at ${timestamp}`);
+      return orderData;
+    },
+
+
+    // ✅ Add a log only if the event is valid
+    addDataToLog: function (event, data) {
+      if (!manufacturingEvents.includes(event)) {
+        console.warn(`🚫 Invalid event: "${event}". Log not added.`);
+        return;
+      }
+
+      const timestamp = new Date().toISOString();
+      if (!orderData.efficiencyMetricsCaptured) {
+        orderData.efficiencyMetricsCaptured;
+      }
+
+      orderData.efficiencyMetricsCaptured = data;
+      console.log(`✅ Log added: "${event}" at ${timestamp}, submitted data: ${JSON.stringify(data)}`);
+      return orderData;
+    },
+
+
+
+    // 🔍 Get logs with optional keyword filter
+    getLogs: function (filterKeyword = "") {
+      if (!orderData.logs) return [];
+      return orderData.logs.filter(log =>
+        log.event.toLowerCase().includes(filterKeyword.toLowerCase())
+      );
+    },
+
+    // 📋 Print all logs
+    printTimeline: function () {
+      if (!orderData.logs || orderData.logs.length === 0) {
+        console.log("No logs available.");
+        return;
+      }
+
+      console.log("🔍 Order Timeline:");
+      orderData.logs.forEach(log => {
+        console.log(`📌 ${log.time} — ${log.event}`);
+      });
+    },
+
+    // 📂 List all possible events
+    listValidEvents: function () {
+      console.log("🧾 Valid Manufacturing Events:");
+      manufacturingEvents.forEach(event => console.log(`- ${event}`));
     }
-  
-    const previousStatus = workOrder.status;
-    workOrder.status = newStatus;
-  
-    console.log(`Status changed from "${previousStatus}" to "${newStatus}" by ${userRole}`);
-    return workOrder;
+  };
+}
+
+function updateWorkOrderStatus(workOrder, newStatus, userRole) {
+  const validStatuses = Object.values(WorkOrderStatus);
+
+  if (!validStatuses.includes(newStatus)) {
+    throw new Error(`Invalid status: "${newStatus}".`);
   }
 
- 
-  
-  
+  const allowedRoles = StatusPermissions[newStatus] || [];
+
+  if (!allowedRoles.includes(userRole)) {
+    throw new Error(`Role "${userRole}" is not authorized to set status "${newStatus}".`);
+  }
+
+  const previousStatus = workOrder.status;
+  workOrder.status = newStatus;
+
+  console.log(`Status changed from "${previousStatus}" to "${newStatus}" by ${userRole}`);
+  return workOrder;
+}
+
+
+

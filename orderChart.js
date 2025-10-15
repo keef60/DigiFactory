@@ -35,9 +35,7 @@ const OrderChartComponent = ({
         const ctx = canvasRef.current.getContext('2d');
 
         const getHourlyProgress = () => {
-            const storedProgress = JSON.parse(localStorage.getItem(
-                `hourlyProgress-${dpName}-${modelId}`
-            )) || [];
+          
 
             const progressArray = Array(19).fill(0); // 0–24 shifted by -6 => index range 0–18
 
@@ -50,6 +48,8 @@ const OrderChartComponent = ({
             
             return progressArray
         };
+
+
 
         const dataSet = getHourlyProgress();
 

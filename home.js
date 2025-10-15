@@ -1,40 +1,28 @@
 const HomeScreen = () => {
-    return (
-      <div className="ui segment">
-  
-        {/* Hero Section */}
-        <div className="ui vertical segment hero-section">
-          <div className="ui container center aligned text">
-            <h1 className="ui huge header">Welcome to CARTr</h1>
-            <h4 className="ui header">
-              Centralized Automated Real-Time Reporting
-            </h4>
-            <p className="ui large text">
-              Simple tools for smarter, faster decisions.
-            </p>
-            <button className="ui big black button">
-              Get Started
-              <i className="right arrow icon"></i>
-            </button>
-          </div>
+  return (
+    <div className="ui segment no-border no-padding">
+      {/* Hero Section */}
+      <div className="ui vertical  segment hero-section center aligned">
+        <div className="ui text container">
+          <img
+            src={`./img/cartr.png`} // or "/cartr-logo.png" if using public folder
+            alt="CARTr Logo"
+            className="cartr-logo"
+          />
+          <h1 className="ui  huge header">Smarter Manufacturing Starts Here</h1>
+          <h4 className="ui  header">
+            Real-Time Insights for Industrial Operations
+          </h4>
+          <p className="ui  large text">
+            Empower your factory with centralized, automated reporting built for efficiency and control.
+          </p>
+          <button className="ui huge orange button">
+            <i className="industry icon"></i>
+            Explore the Platform
+          </button>
         </div>
-  
-        {/* Info Section */}
-        <div className="ui vertical segment info-section">
-          <div className="ui container">
-            <div className="ui stackable grid">
-              <div className="column">
-                <h3 className="ui header">Smarter Manufacturing</h3>
-                <p>
-                  Keep track of performance in real-time, reduce downtime,
-                  and make data-driven decisions—effortlessly.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-  
       </div>
-    );
-  };
-  
+
+    </div>
+  );
+};

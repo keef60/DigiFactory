@@ -7,41 +7,39 @@ const OrderStatistic = ({
   reload,
   setReload
 }) => {
-
   const modelId = title;
   const dpName = departmentName === 'line' ? departmentName + selectedNumber : departmentName;
-  const [canStartOrder, setCanStartOrder] = useState(false);
-  const isLine = localStorage.getItem(`goalProgress-${dpName}-${modelId}`);
-  const notLine = localStorage.getItem(`goalProgress-${dpName}-${modelId}`);
-  //const storedGoalData = isLine ? JSON.parse(isLine) : JSON.parse(notLine);
+
+  const { data: effectiveGpDataInput, isOffline } = useOfflineFallback(gpDataInput);
+
   const [storedGoalData, setStoredGoalData] = useState();
   const [currentProgressUpdate, setCurrentProgressUpdate] = useState();
-  const [goal, setGoal] = useState(storedGoalData?.goal);
-  const [progress, setProgress] = useState(storedGoalData?.progress);
+  const [goal, setGoal] = useState();
+  const [progress, setProgress] = useState();
+  const [canStartOrder, setCanStartOrder] = useState(false);
+  const [updatedHourly, setUpdatedHourly] = useState();
   const boolRef = useRef('');
-  const [updatedHourly, setUpdatedHourly] = useState()
 
+  // Update progress when storedGoalData changes
   useEffect(() => {
-    console.log("storedGoalData", storedGoalData)
-    try {
-      if (storedGoalData) {
+    if (storedGoalData) {
+      try {
         let total = 0;
-        for (let p of storedGoalData.efficiencyMetricsCaptured) {
-          total += (p.progress);
-        };
+        for (let p of storedGoalData.efficiencyMetricsCaptured || []) {
+          total += p.progress;
+        }
         setProgress(total);
-      };
-    } catch (error) {
-      console.warn('------------------Waiting for storedGoalData data ');
-
+        setGoal(storedGoalData?.goal);
+      } catch (error) {
+        console.warn('Error calculating progress from storedGoalData');
+      }
     }
+  }, [storedGoalData]);
 
-  }, [storedGoalData, gpDataInput]);
-
+  // Extract storedGoalData from reports
   useEffect(() => {
     try {
-
-      gpDataInput.reports.map(i => {
+      effectiveGpDataInput?.reports?.forEach(i => {
         const hasValidData = String(modelId) === String(i.fields.Title) && i.fields[dpName] !== undefined;
 
         if (hasValidData) {
@@ -53,26 +51,25 @@ const OrderStatistic = ({
           }
         }
       });
-
     } catch (error) {
       console.warn('Waiting for report data');
     }
+  }, [effectiveGpDataInput, dpName, modelId, reload]);
 
-  }, [gpDataInput, selectedNumber, reload]);
-
+  // Determine if the order can start
   useEffect(() => {
     try {
-
-      gpDataInput.materialsPicks.map(item => {
-        String(modelId) === String(item.fields.Title) && item.fields[dpName] !== undefined ?
-          setCanStartOrder(true) : null;
-      });
+      const canStart = effectiveGpDataInput?.materialsPicks?.some(item =>
+        String(modelId) === String(item.fields.Title) &&
+        item.fields[dpName] !== undefined
+      );
+      setCanStartOrder(!!canStart);
     } catch (error) {
-      console.warn('------------------Waiting for material Picks data ');
+      console.warn('Waiting for material picks data');
     }
+  }, [effectiveGpDataInput, dpName, modelId, reload]);
 
-  }, [gpDataInput, selectedNumber, reload]);
-
+  // Recalculate hourly progress when current progress updates
   useEffect(() => {
     trackProgressPerHour();
   }, [currentProgressUpdate]);
@@ -80,9 +77,9 @@ const OrderStatistic = ({
   const trackProgressPerHour = () => {
     const now = new Date();
     const currentHour = now.getHours();
-    const storedProgress = storedGoalData?.efficiencyMetricsCaptured || [] /* || JSON.parse(localStorage.getItem(`hourlyProgress-${dpName}-${modelId}`)) */;
+    const storedProgress = storedGoalData?.efficiencyMetricsCaptured || [];
 
-    const hourIndex = storedProgress?.findIndex(item => item.hour === currentHour);
+    const hourIndex = storedProgress.findIndex(item => item.hour === currentHour);
 
     const updatedProgress = storedProgress.filter(item => {
       const itemTime = new Date(item.date);
@@ -90,10 +87,16 @@ const OrderStatistic = ({
       return diffInHours < 24;
     });
 
-    if (hourIndex !== -1) {
-      updatedProgress[hourIndex] = { hour: currentHour, progress: currentProgressUpdate, date: now.toISOString() };
+    const newEntry = {
+      hour: currentHour,
+      progress: currentProgressUpdate,
+      date: now.toISOString()
+    };
+
+    if (hourIndex >= 0) {
+      updatedProgress.splice(hourIndex, 1, newEntry);
     } else {
-      updatedProgress.push({ hour: currentHour, progress: currentProgressUpdate, date: now.toISOString() });
+      updatedProgress.push(newEntry);
     }
 
     if (updatedProgress.length > 12) {
@@ -101,39 +104,38 @@ const OrderStatistic = ({
     }
 
     setUpdatedHourly(updatedProgress);
-
     localStorage.setItem(`hourlyProgress-${dpName}-${modelId}`, JSON.stringify(updatedProgress));
   };
 
   const handleProgressChange = (e) => {
-    let prgs = Number(e.target.value) + Number(storedGoalData?.progress);
-    setProgress(prgs);
-    setCurrentProgressUpdate(Number(e.target.value));
+    const additionalProgress = Number(e.target.value);
+    const newProgress = additionalProgress + Number(storedGoalData?.progress || 0);
+    setProgress(newProgress);
+    setCurrentProgressUpdate(additionalProgress);
   };
 
   const handleSave = () => {
-    trackProgressPerHour()
-    const listName = 'REPORTS';
+    trackProgressPerHour();
 
     storedGoalData.progress = progress;
 
-    const logUpdatedData = handleLogs(storedGoalData).addLog("Efficiency Metrics Captured");
-    handleLogs(logUpdatedData).addDataToLog("Efficiency Metrics Captured", updatedHourly);
+    const updatedData = handleLogs(storedGoalData).addLog("Efficiency Metrics Captured");
+    handleLogs(updatedData).addDataToLog("Efficiency Metrics Captured", updatedHourly);
 
     localStorage.setItem(`goalProgress-${dpName}-${modelId}`, JSON.stringify(storedGoalData));
 
-    const currentDepartmentName = dpName;
+    const listName = 'REPORTS';
 
-    main.handleSubmit(
-      modelId,
-      logUpdatedData,
-      currentDepartmentName,
-      listName
-    ).then(e => { }).catch(err => console.log(err));
-    setReload(prev => ({ ...prev, status: true }));
-
-    alert('Goal and progress saved!');
-    setPassProgress(true);
+    main.handleSubmit(modelId, updatedData, dpName, listName)
+      .then(() => {
+        alert('Goal and progress saved!');
+        setPassProgress(true);
+        setReload(prev => ({ ...prev, status: true }));
+      })
+      .catch(err => {
+        console.error('Error submitting data:', err);
+        alert('Error saving progress. You might be offline.');
+      });
   };
 
   const handleReset = () => {
@@ -141,45 +143,66 @@ const OrderStatistic = ({
     setProgress('');
   };
 
-  return (<>
-    <h3 class='header ui'>Hourly Production Entry  </h3>
-    <div class='ui divider'></div>
-    <div className="ui  horizontal statistics tiny" >
-      <div className="ui statistic">
-        <div className="value">{goal || storedGoalData?.goal || 0}</div>
-        <div className="label">Goal</div>
-      </div>
+  return (
+    <>
+      <h3 className="header ui">Hourly Production Entry</h3>
+      <div className="ui divider"></div>
 
-      <div className="ui statistic">
-        <div className="value">
-          {Math.round(calculateRemaining(storedGoalData?.goal, modelId ? progress : storedGoalData?.progress))}
+      {isOffline && (
+        <div className="ui message warning">
+          <strong>Offline Mode:</strong> Using previously saved data. Changes will sync when you're back online.
         </div>
-        <div className="label">Remaining</div>
-      </div>
+      )}
 
-      <div className="eight wide column grid">
+      <div className="ui horizontal statistics tiny">
         <div className="ui statistic">
-          <div className="value">{progress || storedGoalData?.progress || 0}</div>
-          <div className="label">Progress</div>
+          <div className="value">{goal || storedGoalData?.goal || 0}</div>
+          <div className="label">Goal</div>
         </div>
-        <div className="ui grid">
-          <div className="sixteen wide column">
-            <div className="ui input">
-              <input
-                type="number"
-                placeholder="Current Progress"
-                onChange={handleProgressChange}
-                min="0"
-              />
+
+        <div className="ui statistic">
+          <div className="value">
+            {Math.round(
+              calculateRemaining(storedGoalData?.goal, modelId ? progress : storedGoalData?.progress)
+            )}
+          </div>
+          <div className="label">Remaining</div>
+        </div>
+
+        <div className="eight wide column grid">
+          <div className="ui statistic">
+            <div className="value">{progress || storedGoalData?.progress || 0}</div>
+            <div className="label">Progress</div>
+          </div>
+
+          <div className="ui grid">
+            <div className="sixteen wide column">
+              <div className="ui input">
+                <input
+                  type="number"
+                  placeholder="Current Progress"
+                  onChange={handleProgressChange}
+                  min="0"
+                />
+              </div>
             </div>
           </div>
+
+          <div className="ui divider hidden" />
+
+          {canStartOrder ? (
+            <div className="ui buttons small">
+              <button className="ui black button" onClick={handleSave}>Save</button>
+              <button className="ui button" onClick={handleReset}>Reset</button>
+            </div>
+          ) : (
+            <div className="ui message warning">
+              Pick List Incomplete – Pending Item Selection
+            </div>
+          )}
         </div>
-        <div className="ui divider hidden" />
-        {canStartOrder && <div className="ui buttons small">
-          <button className="ui black button" onClick={handleSave}>Save</button>
-          <button className="ui  button" onClick={handleReset}>Reset</button>
-        </div>}
-        {!canStartOrder && <div class='ui message warning'>Pick List Incomplete – Pending Item Selection</div>}
       </div>
-    </div></>)
+    </>
+  );
 };
+

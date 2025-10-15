@@ -18,6 +18,7 @@ const Editor = ({
   inventoryDepartmentName,
   inventoryRef,
   user,
+  email,
   setLoginModalOpen,
   setClearLoading,
   loginModalOpen,
@@ -28,20 +29,14 @@ const Editor = ({
 
 
 }) => {
-
-
-  const [sheetName, setSheetName] = useState(sheetNameLifted);
-  const [searchQuery, setSearchQueryOld] = useState(searchQueryLifted);
   const [imagePaths, setImagePaths] = useState({});
   const [pdfPath, setPdfPath] = useState({});
   const [pdfPath2, setPdfPath2] = useState({});
   const [pdfPath3, setPdfPath3] = useState({});
   const [notePath, setNotePath] = useState({});
-  const [notes, setNotes] = useState({});
-  const [savedNotes, setSavedNotes] = useState(JSON.parse(localStorage.getItem('saved-notes-paint')) || {});
-  const [visible, setVisible] = useState(visibleLifted);
-  const [goal, setGoal] = useState(JSON.parse(localStorage.getItem(`goalProgress-paint-${notePath}`))?.goal);
-  const [progress, setProgress] = useState(JSON.parse(localStorage.getItem(`goalProgress-paint-${notePath}`))?.progress);
+
+  const [goal, setGoal] = useState(0);
+  const [progress, setProgress] = useState(0);
   const [workingThisRow, setWorkingThisRow] = useState('');
 
   const handleClose = () => setVisible(false);
@@ -49,7 +44,6 @@ const Editor = ({
 
   useEffect(() => {
     const row = dataLifted[workingThisRow];
-    const storedData = JSON.parse(localStorage.getItem(`goalProgress-paint-${row?.id}`));
     try {
       spMethod.fetchSharePointData('NOTES', departmentName);
       spMethod.fetchSharePointData('REPORTS', departmentName);
@@ -60,17 +54,12 @@ const Editor = ({
       spMethod.fetchSharePointData('Live Packout', 'FarSide');
       spMethod.fetchSharePointData('IP', 'FarSide');
       spMethod.fetchSharePointData('ELECTRIC KIT', departmentName);
-
-
       
     } catch (error) {
       setError(error)
     }
 
-    if (storedData) {
-      setGoal(storedData.goal);
-      setProgress(storedData.progress);
-    }
+
   }, [dataLifted, workingThisRow]);
 
   $(document).on('click', '.icon.close', handleClose);
@@ -82,21 +71,6 @@ const Editor = ({
     $('.ui.progress').progress();
   }, []);
 
-
-
-
-/*   $(document).on('click', '.save-note-paint', function (e) {
-    e.preventDefault()
-    let rowIndex = $(this).data('rowindexsave');
-    let noteId = $(this).data('noteidsave');
-    saveNoteToLocalStorage(noteId, rowIndex, notes[noteId]);
-  });
-
-  $(document).on('change', '.note-area', function (e) {
-    let rowIndex = $(this).data('rowindex');
-    let noteId = $(this).data('noteid');
-    handleNoteChange(rowIndex, e, noteId);
-  }); */
 
   const getPdfPath = (row) => {
     const pdfFolder = departmentName === 'packout' ? "img/packout/pdfs/" : "img/";
@@ -134,8 +108,6 @@ const Editor = ({
         selectedDepartment={selectedDepartment}
         imagePaths={imagePaths}
         getPdfPath={getPdfPath}
-        openPdfModal={openPdfModal}
-        openNoteModal={openNoteModal}
         setPdfPath={setPdfPath}
         setPdfPath2={setPdfPath2}
         setPdfPath3={setPdfPath3}
@@ -159,6 +131,7 @@ const Editor = ({
         inventoryDepartmentName={inventoryDepartmentName}
         inventoryRef={inventoryRef}
         user={user}
+        email={email}
         setClearLoading={setClearLoading}
         setLoginModalOpen={setLoginModalOpen}
         handleDepartmentClick={handleDepartmentClick}
