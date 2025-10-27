@@ -82,7 +82,7 @@ const handleTokenSubmit = (url) => {
   const startOAuthLogin = () => {
   const tenant = "a8585420-4088-4906-a78d-06b2693cc3aa";
   const clientId = "8db3d71f-62b7-457d-b653-9f874424f89e";
-  const redirectUri = 'http://127.0.0.1:3000/oauth.html';
+  const redirectUri = 'https://keef60.github.io/DigiFactory/oauth.html';
 
   const scopes = "openid profile User.Read offline_access Sites.Manage.All";
   const responseType = 'token';
@@ -199,4 +199,5 @@ const handleTokenSubmit = (url) => {
       {error && <div className="ui red message">{error}</div>}
     </div>
   );
+
 };
