@@ -9,7 +9,7 @@ const LoginTokenNew = ({ setIsLoggedIn, user, setReload, setSelectedDepartment }
     auth: {
       clientId: "8db3d71f-62b7-457d-b653-9f874424f89e",
       authority: "https://login.microsoftonline.com/a8585420-4088-4906-a78d-06b2693cc3aa",
-      redirectUri: 'http://localhost:3000',
+      redirectUri: 'https://keef60.github.io/DigiFactory/oauth.html',
     },
   };
 
@@ -118,4 +118,5 @@ const LoginTokenNew = ({ setIsLoggedIn, user, setReload, setSelectedDepartment }
     </div>
   );
 };
+
 
