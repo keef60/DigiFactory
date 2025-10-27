@@ -1,14 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
-<!-- ✅ Load jQuery First -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-
-<!-- ✅ Load Semantic UI JavaScript After jQuery -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.4.1/semantic.min.js"></script>
-
-<!-- ✅ Load Semantic UI CSS -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.4.1/semantic.min.css">
-
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fomantic-ui@2.9.4/dist/semantic.min.css">
+<script src="https://cdn.jsdelivr.net/npm/fomantic-ui@2.9.4/dist/semantic.min.js"></script>
 <!-- ✅ Load React and ReactDOM -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
@@ -19,227 +13,346 @@
 <!-- Babel CDN to transpile JSX -->
 <!-- <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
  -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.26.5/babel.min.js" integrity="sha512-Y37Caenc5CZqwSMwWZj+5uxkB3Loc9yJNHvb+eSwEsT6nhURSrPZo39vTnb5g8UvOGCNXRbQ+xQvnqr2rR9nRw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.26.5/babel.min.js"
+  integrity="sha512-Y37Caenc5CZqwSMwWZj+5uxkB3Loc9yJNHvb+eSwEsT6nhURSrPZo39vTnb5g8UvOGCNXRbQ+xQvnqr2rR9nRw=="
+  crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
- <!-- React Router DOM -->
- <script src="https://unpkg.com/react-router-dom@6/umd/react-router-dom.development.js" crossorigin></script>
-  
+<!-- React Router DOM -->
+<script src="https://unpkg.com/react-router-dom@6/umd/react-router-dom.development.js" crossorigin></script>
+
 
 <!-- CDN for Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+<script src=".cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+
 
 <style>
+  .progress-circle {
+    transform: rotate(-90deg);
+    transition: stroke-dashoffset 0.1s linear;
+  }
 
-.progress-circle {
-  transform: rotate(-90deg);
-  transition: stroke-dashoffset 0.1s linear;
-}
 
+  body {
+    background-color: #f9f9f9;
+  }
 
- body {
-        background-color: #f9f9f9;
+  .header.huge {
+    font-size: 2.5em;
+  }
+
+  .hero-section {
+
+    padding: 6rem 2rem;
+  }
+
+  .info-section {
+    padding: 6rem 2rem;
+  }
+
+  .rotating-gear {
+    animation: spin 6s linear infinite;
+  }
+
+  @keyframes spin {
+    from {
+      transform: rotate(0deg);
     }
 
-    .header.huge {
-        font-size: 2.5em;
+    to {
+      transform: rotate(360deg);
     }
-
-    .hero-section {
-
-  padding: 6rem 2rem;
-}
-
-.info-section {
-  padding: 6rem 2rem;
-}
-
-.rotating-gear {
-  animation: spin 6s linear infinite;
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
   }
-  to {
-    transform: rotate(360deg);
-  }
-}
 
-.live-dot {
+  .live-dot {
     display: inline-block;
     height: 10px;
     width: 10px;
     margin-right: 8px;
-    background-color: #db2828; /* Semantic UI red */
+    background-color: #db2828;
+    /* Semantic UI red */
     border-radius: 50%;
     animation: pulse-dot 1.2s infinite ease-in-out;
     vertical-align: middle;
-}
+  }
 
-@keyframes pulse-dot {
+  @keyframes pulse-dot {
     0% {
-        transform: scale(1);
-        opacity: 1;
+      transform: scale(1);
+      opacity: 1;
     }
+
     50% {
-        transform: scale(1.4);
-        opacity: 0.6;
+      transform: scale(1.4);
+      opacity: 0.6;
     }
+
     100% {
-        transform: scale(1);
-        opacity: 1;
+      transform: scale(1);
+      opacity: 1;
     }
-}
+  }
 
 
-.job-image.flipped {
-  transform: rotate(180deg);
-}
-.job-status {
+  .job-image.flipped {
+    transform: rotate(180deg);
+  }
+
+  .job-status {
     margin-top: 10px;
     color: #4183c4;
-}
+  }
+</style>
 
-    
+<style>
+  /* General Styles */
+  .no-border {
+    border: none !important;
+  }
+
+  .no-padding {
+    padding: 0 !important;
+  }
+
+  /* Hero Section */
+  .hero-section {
+    background: linear-gradient(to right, #0f2027, #203a43, #2c5364);
+    color: #ffffff;
+    padding: 6em 0;
+    text-align: center;
+  }
+
+  .hero-section .ui.text.container {
+    max-width: 800px;
+  }
+
+  .hero-section .ui.huge.header {
+    font-size: 3.5rem;
+    font-weight: bold;
+    margin-bottom: 0.5em;
+  }
+
+  .hero-section .ui.inverted.header {
+    font-size: 1.5rem;
+    font-weight: 400;
+  }
+
+  .hero-section .ui.inverted.large.text {
+    font-size: 1.25rem;
+    margin-top: 1em;
+    margin-bottom: 2em;
+  }
+
+  .hero-section .ui.primary.button {
+    background-color: #2185d0;
+    color: white;
+    font-size: 1.2rem;
+    padding: 1em 2em;
+    transition: background-color 0.3s ease;
+  }
+
+  .hero-section .ui.primary.button:hover {
+    background-color: #1678c2;
+  }
+
+  /* Info Section */
+  .info-section {
+    padding: 5em 2em;
+    background-color: #f9f9f9;
+  }
+
+  .info-section .ui.icon.header {
+    font-size: 1.5rem;
+    color: #333;
+    margin-bottom: 0.5em;
+  }
+
+  .info-section .ui.icon.header i.icon {
+    color: #2185d0;
+    margin-bottom: 0.5em;
+  }
+
+  .info-section p {
+    font-size: 1.1rem;
+    color: #555;
+    line-height: 1.6;
+  }
+
+  /* Responsive tweaks */
+  @media (max-width: 768px) {
+    .hero-section {
+      padding: 4em 1em;
+    }
+
+    .hero-section .ui.huge.header {
+      font-size: 2.5rem;
+    }
+
+    .info-section {
+      padding: 3em 1em;
+    }
+
+    .info-section .ui.stackable.grid {
+      text-align: center;
+    }
+  }
+
+  .cartr-logo {
+    height: 250px;
+    margin-bottom: .5rem;
+  }
 </style>
 
 <body>
 
-    <!-- Include your precompiled app.js -->
+  <!-- Include your precompiled app.js -->
 
 
-    <div id="root"></div>
-    <script src="js/Framework.js"></script>
+  <div id="root"></div>
+  <script src="/components_jsx/js/Framework.js"></script>
 
 
-    <script type="text/babel" src="/components_ jsx/timeReport.js"></script>
+  <script type="text/babel" src="/components_jsx/editSharepointDB.js"></script>
 
-    <script type="text/babel" src="/components_ jsx/orderLiveLaneChart.js"></script>
-    <script type="text/babel" src="/components_ jsx/ordersList.js"></script>
-    <script type="text/babel" src="/components_ jsx/orderLiveLane.js"></script>
-    <script type="text/babel" src="/components_ jsx/home.js"></script>
-    <script type="text/babel" src="/components_ jsx/progressCircle.js"></script>
+  <script type="text/babel" src="/components_jsx/reportOrderStatus.js"></script>
 
-    <script type="text/babel" src="/components_ jsx/orderSubNavMenu.js"></script>
-    <script type="text/babel" src="/components_ jsx/maintenaceHeaderDetail.js"></script>
-    <script type="text/babel" src="/components_ jsx/maintenanceTabs.js"></script>
-    <script type="text/babel" src="/components_ jsx/maintenanceDashTable.js"></script>
-    <script type="text/babel" src="/components_ jsx/maintenanceDashCards.js"></script>
+  <script type="text/babel" src="/components_jsx/orderQuantityOffsetAlert.js"></script>
+  <script type="text/babel" src="/components_jsx/timeReport.js"></script>
 
-    <script type="text/babel" src="/components_ jsx/maintenanceDash.js"></script>
-    <script type="text/babel" src="/components_ jsx/reportMaintenanceStatus.js"></script>
+  <script type="text/babel" src="/components_jsx/orderLiveLaneChart.js"></script>
+  <script type="text/babel" src="/components_jsx/ordersList.js"></script>
+  <script type="text/babel" src="/components_jsx/orderLiveLane.js"></script>
+  <script type="text/babel" src="/components_jsx/home.js"></script>
+  <script type="text/babel" src="/components_jsx/progressCircle.js"></script>
 
-    <script type="text/babel" src="/components_ jsx/warehouseLowerMenu.js"></script>
-    <script type="text/babel" src="/components_ jsx/warehouseCycleCountForm.js"></script>
-    <script type="text/babel" src="/components_ jsx/warehouseItemMovementForm.js"></script>
-    <script type="text/babel" src="/components_ jsx/warehouseDash.js"></script>
-    <script type="text/babel" src="/components_ jsx/warehouseHeaderDetail.js"></script>
-    <script type="text/babel" src="/components_ jsx/orderStatistics.js"></script>
-    <script type="text/babel" src="/components_ jsx/reportsRealTime.js"></script>
-    <script type="text/babel" src="/components_ jsx/orderIssue.js"></script>
-    <script type="text/babel" src="/components_ jsx/orderDisplayPane.js"></script>
-    <script type="text/babel" src="/components_ jsx/orderMaintenanceRequest.js"></script>
-    <script type="text/babel" src="/components_ jsx/orderPickList.js"></script>
-    <script type="text/babel" src="/components_ jsx/orderComments.js"></script>
-    <script type="text/babel" src="/components_ jsx/orderInventory.js"></script>
+  <script type="text/babel" src="/components_jsx/orderSubNavMenu.js"></script>
+  <script type="text/babel" src="/components_jsx/maintenaceHeaderDetail.js"></script>
+  <script type="text/babel" src="/components_jsx/maintenanceTabs.js"></script>
+  <script type="text/babel" src="/components_jsx/maintenanceDashTable.js"></script>
+  <script type="text/babel" src="/components_jsx/maintenanceDashCards.js"></script>
 
-    <script type="text/babel" src="/components_ jsx/orderNavMenu.js"></script>
-    <script type="text/babel" src="/components_ jsx/orderTimer.js"></script>
-    <script type="text/babel" src="/components_ jsx/orderStatus.js"></script>
-    <script type="text/babel" src="/components_ jsx/orderChart.js"></script>
-    <script type="text/babel" src="/components_ jsx/orderPartList.js"></script>
-    <script type="text/babel" src="/components_ jsx/orderLowerMenu.js"></script>
+  <script type="text/babel" src="/components_jsx/maintenanceDash.js"></script>
+  <script type="text/babel" src="/components_jsx/reportMaintenanceStatus.js"></script>
 
-    <script type="text/babel" src="/components_ jsx/orderDetail.js"></script>
+  <script type="text/babel" src="/components_jsx/warehouseLowerMenu.js"></script>
+  <script type="text/babel" src="/components_jsx/warehouseCycleCountForm.js"></script>
+  <script type="text/babel" src="/components_jsx/warehouseItemMovementForm.js"></script>
+  <script type="text/babel" src="/components_jsx/warehouseDash.js"></script>
+  <script type="text/babel" src="/components_jsx/warehouseHeaderDetail.js"></script>
+  <script type="text/babel" src="/components_jsx/reportsRealTime.js"></script>
+  <script type="text/babel" src="/components_jsx/orderIssue.js"></script>
+  <script type="text/babel" src="/components_jsx/orderDisplayPane.js"></script>
+  <script type="text/babel" src="/components_jsx/orderMaintenanceRequest.js"></script>
+  <script type="text/babel" src="/components_jsx/orderPickList.js"></script>
+  <script type="text/babel" src="/components_jsx/orderComments.js"></script>
+  <script type="text/babel" src="/components_jsx/orderInventory.js"></script>
+  <script type="text/babel" src="/components_jsx/orderNavMenu.js"></script>
+  <script type="text/babel" src="/components_jsx/orderTimer.js"></script>
+  <script type="text/babel" src="/components_jsx/orderStatus.js"></script>
+  <script type="text/babel" src="/components_jsx/orderChart.js"></script>
+  <script type="text/babel" src="/components_jsx/orderPartList.js"></script>
+    <script type="text/babel" src="/components_jsx/orderStatistics.js"></script>
+ 
 
+  <script type="text/babel" src="/components_jsx/orderLowerMenu.js"></script>
 
-    <script type="text/babel" src="/components_ jsx/statistics.js"></script>
-
-    <script type="text/babel" src="/components_ jsx/orderDashClosed.js"></script>
-
-    <script type="text/babel" src="/components_ jsx/orderDash.js"></script>
-
-    
-    <script type="text/babel" src="/components_ jsx/itemDisplaySideBar.js"></script>
-
-    <script type="text/babel" src="/components_ jsx/sideView.js"></script>
-
-    <script type="text/babel" src="/components_ jsx/timer.js"></script>
+  <script type="text/babel" src="/components_jsx/orderDetail.js"></script>
 
 
-    <script type="text/babel" src="/components_ jsx/itemDisplay.js"></script>
+  <script type="text/babel" src="/components_jsx/statistics.js"></script>
+
+  <script type="text/babel" src="/components_jsx/orderDashClosed.js"></script>
+
+  <script type="text/babel" src="/components_jsx/orderDash.js"></script>
 
 
-    <script type="text/babel" src="/components_ jsx/itemDisplayMini.js"></script>
+  <script type="text/babel" src="/components_jsx/itemDisplaySideBar.js"></script>
+
+  <script type="text/babel" src="/components_jsx/sideView.js"></script>
+
+  <script type="text/babel" src="/components_jsx/timer.js"></script>
 
 
-    <script type="text/babel" src="/components_ jsx/miniSearch.js"></script>
+  <script type="text/babel" src="/components_jsx/itemDisplay.js"></script>
 
 
-    <script type="text/babel" src="/components_ jsx/warehouse.js"></script>
+  <script type="text/babel" src="/components_jsx/itemDisplayMini.js"></script>
 
 
-    <script type="text/babel" src="/components_ jsx/filterSettings.js"></script>
+  <script type="text/babel" src="/components_jsx/miniSearch.js"></script>
 
 
-    <script type="text/babel" src="/components_ jsx/requestFormMain.js"></script>
-
-    <script type="text/babel" src="/components_ jsx/yieldAnalysis.js"></script>
+  <script type="text/babel" src="/components_jsx/warehouse.js"></script>
 
 
-    <script type="text/babel" src="/components_ jsx/throughputReport.js"></script>
+  <script type="text/babel" src="/components_jsx/filterSettings.js"></script>
 
 
-    <script type="text/babel" src="/components_ jsx/productionDowntimeReport.js"></script>
+  <script type="text/babel" src="/components_jsx/requestFormMain.js"></script>
+
+  <script type="text/babel" src="/components_jsx/yieldAnalysis.js"></script>
+
+
+  <script type="text/babel" src="/components_jsx/throughputReport.js"></script>
+
+
+  <script type="text/babel" src="/components_jsx/productionDowntimeReport.js"></script>
 
 
 
-    <script type="text/babel" src="/components_ jsx/inventoryLevels.js"></script>
+  <script type="text/babel" src="/components_jsx/inventoryLevels.js"></script>
 
-    <script type="text/babel" src="/components_ jsx/dailyProductionOverview.js"></script>
-
-
-
-    <script type="text/babel" src="/components_ jsx/dashboardTable.js"></script>
+  <script type="text/babel" src="/components_jsx/dailyProductionOverview.js"></script>
 
 
-    <script type="text/babel" src="/components_ jsx/dashboardStats.js"></script>
+
+  <script type="text/babel" src="/components_jsx/dashboardTable.js"></script>
 
 
-    <script type="text/babel" src="/components_ jsx/dashboardResponsiveChart.js"></script>
+  <script type="text/babel" src="/components_jsx/dashboardStats.js"></script>
 
 
-    <script type="text/babel" src="/components_ jsx/dashboardSelectionTab.js"></script>
+  <script type="text/babel" src="/components_jsx/dashboardResponsiveChart.js"></script>
 
-    <script type="text/babel" src="/components_ jsx/errorMessage.js"></script>
 
-    <script type="text/babel" src="/components_ jsx/leftMenu.js"></script>
+  <script type="text/babel" src="/components_jsx/dashboardSelectionTab.js"></script>
 
-   <script type="text/babel" src="/components_ jsx/dashboard.js"></script>
-    <script type="text/babel" src="/components_ jsx/login.js"></script>
-    <script type="text/babel" src="/components_ jsx/chart.js"></script>
-    <script type="text/babel" src="/components_ jsx/chooseLine.js"></script>
-    <script type="text/babel" src="/components_ jsx/detailPane.js"></script>
-    <script type="text/babel" src="/components_ jsx/detailPaneMini.js"></script>
-    <script type="text/babel" src="/components_ jsx/displayPane.js"></script>
-    <script type="text/babel" src="/components_ jsx/inventory.js"></script>
-    <script type="text/babel" src="/components_ jsx/lookupTable.js"></script>
-    <script type="text/babel" src="/components_ jsx/issuePane.js"></script>
-    <script type="text/babel" src="/components_ jsx//editorLine.js"></script>
-    <script type="text/babel" src="/components_ jsx/searchBar.js"></script>
-    <script type="text/babel" src="/components_ jsx/pickList.js"></script>
-    <script type="text/babel" src="/components_ jsx/lookupPane.js"></script>
-    <script type="text/babel" src="/components_ jsx/lookupPanePackout.js"></script>
-    <script type="text/JavaScript" src="js/UUIDgen.js"></script>
-    <script type="text/JavaScript" src="js/spMethod.js"></script>
-    <script type="text/JavaScript" src="js/timeConvert.js"></script>
-    <script type="text/JavaScript" src="js/imageChecks.js"></script>
-    <script type="text/JavaScript" src="jsjsonCreation.js"></script>
+  <script type="text/babel" src="/components_jsx/errorMessage.js"></script>
 
-    <script type="text/babel" src="/components_ jsx/editor.js"></script>
-    <script type="text/babel" src="/app.js"></script>
+  <script type="text/babel" src="/components_jsx/leftMenu.js"></script>
+
+  <script type="text/babel" src="/components_jsx/dashboard.js"></script>
+  <script type="text/babel" src="/components_jsx/login.js"></script>
+  <script type="text/babel" src="/components_jsx/chart.js"></script>
+  <script type="text/babel" src="/components_jsx/chooseLine.js"></script>
+  <script type="text/babel" src="/components_jsx/detailPane.js"></script>
+  <script type="text/babel" src="/components_jsx/detailPaneMini.js"></script>
+  <script type="text/babel" src="/components_jsx/displayPane.js"></script>
+  <script type="text/babel" src="/components_jsx/inventory.js"></script>
+  <script type="text/babel" src="/components_jsx/lookupTable.js"></script>
+  <script type="text/babel" src="/components_jsx/issuePane.js"></script>
+  <script type="text/babel" src="/components_jsx//editorLine.js"></script>
+  <script type="text/babel" src="/components_jsx/searchBar.js"></script>
+  <script type="text/babel" src="/components_jsx/pickList.js"></script>
+  <script type="text/babel" src="/components_jsx/lookupPane.js"></script>
+  <script type="text/babel" src="/components_jsx/lookupPanePackout.js"></script>
+ 
+
+  <script type="text/JavaScript" src="/components_jsx/js/exportReport.js"></script>
+  <script type="text/JavaScript" src="/components_jsx/js/UUIDgen.js"></script>
+  <script type="text/JavaScript" src="/components_jsx/js/spMethod.js"></script>
+  <script type="text/JavaScript" src="/components_jsx/js/timeConvert.js"></script>
+  <script type="text/JavaScript" src="/components_jsx/js/imageChecks.js"></script>
+  <script type="text/JavaScript" src="/components_jsx/js/jsonCreation.js"></script>
+  <script type="text/JavaScript" src="/components_jsx/js/db.js"></script>
+  <script type="text/JavaScript" src="/components_jsx/js/useFormPersistence.js"></script>
+  <script type="text/JavaScript" src="/components_jsx/js/useCachedImages.js"></script>
+
+  <script type="text/JavaScript" src="/components_jsx/js/offline.js"></script>
+  <script type="text/babel" src="/components_jsx/editor.js"></script>
+  <script type="text/babel" src="/app.js"></script>
 
 
 
@@ -251,5 +364,3 @@
 </body>
 
 </html>
-
-
