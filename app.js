@@ -1,6 +1,6 @@
 
 
-const { useState, useEffect, useRef } = React;
+const { useState, useEffect, useRef, useMemo } = React;
 /* const { createRoot } = ReactDOM;
 const {
     BrowserRouter,
@@ -32,6 +32,8 @@ function DepartmentMenu() {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [woNdev, setWOnDev] = useState();
     const [userName, setUserName] = useState(undefined);
+    const [userEmail, setUserEmail] = useState(undefined);
+
     const [newError, setError] = useState();
     const [issesListData, setIssesListData] = useState([]);
     const inventoryRef = useRef([]);
@@ -43,17 +45,17 @@ function DepartmentMenu() {
     const [quickVeiwTitle, setQuickVeiwTitle] = useState('Expand Details');
     const departmentRefName = selectedDepartment
     const [filterTask, setFilterTask] = useState(false);
-    const [gpDataInput, setGpDataInput] = useState({reports:[],materialsPicks:[]});
+    const [gpDataInput, setGpDataInput] = useState({ reports: [], materialsPicks: [] });
     const [throttle, setThrottle] = useState(true);
     const [reload, setReload] = useState({ status: false, tab: '' });
 
-    
-    
+
+
     useEffect(() => {
         const interval = setInterval(() => {
             setReload({ status: true });
         }, 30 * 1000); // 30 seconds
-    
+
         return () => clearInterval(interval);
     }, [reload]);
 
@@ -65,42 +67,56 @@ function DepartmentMenu() {
         }
 
     }, [[reload]]);
+
     useEffect(() => {
-        try {
+        const fetchPicklistAndReports = async () => {
+            try {
+                if (throttle) {
+                    const [picklistCache, reportsCache] = await Promise.all([
+                        getSetting('PICKLIST'),
+                        getSetting('REPORTS')
+                    ]);
 
-            if (throttle) {
+                    if (gpDataInput.materialsPicks.length === 0 && picklistCache) {
+                        setGpDataInput(prev => ({ ...prev, materialsPicks: picklistCache }));
+                    }
 
-                main.fetchSharePointData('PICKLIST', 'load').then(e => {
-                    if (e.value.length === 0) {
-                        console.log('PICKLIST array is 0');
-                        setThrottle(false);
-                    } else if (gpDataInput.materialsPicks.length === 0 || reload.status) {
-                        console.log('PICKLIST FOUND')
-                        setGpDataInput(prev=>({...prev, materialsPicks:e.value}));
-                    };
-                });
+                    if (gpDataInput.reports.length === 0 && reportsCache) {
+                        setGpDataInput(prev => ({ ...prev, reports: reportsCache }));
+                    }
 
-                main.fetchSharePointData('REPORTS', 'load').then(e => {
-                    if (e.value.length === 0) {
-                        console.log('REPORTS array is 0');
-                        setThrottle(false);
-                    } else if (gpDataInput.reports.length === 0 || reload.status) {
-                        console.log('REPORTS FOUND',e.value)
-                        setGpDataInput(prev=>({...prev, reports:e.value}));
+                    const picklist = await main.fetchSharePointData('PICKLIST', 'load');
+                    if (picklist.value.length > 0 && reload.status) {
+                        setGpDataInput(prev => ({ ...prev, materialsPicks: picklist.value }));
+                        await saveSetting('PICKLIST', picklist.value); // save to DB
+                    }
 
-                    };
-                });
+                    const reports = await main.fetchSharePointData('REPORTS', 'load');
+                    if (reports.value.length > 0 && reload.status) {
+                        setGpDataInput(prev => ({ ...prev, reports: reports.value }));
+                        await saveSetting('REPORTS', reports.value); // save to DB
+                    }
+                }
+            } catch (error) {
+                console.warn(error);
+
+                if (picklistCache) {
+                    setGpDataInput(prev => ({ ...prev, materialsPicks: picklistCache }));
+                }
+
+                if (reportsCache) {
+                    setGpDataInput(prev => ({ ...prev, reports: reportsCache }));
+                }
             }
-        } catch (error) {
-            console.warn(error)
-        }
+        };
 
+        fetchPicklistAndReports();
     }, [reload]);
 
     useEffect(() => {
         $('.ui.login.dimmer').dimmer('hide');
         getMe();
-    }, [userInfo, isLoggedIn, newError,reload]);
+    }, [userInfo, isLoggedIn, newError, reload]);
 
     useEffect(() => {
 
@@ -119,28 +135,33 @@ function DepartmentMenu() {
 
         stock();
 
-    }, [userInfo,reload]);
+    }, [userInfo, reload]);
 
     useEffect(() => {
-        const r = async () => {
+        const fetchIssues = async () => {
+            try {
+                const cachedIssues = await getSetting('ISSUE_LIST');
+                if (cachedIssues && issesListData.length === 0) {
+                    setIssesListData(cachedIssues);
+                }
 
-            await main.fetchSharePointData('IssueList', 'issues')
-                .then((e) => {
-                    const fields = e.value[0].fields;
-
-                    // Save the data into the refs
-                    setIssesListData(fields);
-
-                }).catch(err => {
-                    setError(err);
-                    console.log('================> STOCK ERROR', err);
-                });
-        }
-        if (issesListData.length === 0) {
-            r().then((e) => e).catch(er => setError(error))
-
+                const response = await main.fetchSharePointData('IssueList', 'issues');
+                const fields = response.value[0].fields;
+                setIssesListData(fields);
+                await saveSetting('ISSUE_LIST', fields);
+            } catch (err) {
+                if (cachedIssues) {
+                    setIssesListData(cachedIssues);
+                }
+                setError(err);
+                console.log('================> ISSUE ERROR', err);
+            }
         };
-    }, [issesListData,reload]);
+
+        if (issesListData.length === 0) {
+            fetchIssues();
+        }
+    }, [issesListData, reload]);
 
     useEffect(() => {
         if (!tableData) {
@@ -182,13 +203,14 @@ function DepartmentMenu() {
             setData(table);
             setClearLoading(false);
         }
-    }, [tableData, packoutTableData, selectedDepartment,reload]);
+    }, [tableData, packoutTableData, selectedDepartment, reload]);
 
     useEffect(() => {
         if (userInfo) {
             setUserName(userInfo.displayName);
+            setUserEmail(userInfo.mail)
         }
-    }, [userInfo,reload]);
+    }, [userInfo, reload]);
 
     useEffect(() => {
         if (filterTask) {
@@ -253,6 +275,7 @@ function DepartmentMenu() {
                     inventoryDepartmentName={['inventory', 'inventory']}
                     inventoryRef={inventory}
                     user={userName}
+                    email={userEmail}
                     gpDataInput={gpDataInput}
                     setClearLoading={setClearLoading}
                     setLoginModalOpen={setLoginModalOpen}
@@ -260,9 +283,6 @@ function DepartmentMenu() {
                     loginModalOpen={loginModalOpen}
                     setReload={setReload}
                     reload={reload}
-
-
-
                 /> :
                 <Editor
                     spMethod={main}
@@ -284,6 +304,7 @@ function DepartmentMenu() {
                     inventoryDepartmentName={['inventory', 'inventory']}
                     inventoryRef={inventory}
                     user={userName}
+                    email={userEmail}
                     setClearLoading={setClearLoading}
                     setLoginModalOpen={setLoginModalOpen}
                     handleDepartmentClick={handleDepartmentClick}
@@ -298,111 +319,255 @@ function DepartmentMenu() {
 
     const taskData = [
         {
-          "timestamp": "2025-04-30T21:50:49.860Z",
-          "taskId": 1746047984339,
-          "taskName": "HANDLES Assembly",
-          "employee": "Keith Carter",
-          "action": "start",
-          "department": "LINE",
-          "workCenter": "026",
-          "realDurationAtAction": 0,
-          "statusAfterAction": "In Progress",
-          "workOrderID": "WO - 00364434-03"
+            "timestamp": "2025-04-30T21:50:49.860Z",
+            "taskId": 1746047984339,
+            "taskName": "HANDLES Assembly",
+            "employee": "Keith Carter",
+            "action": "start",
+            "department": "LINE",
+            "workCenter": "026",
+            "realDurationAtAction": 0,
+            "statusAfterAction": "In Progress",
+            "workOrderID": "WO - 00364434-03"
         },
         {
-          "timestamp": "2025-04-30T21:50:58.396Z",
-          "taskId": 1746049509281,
-          "taskName": "LINE Assembly",
-          "employee": "Keith Carter",
-          "action": "start",
-          "department": "LINE",
-          "workCenter": "026",
-          "realDurationAtAction": 0,
-          "statusAfterAction": "In Progress",
-          "workOrderID": "WO - 00364436"
+            "timestamp": "2025-04-30T21:50:58.396Z",
+            "taskId": 1746049509281,
+            "taskName": "LINE Assembly",
+            "employee": "Keith Carter",
+            "action": "start",
+            "department": "LINE",
+            "workCenter": "026",
+            "realDurationAtAction": 0,
+            "statusAfterAction": "In Progress",
+            "workOrderID": "WO - 00364436"
         },
         {
-          "timestamp": "2025-04-30T21:51:01.132Z",
-          "taskId": 1746049540358,
-          "taskName": "LINE Assembly",
-          "employee": "Keith Carter",
-          "action": "start",
-          "department": "LINE",
-          "workCenter": "026",
-          "realDurationAtAction": 0,
-          "statusAfterAction": "In Progress",
-          "workOrderID": "WO - 00364434"
+            "timestamp": "2025-04-30T21:51:01.132Z",
+            "taskId": 1746049540358,
+            "taskName": "LINE Assembly",
+            "employee": "Keith Carter",
+            "action": "start",
+            "department": "LINE",
+            "workCenter": "026",
+            "realDurationAtAction": 0,
+            "statusAfterAction": "In Progress",
+            "workOrderID": "WO - 00364434"
         },
         {
-          "timestamp": "2025-04-30T21:53:22.623Z",
-          "taskId": 1746049509281,
-          "taskName": "LINE Assembly",
-          "employee": "Keith Carter",
-          "action": "pause",
-          "department": "LINE",
-          "workCenter": "026",
-          "realDurationAtAction": 0,
-          "statusAfterAction": "Paused",
-          "workOrderID": "WO - 00364436",
-          "pauseReason": "Break"
+            "timestamp": "2025-04-30T21:53:22.623Z",
+            "taskId": 1746049509281,
+            "taskName": "LINE Assembly",
+            "employee": "Keith Carter",
+            "action": "pause",
+            "department": "LINE",
+            "workCenter": "026",
+            "realDurationAtAction": 0,
+            "statusAfterAction": "Paused",
+            "workOrderID": "WO - 00364436",
+            "pauseReason": "Break"
         },
         {
-          "timestamp": "2025-04-30T21:53:24.440Z",
-          "taskId": 1746049540358,
-          "taskName": "LINE Assembly",
-          "employee": "Keith Carter",
-          "action": "stop",
-          "department": "LINE",
-          "workCenter": "026",
-          "realDurationAtAction": 143,
-          "statusAfterAction": "Completed",
-          "workOrderID": "WO - 00364434"
+            "timestamp": "2025-04-30T21:53:24.440Z",
+            "taskId": 1746049540358,
+            "taskName": "LINE Assembly",
+            "employee": "Keith Carter",
+            "action": "stop",
+            "department": "LINE",
+            "workCenter": "026",
+            "realDurationAtAction": 143,
+            "statusAfterAction": "Completed",
+            "workOrderID": "WO - 00364434"
         },
         {
-          "timestamp": "2025-05-01T21:31:49.489Z",
-          "taskId": 1746047984339,
-          "taskName": "HANDLES Assembly",
-          "employee": "Keith Carter",
-          "action": "stop",
-          "department": "HANDLES",
-          "workCenter": "026",
-          "realDurationAtAction": 85259,
-          "statusAfterAction": "Completed",
-          "workOrderID": "WO - 00364434-03"
+            "timestamp": "2025-05-01T21:31:49.489Z",
+            "taskId": 1746047984339,
+            "taskName": "HANDLES Assembly",
+            "employee": "Keith Carter",
+            "action": "stop",
+            "department": "HANDLES",
+            "workCenter": "026",
+            "realDurationAtAction": 85259,
+            "statusAfterAction": "Completed",
+            "workOrderID": "WO - 00364434-03"
         },
         {
-          "timestamp": "2025-05-01T21:31:56.593Z",
-          "taskId": 1746049509281,
-          "taskName": "LINE Assembly",
-          "employee": "Keith Carter",
-          "action": "start",
-          "department": "HANDLES",
-          "workCenter": "026",
-          "realDurationAtAction": 0,
-          "statusAfterAction": "In Progress",
-          "workOrderID": "WO - 00364436"
+            "timestamp": "2025-05-01T21:31:56.593Z",
+            "taskId": 1746049509281,
+            "taskName": "LINE Assembly",
+            "employee": "Keith Carter",
+            "action": "start",
+            "department": "HANDLES",
+            "workCenter": "026",
+            "realDurationAtAction": 0,
+            "statusAfterAction": "In Progress",
+            "workOrderID": "WO - 00364436"
         },
         {
-          "timestamp": "2025-05-01T21:54:38.416Z",
-          "taskId": 1746049509281,
-          "taskName": "LINE Assembly",
-          "employee": "Keith Carter",
-          "action": "stop",
-          "department": "HANDLES",
-          "workCenter": "026",
-          "realDurationAtAction": 1361,
-          "statusAfterAction": "Completed",
-          "workOrderID": "WO - 00364436"
+            "timestamp": "2025-05-01T21:54:38.416Z",
+            "taskId": 1746049509281,
+            "taskName": "LINE Assembly",
+            "employee": "Keith Carter",
+            "action": "stop",
+            "department": "HANDLES",
+            "workCenter": "026",
+            "realDurationAtAction": 1361,
+            "statusAfterAction": "Completed",
+            "workOrderID": "WO - 00364436"
+        },
+        {
+            "timestamp": "2025-05-05T14:48:14.042Z",
+            "taskId": 1746048221515,
+            "taskName": "HANDLES Assembly",
+            "employee": "Keith Carter",
+            "action": "start",
+            "department": "HANDLES",
+            "workCenter": "026",
+            "realDurationAtAction": 0,
+            "statusAfterAction": "In Progress",
+            "workOrderID": "WO - 00364436-03"
+        },
+        {
+            "timestamp": "2025-05-05T14:48:32.452Z",
+            "taskId": 1746048828729,
+            "taskName": "PACKOUT Assembly",
+            "employee": "Keith Carter",
+            "action": "start",
+            "department": "HANDLES",
+            "workCenter": "026",
+            "realDurationAtAction": 0,
+            "statusAfterAction": "In Progress",
+            "workOrderID": "WO - 00364434-04"
+        },
+        {
+            "timestamp": "2025-05-05T14:48:56.463Z",
+            "taskId": 1746048867627,
+            "taskName": "PACKOUT Assembly",
+            "employee": "Keith Carter",
+            "action": "start",
+            "department": "HANDLES",
+            "workCenter": "026",
+            "realDurationAtAction": 0,
+            "statusAfterAction": "In Progress",
+            "workOrderID": "WO - 00364436-04"
+        },
+        {
+            "timestamp": "2025-05-05T14:49:10.434Z",
+            "taskId": 1746456296567,
+            "taskName": "ELECTRIC Assembly",
+            "employee": "Keith Carter",
+            "action": "start",
+            "department": "HANDLES",
+            "workCenter": "026",
+            "realDurationAtAction": 0,
+            "statusAfterAction": "In Progress",
+            "workOrderID": "WO - 00364650-01E"
+        },
+        {
+            "timestamp": "2025-05-05T14:59:14.466Z",
+            "taskId": 1746048828729,
+            "taskName": "PACKOUT Assembly",
+            "employee": "Keith Carter",
+            "action": "pause",
+            "department": "ELECTRIC",
+            "workCenter": "026",
+            "realDurationAtAction": 0,
+            "statusAfterAction": "Paused",
+            "workOrderID": "WO - 00364434-04",
+            "pauseReason": "Machine issue"
+        },
+        {
+            "timestamp": "2025-05-05T15:07:15.702Z",
+            "taskId": 1746048221515,
+            "taskName": "HANDLES Assembly",
+            "employee": "Keith Carter",
+            "action": "stop",
+            "department": "ELECTRIC",
+            "workCenter": "026",
+            "realDurationAtAction": 1141,
+            "statusAfterAction": "Completed",
+            "workOrderID": "WO - 00364436-03"
+        },
+        {
+            "timestamp": "2025-05-05T15:07:32.047Z",
+            "taskId": 1746456296567,
+            "taskName": "ELECTRIC Assembly",
+            "employee": "Keith Carter",
+            "action": "stop",
+            "department": "ELECTRIC",
+            "workCenter": "026",
+            "realDurationAtAction": 1101,
+            "statusAfterAction": "Completed",
+            "workOrderID": "WO - 00364650-01E"
+        },
+        {
+            "timestamp": "2025-05-05T15:07:46.836Z",
+            "taskId": 1746048867627,
+            "taskName": "PACKOUT Assembly",
+            "employee": "Keith Carter",
+            "action": "stop",
+            "department": "ELECTRIC",
+            "workCenter": "026",
+            "realDurationAtAction": 1130,
+            "statusAfterAction": "Completed",
+            "workOrderID": "WO - 00364436-04"
+        },
+        {
+            "timestamp": "2025-05-05T15:07:58.804Z",
+            "taskId": 1746048828729,
+            "taskName": "PACKOUT Assembly",
+            "employee": "Keith Carter",
+            "action": "start",
+            "department": "ELECTRIC",
+            "workCenter": "026",
+            "realDurationAtAction": 0,
+            "statusAfterAction": "In Progress",
+            "workOrderID": "WO - 00364434-04"
+        },
+        {
+            "timestamp": "2025-05-05T15:08:01.968Z",
+            "taskId": 1746048828729,
+            "taskName": "PACKOUT Assembly",
+            "employee": "Keith Carter",
+            "action": "stop",
+            "department": "ELECTRIC",
+            "workCenter": "026",
+            "realDurationAtAction": 3,
+            "statusAfterAction": "Completed",
+            "workOrderID": "WO - 00364434-04"
+        },
+        {
+            "timestamp": "2025-05-05T19:50:05.856Z",
+            "taskId": 1746049060743,
+            "taskName": "FRAMES Assembly",
+            "employee": "Keith Carter",
+            "action": "start",
+            "department": "HANDLES",
+            "workCenter": "026",
+            "realDurationAtAction": 0,
+            "statusAfterAction": "In Progress",
+            "workOrderID": "WO - 00364434-02"
+        },
+        {
+            "timestamp": "2025-05-06T21:33:25.818Z",
+            "taskId": 1746049060743,
+            "taskName": "FRAMES Assembly",
+            "employee": "Keith Carter",
+            "action": "stop",
+            "department": "HANDLES",
+            "workCenter": "026",
+            "realDurationAtAction": 92599,
+            "statusAfterAction": "Completed",
+            "workOrderID": "WO - 00364434-02"
         }
-      ]
-
+    ]
     const renderContent = () => {
         switch (selectedDepartment) {
             case 'Home': return (<HomeScreen />)
 
             case 'Paint':
                 return (
-                    contentMasterSeletor("FRAMES KIT", 'frames')
+                    contentMasterSeletor("FRAME KIT", 'frames')
                 )
             case 'Packout':
                 return (
@@ -411,6 +576,11 @@ function DepartmentMenu() {
             case 'Handles':
                 return (
                     contentMasterSeletor("HANDLE KIT", 'handles')
+                )
+
+            case 'Electric':
+                return (
+                    contentMasterSeletor("ELECTRIC KIT", 'electric')
                 )
             case 'Frames':
                 return (
@@ -489,6 +659,10 @@ function DepartmentMenu() {
                 <MaintenanceRequest />
             );
 
+            case 'Order Status': return (
+                <ReportOrderStatus reload={reload} gpDataInput={gpDataInput} />
+            );
+
             case 'Throughput Report': return (
                 <ThroughputReport />
             );
@@ -506,6 +680,9 @@ function DepartmentMenu() {
                 <ProductionDowntimeReport spMethod={main} />
             );
 
+            case 'Edit SharePoint Data': return(
+                <EditSharePointDB />
+            )
             case 'Real-Time Production Report':
                 return (
                     <div className="ui">
@@ -536,27 +713,12 @@ function DepartmentMenu() {
         }
     };
 
-    const header = () => {
-        return (
-            <div>
-                <h1 className="ui header medium" style={{ marginTop: '2%', marginLeft: '3%' }}>
-                    <div className="ui image avatar">
-                        <img
-                            src="img/logo.jpg" // replace with your image source
-                            alt="Department Image"
-                        />
-                    </div>
-                    Manufacturing Orders
-
-                </h1>
-            </div>
-        );
-    };
 
     const loginUser = () => {
 
         setIsLoggedIn(true);
-        setUserName(userInfo.displayName);
+        setUserName(sessionStorage.getItem('user_name'));
+        setUserEmail(sessionStorage.getItem('user_email'));
 
     }
     const loginModal = () => {
@@ -599,13 +761,14 @@ function DepartmentMenu() {
                 sheetNameLifted={sheetNameLifted}
                 setSheetName={setSheetName}
                 userName={userName}
+                email={userEmail}
                 selectedDepartment={selectedDepartment}
                 loginModalOpen={loginModalOpen}
                 reload={reload}
             />
             <div className="ui grid contentPane">
                 {/* Left Sidebar Menu */}
-                
+
                 {/* Content Area with manually created tabs */}
                 <div className="ui fourteen wide column centered"
                     style={{ /* marginLeft: '15.5%', paddingRight: '5%' */ }}>
