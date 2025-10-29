@@ -86,7 +86,7 @@ const handleTokenSubmit = (url) => {
 
   const scopes = "openid profile User.Read offline_access Sites.Manage.All";
   const responseType = 'token';
-  const authUrl = `https://login.microsoftonline.com/${tenant}/oauth2/v2.0/authorize?client_id=${clientId}&response_type=${responseType}&redirect_uri=${redirectUri[1]}&scope=${encodeURIComponent(scopes)}`;
+  const authUrl = `https://login.microsoftonline.com/${tenant}/oauth2/v2.0/authorize?client_id=${clientId}&response_type=${responseType}&redirect_uri=${redirectUri[0]}&scope=${encodeURIComponent(scopes)}`;
 
   const popup = window.open(authUrl, '_blank', 'width=600,height=400,scrollbars=yes');
 

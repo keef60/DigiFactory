@@ -8,11 +8,18 @@ const OrderChartComponent = ({
     reload
 }) => {
     const canvasRef = useRef(null);
-    const chartRef = useRef(null); // Store the chart instance
+    const chartRef = useRef(null);
+
     const [storedGoalData, setStoredGoalData] = useState([]);
-    const [runRate, setRunRates] = useState(JSON.parse(localStorage.getItem('runRates')));
-    const rate = runRate.find(i => String(i['Unit']) === String(modelId))
-    const dpName = departmentName === 'line' ? departmentName + selectedNumber : departmentName
+    const [runRate, setRunRates] = useState(
+        JSON.parse(localStorage.getItem('runRates')) || []
+    );
+
+    const rate = runRate.find(i => String(i['Unit']) === String(modelId)) ?? 0;
+
+    const dpName = departmentName === 'line'
+        ? departmentName + selectedNumber
+        : departmentName;
 
     useEffect(() => {
         try {
@@ -30,7 +37,7 @@ const OrderChartComponent = ({
             console.warn('------------------Waiting for report data ');
         };
 
-    }, [gpDataInput, selectedNumber, departmentName, reload]);
+    }, [gpDataInput, selectedNumber, departmentName, reload,runRate]);
     useEffect(() => {
         const ctx = canvasRef.current.getContext('2d');
 
