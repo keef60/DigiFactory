@@ -104,61 +104,139 @@
             }, []);
 
 
+            const [activeTab, setActiveTab] = useState("chart"); // default tab
+            const [aBlod, setBlob] = useState(); // default tab
+            
+
             return (
                 <div className="ui container" style={{ padding: "20px" }}>
-                    <div className="ui clearing segment grey inverted ">
-                        {/* Main title */}
-                        <h1 className="ui header huge ">
-                            Order Progress Dashboard
-                        </h1>
+                    <div className="ui clearing segment   padded">
+                        <h1 className="ui header huge">Order Progress Dashboard</h1>
 
-                        {/* Subtitle showing order or model ID */}
-                        <h3 className="ui header sub header " style={{ marginTop: '0.5em' }}>
+                        <h3 className="ui header sub header" style={{ marginTop: "0.5em" }}>
                             Order: {workOrder || "N/A"}
                         </h3>
-                        <h3 className="ui header sub header " style={{ marginTop: '0.5em' }}>
+                        <h3 className="ui header sub header" style={{ marginTop: "0.5em" }}>
                             Model: {data.modelId || "N/A"}
                         </h3>
-
-                        <h3 className="ui header sub header" style={{ marginTop: '0.5em' }}>
+                        <h3 className="ui header sub header" style={{ marginTop: "0.5em" }}>
                             Department: {data.departmentName || "N/A"}
                         </h3>
 
-                        {/* Close button aligned to the right */}
-                        <button className="ui  right floated red button" onClick={() => window.close()}>
+                        <button
+                            className="ui right floated red button"
+                            onClick={() => window.close()}
+                        >
                             Close
                         </button>
                     </div>
 
-                    <OrderChartComponent
-                        modelId={data.modelId}
-                        departmentName={data.departmentName}
-                        selectedNumber={data.selectedNumber}
-                        progress={data.progress}
-                        gpDataInput={data.gpDataInput} />
-
-                    <div className="ui divider"></div>
-
-                    <div className="ui three statistics">
-                        <div className="ui statistic teal">
-                            <div className="value">{data.goal}</div>
-                            <div className="label">Goal</div>
-                        </div>
-
-                        <div className="ui statistic blue">
-                            <div className="value">{data.progress}</div>
-                            <div className="label">Progress</div>
-                        </div>
-
-                        <div className="ui statistic orange">
-                            <div className="value">{data.remaining}</div>
-                            <div className="label">Remaining</div>
-                        </div>
+                    {/* TABS HEADER */}
+                    <div className="ui top attached tabular menu">
+                        <a
+                            className={`item ${activeTab === "chart" ? "active" : ""}`}
+                            onClick={() => setActiveTab("chart")}
+                        >
+                            📊 Chart
+                        </a>
+                        <a
+                            className={`item ${activeTab === "drawing" ? "active" : ""}`}
+                            onClick={() => setActiveTab("drawing")}
+                        >
+                            🧩 eDrawing
+                        </a>
                     </div>
 
-                    <div className="ui segment">
-                        <p>This view updates live when the main page changes data.</p>
-                        <p>If you refresh this tab, it reloads the last known values from localStorage.</p>
+                    {/* TABS CONTENT */}
+                    <div className="ui bottom attached segment">
+                        {activeTab === "chart" && (
+                            <>
+                                <OrderChartComponent
+                                    modelId={data.modelId}
+                                    departmentName={data.departmentName}
+                                    selectedNumber={data.selectedNumber}
+                                    progress={data.progress}
+                                    gpDataInput={data.gpDataInput}
+                                />
+
+                                <div className="ui divider"></div>
+
+                                <div className="ui three statistics">
+                                    <div className="ui statistic teal">
+                                        <div className="value">{data.goal}</div>
+                                        <div className="label">Goal</div>
+                                    </div>
+
+                                    <div className="ui statistic blue">
+                                        <div className="value">{data.progress}</div>
+                                        <div className="label">Progress</div>
+                                    </div>
+
+                                    <div className="ui statistic orange">
+                                        <div className="value">{data.remaining}</div>
+                                        <div className="label">Remaining</div>
+                                    </div>
+                                </div>
+
+                                <div className="ui segment">
+                                    <p>This view updates live when the main page changes data.</p>
+                                    <p>
+                                        If you refresh this tab, it reloads the last known values from
+                                        localStorage.
+                                        type here
+
+                                    </p>
+                                </div>
+                            </>
+                        )}
+
+                        {activeTab === "drawing" && (
+                            <div style={{ height: "85vh", display: "flex", flexDirection: "column" }}>
+                                <div className="ui segment">
+                                    <button
+                                        className="ui blue button"
+                                        onClick={async () => {
+                                            try {
+                                                // Open a file picker (PDF only)
+                                                const [fileHandle] = await window.showOpenFilePicker(/* {
+                                                    types: [
+                                                        {
+                                                            description: "PDF Files",
+                                                            accept: { "application/pdf": [".pdf"] },
+                                                        },
+                                                    ],
+                                                    multiple: false, // only one file
+                                                } */);
+
+                                                const file = await fileHandle.getFile();
+                                                const blobURL = URL.createObjectURL(file);
+
+                                                // Set iframe src
+                                               // const iframe = document.getElementById("drawingFrame");
+                                              //   iframe.src = blobURL;
+                                                setBlob(blobURL)
+                                            } catch (err) {
+                                                console.error(err);
+                                                alert("File selection was cancelled or failed.");
+                                            }
+                                        }}
+                                    >
+                                        📂 Open File
+                                    </button>
+                                </div>
+
+                                <iframe
+                                    id="drawingFrame"
+                                    src={aBlod}
+                                    title="PDF Viewer"
+                                    width="100%"
+                                    height="100%"
+                                    style={{ border: "none", flexGrow: 1 }}
+                                ></iframe>
+                            </div>
+                        )}
+
+
                     </div>
                 </div>
             );
