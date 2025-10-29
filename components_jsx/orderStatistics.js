@@ -1,4 +1,6 @@
 //Commit Update
+let fullViewWindow = null;
+
 const OrderStatistic = ({
   departmentName,
   selectedNumber,
@@ -144,6 +146,63 @@ const OrderStatistic = ({
     setProgress('');
   };
 
+
+ const handleOpenFullView = (e) => {
+  e.preventDefault();
+
+  if (!fullViewWindow || fullViewWindow.closed) {
+    fullViewWindow = window.open("fullview.html", "FullView");
+  } else {
+    fullViewWindow.focus();
+  }
+
+  sendFullViewData();
+};
+
+
+  const sendFullViewData = () => {
+    // open if not already open
+    if (!fullViewWindow || fullViewWindow.closed) {
+      fullViewWindow = window.open("fullview.html", "FullView");
+    }
+
+    // wait until the window is ready
+    if (!fullViewWindow) return;
+
+    const dataToSend = {
+      modelId: title,
+      selectedNumber,
+      departmentName,
+      gpDataInput,
+      goal: goal || storedGoalData?.goal || 0,
+      progress: progress || storedGoalData?.progress || 0,
+      remaining: Math.round(
+        calculateRemaining(
+          storedGoalData?.goal,
+          modelId ? progress : storedGoalData?.progress
+        )
+      ),
+    };
+
+    // use setTimeout to ensure window has loaded
+    setTimeout(() => {
+      fullViewWindow.postMessage(
+        { type: "UPDATE_FULL_VIEW", payload: dataToSend },
+        "*"
+      );
+    }, 500);
+  };
+
+  useEffect(() => {
+    // if full view window exists, resend data on reload
+    if (fullViewWindow && !fullViewWindow.closed) {
+      sendFullViewData();
+    }
+  }, [reload, goal, progress, storedGoalData]);
+
+
+
+
   return (
     <>
       <h3 className="header ui">Hourly Production Entry</h3>
@@ -191,6 +250,17 @@ const OrderStatistic = ({
 
           <div className="ui divider hidden" />
 
+          <div className="ui clearing segment">
+            <h3 className="ui header left floated">Hourly Production Entry</h3>
+            <a
+              href="fullview.html"
+              target="_blank"
+              className="ui right floated button blue"
+              onClick={handleOpenFullView}
+            >
+              Full View
+            </a>
+          </div>
           {canStartOrder ? (
             <div className="ui buttons small">
               <button className="ui black button" onClick={handleSave}>Save</button>
