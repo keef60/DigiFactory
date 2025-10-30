@@ -23,8 +23,8 @@
 
     <!-- CDN for Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script type="text/babel" src="components_jsx/orderChart.js"></script>
-    <script type="text/JavaScript" src="components_jsx/js/spMethod.js"></script>
+    <script type="text/babel" src="components_ jsx/orderChart.js"></script>
+    <script type="text/JavaScript" src="components_ jsx/js/spMethod.js"></script>
 
     <style>
         .progress-circle {
@@ -234,35 +234,61 @@
                 departmentName: ''
 
             });
-            let workOrder = null
+            // const [setWorkOrder,workOrder] = useEffect();
 
-            const r = Array.isArray(data.gpDataInput?.reports)
 
-            if (r) {
 
-                data.gpDataInput.reports.forEach(item => {
+            const wrkOrd = useMemo(() => {
+                if (!Array.isArray(data.gpDataInput?.reports)) return null;
+
+                for (const item of data.gpDataInput.reports) {
                     const fields = item.fields;
-                    // Find all workOrder IDs dynamically
-                    const workOrderIds = Object.values(fields)
-                        .filter(v => typeof v === "string")            // only check stringified JSON fields
-                        .map(v => {
-                            try {
-                                const parsed = JSON.parse(v);
-                                const dName = data.departmentName.includes('line') ? data.departmentName + data.selectedNumber : data.departmentName;
-                                const nameMatch = parsed?.assignedTo?.department === dName;
-                                const modelMatch = parsed?.product?.id === data.modelId;
-                                if (nameMatch && modelMatch) return parsed?.workOrder?.id || null;
-                            } catch {
-                                return null; // ignore non-JSON fields
-                            }
-                        })
-                        .filter(Boolean); // remove null values
 
-                    workOrder = workOrderIds[0];
+                    for (const val of Object.values(fields)) {
+                        if (typeof val !== "string") continue;
+                        try {
+                            const parsed = JSON.parse(val);
+                            const dName = data.departmentName.includes("line")
+                                ? data.departmentName + data.selectedNumber
+                                : data.departmentName;
+                            const nameMatch = parsed?.assignedTo?.department === dName;
+                            const modelMatch = parsed?.product?.id === data.modelId;
+                            if (nameMatch && modelMatch) return parsed?.workOrder?.id;
+                        } catch {
+                            continue;
+                        }
+                    }
+                }
 
-                })
-            }
+                return null;
+            }, [data]);
 
+            /*             if (r) {
+            
+                            data.gpDataInput.reports.forEach(item => {
+                                const fields = item.fields;
+                                // Find all workOrder IDs dynamically
+                                const workOrderIds = Object.values(fields)
+                                    .filter(v => typeof v === "string")            // only check stringified JSON fields
+                                    .map(v => {
+                                        try {
+                                            const parsed = JSON.parse(v);
+                                            const dName = data.departmentName.includes('line') ? data.departmentName + data.selectedNumber : data.departmentName;
+                                            const nameMatch = parsed?.assignedTo?.department === dName;
+                                            const modelMatch = parsed?.product?.id === data.modelId;
+                                            if (nameMatch && modelMatch) return parsed?.workOrder?.id || null;
+                                        } catch {
+                                            return null; // ignore non-JSON fields
+                                        }
+                                    })
+                                    .filter(Boolean); // remove null values
+            
+                                    wrkOrd = workOrderIds[0];
+             
+                            });
+                        }
+            
+             */
             // Listen for messages from the main window
             useEffect(() => {
                 const handleMessage = (event) => {
@@ -292,7 +318,7 @@
                         <h1 className="ui header huge">Order Progress Dashboard</h1>
 
                         <h3 className="ui header sub header" style={{ marginTop: "0.5em" }}>
-                            Order: {workOrder || "N/A"}
+                            Order: {wrkOrd || "N/A"}
                         </h3>
                         <h3 className="ui header sub header" style={{ marginTop: "0.5em" }}>
                             Model: {data.modelId || "N/A"}
@@ -336,7 +362,7 @@
                                         selectedNumber={data.selectedNumber}
                                         progress={data.progress}
                                         gpDataInput={data.gpDataInput}
-                                    /> 
+                                    />
                                 </div>
 
 
@@ -428,4 +454,3 @@
 </body>
 
 </html>
-
