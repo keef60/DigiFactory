@@ -1,4 +1,4 @@
-//Commit Update
+
 const OrderChartComponent = ({
     departmentName,
     selectedNumber,
@@ -16,54 +16,77 @@ const OrderChartComponent = ({
     );
 
     const rate = runRate.find(i => String(i['Unit']) === String(modelId)) ?? 0;
-
     const dpName = departmentName === 'line'
         ? departmentName + selectedNumber
         : departmentName;
 
     useEffect(() => {
         try {
-            let logData = [];
-            gpDataInput.reports.map(item => {
-                let bool = String(modelId) === String(item.fields.Title) &&
+            gpDataInput.reports.forEach(item => {
+                const match = String(modelId) === String(item.fields.Title) &&
                     item.fields[dpName] !== undefined;
-                if (bool) {
+                if (match) {
                     const parsedData = JSON.parse(item.fields[dpName]);
-                    setStoredGoalData(parsedData.efficiencyMetricsCaptured)
-                };
-            });
-
-        } catch (error) {
-            console.warn('------------------Waiting for report data ');
-        };
-
-    }, [gpDataInput, selectedNumber, departmentName, reload,runRate]);
-    useEffect(() => {
-        const ctx = canvasRef.current.getContext('2d');
-
-        const getHourlyProgress = () => {
-            const progressArray = Array(19).fill(0);
-            storedGoalData?.forEach(item => {
-                const index = item.hour - 6;
-                if (index >= 0 && index < progressArray.length) {
-                    progressArray[index] = item.progress ?? 0;
+                    setStoredGoalData(parsedData.efficiencyMetricsCaptured || []);
                 }
             });
-            return progressArray;
-        };
+        } catch (error) {
+            console.warn('Waiting for report data');
+        }
+    }, [gpDataInput, selectedNumber, departmentName, reload, runRate]);
 
-        const dataSet = getHourlyProgress();
+    useEffect(() => {
+        const ctx = canvasRef.current.getContext('2d');
+        const today = new Date().toDateString();
         const runRateValue = rate?.['Run Rate'] ?? 0;
 
-        // Destroy existing chart if present
-        if (chartRef.current) {
-            chartRef.current.destroy();
-        }
+        // Group entries by hour (adjusted for chart)
+        const grouped = {};
+        storedGoalData.forEach(item => {
+            const hour = item.hour - 6; // shift for chart (1–12)
+            if (hour >= 0 && hour < 12) {
+                const date = new Date(item.date);
+                const dateLabel = date.toDateString();
+                const isToday = dateLabel === today;
 
-        // Color bars based on Run Rate comparison
-        const backgroundColors = dataSet.map(value =>
-            value >= runRateValue ? 'rgba(21, 159, 63, 0.7)' : 'rgba(255, 99, 132, 0.7)'
-        );
+                if (!grouped[hour]) grouped[hour] = [];
+                grouped[hour].push({
+                    progress: item.progress ?? 0,
+                    label: isToday ? 'Today' : dateLabel,
+                    isToday,
+                    date,
+                });
+            }
+        });
+
+        const labels = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+        const datasets = [];
+
+        Object.entries(grouped).forEach(([hourIndex, entries]) => {
+            entries.forEach((entry, i) => {
+                const color = entry.isToday
+                    ? entry.progress >= runRateValue
+                        ? 'rgba(21, 159, 63, 0.7)' // green
+                        : 'rgba(255, 99, 132, 0.7)' // red
+                    : `rgba(${100 + i * 30}, ${100 + i * 20}, ${200 - i * 20}, 0.6)`;
+
+                const borderColor = color.replace('0.6', '1').replace('0.7', '1');
+
+                const data = Array(labels.length).fill(0);
+                data[hourIndex] = entry.progress;
+
+                datasets.push({
+                    label: `Hour ${labels[hourIndex]} - ${entry.label}`,
+                    data,
+                    backgroundColor: color,
+                    borderColor,
+                    borderWidth: 1,
+                });
+            });
+        });
+
+        // Destroy previous chart
+        if (chartRef.current) chartRef.current.destroy();
 
         // Plugin to draw horizontal Run Rate line
         const runRateLine = {
@@ -81,7 +104,6 @@ const OrderChartComponent = ({
                 ctx.setLineDash([6, 3]);
                 ctx.stroke();
 
-                // Label for the line
                 ctx.fillStyle = 'red';
                 ctx.font = '12px sans-serif';
                 ctx.fillText(`Run Rate: ${runRateValue}`, right - 100, y.getPixelForValue(runRateValue) - 5);
@@ -89,30 +111,24 @@ const OrderChartComponent = ({
             }
         };
 
-        // Create the chart
+        // Create chart
         chartRef.current = new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
-                datasets: [
-                    {
-                        label: 'Completed',
-                        data: dataSet,
-                        backgroundColor: backgroundColors,
-                        borderColor: backgroundColors.map(c => c.replace('0.7', '1')),
-                        borderWidth: 1,
-                    },
-                ],
+                labels,
+                datasets,
             },
             options: {
                 responsive: true,
                 scales: {
                     x: {
                         title: { display: true, text: 'Hours' },
+                        stacked: true,
                     },
                     y: {
                         title: { display: true, text: 'Completed' },
                         beginAtZero: true,
+                        stacked: true,
                     },
                 },
                 plugins: {
@@ -125,75 +141,9 @@ const OrderChartComponent = ({
         });
     }, [progress, departmentName, selectedNumber, modelId, storedGoalData]);
 
-    /*     useEffect(() => {
-    
-            const ctx = canvasRef.current.getContext('2d');
-    
-            const getHourlyProgress = () => {
-              
-    
-                const progressArray = Array(19).fill(0); // 0–24 shifted by -6 => index range 0–18
-    
-                storedGoalData?.forEach(item => {
-                    const index = item.hour - 6;
-                    if (index >= 0 && index < progressArray.length) {
-                        progressArray[index] = item.progress ?? 0;
-                    };
-                });
-                
-                return progressArray
-            };
-    
-    
-            const dataSet = getHourlyProgress();
-    
-    
-            // Destroy the existing chart if there is one
-            if (chartRef.current) {
-                chartRef.current.destroy();
-            }
-    
-            // Create a new chart
-            chartRef.current = new Chart(ctx, {
-                type: 'bar', // Change to other types like 'bar' or 'pie' if needed
-                data: {
-                    labels: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], // Hours from 1 to 12
-                    datasets: [
-                        {
-                            label: 'Completed',
-                            data: dataSet, // Example data
-                            borderColor: 'rgb(21, 159, 63)',
-                            fill: true,
-                        },
-                    ],
-                },
-                options: {
-                    responsive: true,
-                    scales: {
-                        x: {
-                            title: {
-                                display: true,
-                                text: 'Hours',
-                            },
-                        },
-                        y: {
-                            title: {
-                                display: true,
-                                text: 'Completed',
-                            },
-                        },
-                    },
-                },
-            });
-    
-        }, [progress, departmentName, selectedNumber, modelId, storedGoalData]);
-     */
-    return (<>
-        <canvas
-            ref={canvasRef}
-            width={400}
-
-        />
-    </>
+    return (
+        <>
+            <canvas ref={canvasRef} width={400} />
+        </>
     );
 };
