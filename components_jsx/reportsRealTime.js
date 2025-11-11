@@ -8,6 +8,11 @@ const ReportsRealTimeDashboard = ({ }) => {
     const [departmentClick, setDepartmentClick] = useState();
     const [departmentTitle, setDepartmentTitle] = useState();
 
+    const [selectedDate, setSelectedDate] = useState(null); // e.g., '2025-10-30'
+    const [selectedModel, setSelectedModel] = useState('');
+    const [availableModels, setAvailableModels] = useState([]);
+
+
     async function convertToTableData1() {
         const data = [];
         const noteData = []
@@ -90,7 +95,14 @@ const ReportsRealTimeDashboard = ({ }) => {
         }
     }
 
-    async function convertToTableData() {
+
+    useEffect(() => {
+        // Wait for DOM to render, then initialize dropdown
+        $('.ui.dropdown').dropdown();
+    }, [availableModels])
+
+
+    async function convertToTableData(selectedDate, selectedModel) {
         const data = [];
         const noteData = [];
 
@@ -106,6 +118,27 @@ const ReportsRealTimeDashboard = ({ }) => {
             const reportItems = await main.fetchSharePointData('REPORTS', departmentClick, false)
                 .then(e => e.value)
                 .catch(err => console.log("Reports error", err));
+
+            const modelSet = new Set();
+
+            for (const item of reportItems) {
+                const fields = item.fields;
+                for (const key in fields) {
+                    if (![departmentClick].includes(key)) continue;
+
+                    let departmentJson;
+                    try {
+                        departmentJson = JSON.parse(fields[key]);
+                    } catch (e) {
+                        continue;
+                    }
+
+                    const model = departmentJson?.product?.id || fields["Title"];
+                    if (model) modelSet.add(model);
+                }
+            }
+
+            setAvailableModels(Array.from(modelSet));
 
             for (const item of reportItems) {
 
@@ -138,7 +171,7 @@ const ReportsRealTimeDashboard = ({ }) => {
 
                     const hourData = logs || [];
 
-                    for (const entry of hourData) {
+                    /* for (const entry of hourData) {
                         const hour = `H ${entry.hour - 6}`;
                         const machinePrd = entry.progress;
 
@@ -156,6 +189,34 @@ const ReportsRealTimeDashboard = ({ }) => {
                                 machVar,
                                 varPercentage: `${varPercentage}%`
                             });
+                        }
+                    } */
+
+                    for (const entry of hourData) {
+                        const entryDate = new Date(entry.date).toISOString().split('T')[0]; // 'YYYY-MM-DD'
+
+                        const matchesDate = !selectedDate || entryDate === selectedDate;
+                        const matchesModel = !selectedModel || String(model) === String(selectedModel);
+                        if (selectedModel && String(model) !== String(selectedModel)) continue;
+                        if (matchesDate && matchesModel) {
+                            const hour = `H ${entry.hour - 6}`;
+                            const machinePrd = entry.progress;
+                            const runRateEntry = runRates.find(r => String(r['Unit']) === String(model));
+
+                            if (runRateEntry) {
+                                const runRate = runRateEntry["Run Rate"];
+                                const machVar = machinePrd - runRate;
+                                const varPercentage = ((machinePrd / runRate) * 100).toFixed(2);
+
+                                data.push({
+                                    hour,
+                                    model,
+                                    machinePrd,
+                                    runRate,
+                                    machVar,
+                                    varPercentage: `${varPercentage}%`
+                                });
+                            }
                         }
                     }
 
@@ -187,9 +248,13 @@ const ReportsRealTimeDashboard = ({ }) => {
             console.log("convertToTableData failed", err);
         }
     };
+
+
     useEffect(() => {
-        convertToTableData();
-    }, [departmentClick]);
+        convertToTableData(selectedDate, selectedModel);
+    }, [departmentClick, selectedDate, selectedModel]);
+
+
 
     const totalProduction = data.reduce((sum, row) => sum + row.machinePrd, 0);
     const totalRunRate = data.reduce((sum, row) => sum + row.runRate, 0);
@@ -275,16 +340,60 @@ const ReportsRealTimeDashboard = ({ }) => {
             <div className="ui segment very padded black " style={{ marginTop: "2px" }}>
 
                 <div className="ui grid centered">
+
                     <div class='row'>
+
                         <div class=' ten wide column'>
+                            <div className="ui form segment basic">
+                                <div className="fields">
+                                    <div className="field">
+                                        <label>Filter by Date</label>
+                                        <input
+                                            type="date"
+                                            value={selectedDate || ''}
+                                            onChange={e => setSelectedDate(e.target.value)}
+                                        />
+                                    </div>
+                                    <div className="field">
+                                        <label>Filter by Model</label>
+                                        <div className="ui selection dropdown">
+                                            <input type="hidden" name="model" value={selectedModel} />
+                                            <i className="dropdown icon"></i>
+                                            <div className="default text">Select Model</div>
+                                            <div className="menu">
+                                                <div className="item" onClick={() => setSelectedModel('')}>All Models</div>
+                                                {availableModels.map((model, index) => (
+                                                    <div
+                                                        key={index}
+                                                        className="item"
+                                                        onClick={() => setSelectedModel(model)}
+                                                    >
+                                                        {model}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="field">
+                                        <label> Reset Filters</label>
+                                        <button className="ui button" onClick={() => {
+                                            setSelectedModel('');
+                                            setSelectedDate(null);
+                                        }}>
+                                            Reset Filters
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                             <div class='ui segment black '>
                                 <ResponsiveChart_DashboardComponent
                                     departmentTitle={departmentTitle}
                                     setTableView={setTableView} />
                             </div>
+
                         </div>
                         <div class=' four wide column '>
-                            <div class='ui segment  black '>
+                            <div class='ui segment  black ' style={{top:"25%"}}>
                                 <Statistics_DashboardComponent stats={[
                                     {
                                         total: totalProduction,
@@ -300,6 +409,8 @@ const ReportsRealTimeDashboard = ({ }) => {
                                     }
                                 ]} />
                             </div>
+
+
                         </div>
                     </div>
                 </div>
