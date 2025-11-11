@@ -77,7 +77,7 @@ const OrderStatistic = ({
     trackProgressPerHour();
   }, [currentProgressUpdate]);
 
-  const trackProgressPerHour = () => {
+  const trackProgressPerHourOld = () => {
     const now = new Date();
     const currentHour = now.getHours();
     const storedProgress = storedGoalData?.efficiencyMetricsCaptured || [];
@@ -109,6 +109,42 @@ const OrderStatistic = ({
     setUpdatedHourly(updatedProgress);
     localStorage.setItem(`hourlyProgress-${dpName}-${modelId}`, JSON.stringify(updatedProgress));
   };
+  const trackProgressPerHour = () => {
+  const now = new Date();
+  const currentHour = now.getHours();
+  const storedProgress = storedGoalData?.efficiencyMetricsCaptured || [];
+
+  // Find index of entry with same hour AND same date
+  const hourIndex = storedProgress.findIndex(item => {
+    const itemDate = new Date(item.date);
+    return itemDate.getHours() === currentHour &&
+           itemDate.toDateString() === now.toDateString();
+  });
+
+  const newEntry = {
+    hour: currentHour,
+    progress: currentProgressUpdate,
+    date: now.toISOString()
+  };
+
+  let updatedProgress = [...storedProgress];
+
+  if (hourIndex >= 0) {
+    // Overwrite the existing entry
+    updatedProgress.splice(hourIndex, 1, newEntry);
+  } else {
+    // Add new entry
+    updatedProgress.push(newEntry);
+  }
+
+  // Optional: limit to last 12 entries (remove this if you want unlimited)
+  // if (updatedProgress.length > 12) {
+  //   updatedProgress.splice(0, updatedProgress.length - 12);
+  // }
+
+  setUpdatedHourly(updatedProgress);
+  localStorage.setItem(`hourlyProgress-${dpName}-${modelId}`, JSON.stringify(updatedProgress));
+};
 
   const handleProgressChange = (e) => {
     const additionalProgress = Number(e.target.value);
@@ -147,17 +183,17 @@ const OrderStatistic = ({
   };
 
 
- const handleOpenFullView = (e) => {
-  e.preventDefault();
+  const handleOpenFullView = (e) => {
+    e.preventDefault();
 
-  if (!fullViewWindow || fullViewWindow.closed) {
-    fullViewWindow = window.open("fullview.html", "FullView");
-  } else {
-    fullViewWindow.focus();
-  }
+    if (!fullViewWindow || fullViewWindow.closed) {
+      fullViewWindow = window.open("fullview.html", "FullView");
+    } else {
+      fullViewWindow.focus();
+    }
 
-  sendFullViewData();
-};
+    sendFullViewData();
+  };
 
 
   const sendFullViewData = () => {
